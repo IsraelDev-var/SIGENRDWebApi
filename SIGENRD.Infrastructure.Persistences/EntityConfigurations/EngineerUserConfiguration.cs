@@ -15,8 +15,7 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
             #endregion
 
             #region Property cofiguration
-            builder.ToTable("EngineerUsers");
-            builder.HasKey(e => e.Id);
+            
 
             builder.Property(e => e.ApplicationUserId)
                 .HasMaxLength(450) // Identity uses string Ids
@@ -29,12 +28,16 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
             builder.Property(e => e.Specialty)
                 .HasMaxLength(120);
 
-            builder.Property(e => e.IsActive)
+            builder.Property(e => e.IsVerifiedByCodia)
                 .HasDefaultValue(true);
             #endregion
 
-            #region Property cofiguration
-            
+            #region relationship configurations
+            builder.HasOne(e => e.InstallerCompany)
+                   .WithMany(c => c.Engineers)
+                   .HasForeignKey(e => e.InstallerCompanyId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
             #endregion
         }
     }

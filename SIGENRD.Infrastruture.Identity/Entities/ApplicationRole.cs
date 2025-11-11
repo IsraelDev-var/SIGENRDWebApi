@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-
-namespace SIGENRD.Infrastruture.Identity.Entities
+namespace SIGENRD.Infrastructure.Identity.Entities
 {
-    public class ApplicationRole : IdentityUser
+    public class ApplicationRole : IdentityRole
     {
-        public required string RoleName { get; set; } = string.Empty;
+        public string? Description { get; set; }
     }
 }

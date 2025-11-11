@@ -1,5 +1,7 @@
 ﻿
 
+using SIGENRD.Core.Domain.Base;
+using SIGENRD.Core.Domain.Enums;
 using System.Drawing;
 
 namespace SIGENRD.Core.Domain.Entities
@@ -7,7 +9,7 @@ namespace SIGENRD.Core.Domain.Entities
     /// <summary>
     /// Representa una solicitud de conexión eléctrica por parte de un cliente o empresa instaladora.
     /// </summary>
-    public class ConnectionRequest
+    public class ConnectionRequest : AuditableEntity
     {
         public int Id { get; set; }
 
@@ -23,22 +25,31 @@ namespace SIGENRD.Core.Domain.Entities
         // Distribuidora receptora
         public int DistributorId { get; set; }
 
-        // Transformador al que se conecta
+        // Transformador asociado
         public int TransformerId { get; set; }
 
         // Fecha de solicitud
-        public DateTime RequestedAt { get; set; } = DateTime.UtcNow; 
+        public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
 
-        // Estado de la solicitud (En revisión, Aprobada, Rechazada, etc.)
-        public string Status { get; set; } = "UnderReview";
+        // Estado del trámite (UnderReview, Approved, etc.)
+        public RequestStatus Status { get; set; } = RequestStatus.UnderReview;
+
+        // Tipo de uso (residencial, comercial, etc.)
+        public UsageType UsageType { get; set; }
+
+        // Tipo de tarifa (BT, MT, AT)
+        public TariffType TariffType { get; set; }
+
+        // Tipo de interconexión (Parallel, Isolated, etc.)
+        public InterconnectionType InterconnectionType { get; set; }
 
         // Descripción del proyecto
         public string? ProjectDescription { get; set; }
 
-        // Dirección o ubicación del proyecto
+        // Dirección física
         public string? ProjectAddress { get; set; }
 
-        // Coordenadas del proyecto
+        // Coordenadas geográficas
         public Point? Coordinates { get; set; }
 
         // Relaciones
@@ -50,6 +61,8 @@ namespace SIGENRD.Core.Domain.Entities
         public ICollection<TechnicalDocument>? TechnicalDocuments { get; set; }
         public ICollection<StateHistory>? StateHistories { get; set; }
         public ICollection<ReviewObservation>? Observations { get; set; }
+
+        // Relación 1:1 con medición neta
         public NetMeteringRequest? NetMeteringRequest { get; set; }
     }
 }

@@ -1,9 +1,12 @@
-﻿namespace SIGENRD.Core.Domain.Entities
+﻿using SIGENRD.Core.Domain.Base;
+using SIGENRD.Core.Domain.Enums;
+
+namespace SIGENRD.Core.Domain.Entities
 {
     /// <summary>
     /// Observaciones o comentarios técnicos/documentales en el proceso de revisión de una solicitud.
     /// </summary>
-    public class ReviewObservation
+    public class ReviewObservation : AuditableEntity
     {
         public int Id { get; set; }
 
@@ -14,13 +17,9 @@
         public string Comment { get; set; } = string.Empty;
 
         // Tipo de observación (Técnica / Documental)
-        public string Type { get; set; } = "Technical";
+        public DocumentType DocumentType { get; set; } = DocumentType.TechnicalSheet;
 
-        // Usuario que generó la observación
-        public string? CreatedByUser { get; set; }
-
-        // Fecha del registro
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+       
 
         // Relación
         public ConnectionRequest? ConnectionRequest { get; set; }

@@ -1,11 +1,13 @@
 ﻿
 
+using SIGENRD.Core.Domain.Base;
+
 namespace SIGENRD.Core.Domain.Entities
 {
     /// <summary>
     /// Define la zona o área geográfica de servicio eléctrico.
     /// </summary>
-    public class ServiceZone
+    public class ServiceZone : AuditableEntity
     {
         public int Id { get; set; }
 

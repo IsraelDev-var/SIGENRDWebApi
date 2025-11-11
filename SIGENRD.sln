@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIGENRD.Core.Domain", "SIGE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIGENRD.Infrastructure.Persistences", "SIGENRD.Infrastructure.Persistences\SIGENRD.Infrastructure.Persistences.csproj", "{FB4F197D-B8D3-48BC-A371-1D47839D0319}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIGENRD.Infrastruture.Identity", "SIGENRD.Infrastruture.Identity\SIGENRD.Infrastruture.Identity.csproj", "{3843E710-619C-45C8-AB47-7F83C16F0094}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIGENRD.Infrastructure.Identity", "SIGENRD.Infrastruture.Identity\SIGENRD.Infrastructure.Identity.csproj", "{3843E710-619C-45C8-AB47-7F83C16F0094}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIGENRD.Infrastructure.Shared", "SIGENRD.Infrastructure.Shared\SIGENRD.Infrastructure.Shared.csproj", "{36CBA4EE-4C19-401A-84D2-02F43D7CAE58}"
 EndProject

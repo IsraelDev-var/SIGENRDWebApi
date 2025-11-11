@@ -1,11 +1,14 @@
 ﻿
 
+using SIGENRD.Core.Domain.Base;
+using SIGENRD.Core.Domain.Enums;
+
 namespace SIGENRD.Core.Domain.Entities
 {
     /// <summary>
     /// Representa un documento técnico adjunto a una solicitud de conexión.
     /// </summary>
-    public class TechnicalDocument
+    public class TechnicalDocument : AuditableEntity
     {
         public int Id { get; set; }
 
@@ -16,16 +19,12 @@ namespace SIGENRD.Core.Domain.Entities
         public string FileName { get; set; } = string.Empty;
 
         // Tipo de documento (Plano, Permiso, Ficha técnica)
-        public string DocumentType { get; set; } = string.Empty;
+        public DocumentType DocumentType { get; set; } = DocumentType.Other;
 
         // URL del archivo
         public string FileUrl { get; set; } = string.Empty;
 
-        // Fecha de carga
-        public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
-
-        // Usuario que subió el documento
-        public string? UploadedBy { get; set; }
+        
 
         // Relación
         public ConnectionRequest? ConnectionRequest { get; set; }

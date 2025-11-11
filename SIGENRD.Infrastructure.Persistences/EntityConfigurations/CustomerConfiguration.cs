@@ -31,7 +31,15 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
             #endregion
 
 
-           
+            #region relationship configurations
+            builder.HasMany(c => c.ConnectionRequests)
+           .WithOne(r => r.Customer)
+           .HasForeignKey(r => r.CustomerId)
+           .OnDelete(DeleteBehavior.Cascade);
+            #endregion
+
+
+
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Entities;
 using System.Reflection;
 
@@ -17,6 +18,10 @@ namespace SIGENRD.Infrastructure.Persistences.Contexts
         public DbSet<TechnicalDocument> TechnicalDocuments => Set<TechnicalDocument>();
         public DbSet<StateHistory> StateHistories => Set<StateHistory>();
         public DbSet<ReviewObservation> ReviewObservations => Set<ReviewObservation>();
+
+        public DbSet<AuditableEntity> AuditableEntities => Set<AuditableEntity>();
+
+        public DbSet<Generator> Generators => Set<Generator>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

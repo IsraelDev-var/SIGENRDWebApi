@@ -1,15 +1,13 @@
-﻿
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using SIGENRD.Infrastruture.Identity.Entities;
+using SIGENRD.Infrastructure.Identity.Entities;
 
-namespace SIGENRD.Infrastruture.Identity.Configurations
+
+namespace SIGENRD.Infrastructure.Identity.Configurations
 {
-    public class IdentityDbContextSIGENRD : IdentityDbContext<ApplicationUser, ApplicationRole, string>
+    public class IdentityDbContextSIGENRD(DbContextOptions<IdentityDbContextSIGENRD> options)
+                : IdentityDbContext<ApplicationUser, ApplicationRole, string>(options)
     {
-        public IdentityDbContextSIGENRD(DbContextOptions<IdentityDbContextSIGENRD> options)
-           : base(options) { }
-
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

@@ -1,9 +1,11 @@
-﻿namespace SIGENRD.Core.Domain.Entities
+﻿using SIGENRD.Core.Domain.Base;
+
+namespace SIGENRD.Core.Domain.Entities
 {
     /// <summary>
     /// Registro del historial de cambios de estado de una solicitud.
     /// </summary>
-    public class StateHistory
+    public class StateHistory : AuditableEntity
     {
         public int Id { get; set; }
 
@@ -16,11 +18,7 @@
         // Nuevo estado
         public string? NewState { get; set; }
 
-        // Fecha del cambio
-        public DateTime ChangedAt { get; set; } = DateTime.UtcNow;
-
-        // Usuario que realizó el cambio
-        public string? ChangedByUser { get; set; }
+        
 
         // Comentario o motivo del cambio
         public string? Comment { get; set; }

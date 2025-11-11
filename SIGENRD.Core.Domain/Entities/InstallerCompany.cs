@@ -1,9 +1,11 @@
-﻿namespace SIGENRD.Core.Domain.Entities
+﻿using SIGENRD.Core.Domain.Base;
+
+namespace SIGENRD.Core.Domain.Entities
 {
     /// <summary>
     /// Representa una empresa instaladora certificada por la SIE.
     /// </summary>
-    public class InstallerCompany
+    public class InstallerCompany : AuditableEntity
     {
         public int Id { get; set; }
 
@@ -28,7 +30,7 @@
 
 
         // Relaciones
-        public ICollection<EngineerUser>? Users { get; set; }
+        public ICollection<EngineerUser>? Engineers { get; set; }
         public ICollection<ConnectionRequest>? ConnectionRequests { get; set; }
     }
 

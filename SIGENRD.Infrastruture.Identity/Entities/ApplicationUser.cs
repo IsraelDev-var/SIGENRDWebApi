@@ -1,8 +1,9 @@
 ﻿
 
 using Microsoft.AspNetCore.Identity;
+using SIGENRD.Core.Domain.Enums;
 
-namespace SIGENRD.Infrastruture.Identity.Entities
+namespace SIGENRD.Infrastructure.Identity.Entities
 {
     public class ApplicationUser : IdentityUser
     {

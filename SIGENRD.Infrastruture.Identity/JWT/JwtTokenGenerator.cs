@@ -1,18 +1,20 @@
 ﻿
 
 using Microsoft.IdentityModel.Tokens;
-using SIGENRD.Infrastruture.Identity.Entities;
+using SIGENRD.Infrastructure.Identity.Entities;
+
+using SIGENRD.Infrastruture.Identity.JWT;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-namespace SIGENRD.Infrastruture.Identity.JWT
+namespace SIGENRD.Infrastructure.Identity.JWT
 {
     public class JwtTokenGenerator(JwtSettings jwtSettings)
     {
         private readonly JwtSettings _jwtSettings = jwtSettings;
 
 
-        public string GeneratedToken(ApplicationUser user, IList<string> roles)
+        public string GenerateToken(ApplicationUser user, IList<string> roles)
         {
             var claims = new List<Claim>
             {

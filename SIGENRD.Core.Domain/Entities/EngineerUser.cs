@@ -1,8 +1,10 @@
 ﻿
 
+using SIGENRD.Core.Domain.Base;
+
 namespace SIGENRD.Core.Domain.Entities
 {
-    public class EngineerUser
+    public class EngineerUser : AuditableEntity
     {
         public int Id { get; set; }
         public string ApplicationUserId { get; set; } = string.Empty;
