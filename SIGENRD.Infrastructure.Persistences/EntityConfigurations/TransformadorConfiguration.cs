@@ -23,10 +23,10 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
                    .HasMaxLength(50)
                    .HasDefaultValue("Available");
 
-            builder.Property(t => t.TotalCapacityKw)
+            builder.Property(t => t.TotalCapacityKVA)
                    .HasColumnType("numeric(10,2)");
 
-            builder.Property(t => t.AvailableCapacityKw)
+            builder.Property(t => t.AvailableCapacityKVA)
                    .HasColumnType("numeric(10,2)");
 
             builder.Property(t => t.Location)

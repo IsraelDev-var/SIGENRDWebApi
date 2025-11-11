@@ -9,7 +9,8 @@ namespace SIGENRD.Core.Domain.Entities
     {
         public int Id { get; set; }
 
-        // Nombre completo del cliente
+
+        
         public string FullName { get; set; } = string.Empty;
 
         // Cedula o RNC
@@ -31,5 +32,7 @@ namespace SIGENRD.Core.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Relaciones
-        public I
+        public ICollection<ConnectionRequest>? ConnectionRequests { get; set; }
     }
+
+}

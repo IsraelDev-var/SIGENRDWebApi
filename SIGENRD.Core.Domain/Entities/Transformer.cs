@@ -17,11 +17,11 @@ namespace SIGENRD.Core.Domain.Entities
         // Distribuidora a la que pertenece
         public int DistributorId { get; set; }
 
-        // Capacidad total en kW
-        public decimal TotalCapacityKw { get; set; }
+        // Capacidad total en kva(kilovoltio ampere)
+        public decimal TotalCapacityKVA { get; set; }
 
-        // Capacidad disponible en kW
-        public decimal AvailableCapacityKw { get; set; }
+        // Capacidad disponible en kva(kilovoltio ampere)
+        public decimal AvailableCapacityKVA { get; set; }
 
         // Estado actual (Disponible / Condicionada / Saturada)
         public string Status { get; set; } = "Available";

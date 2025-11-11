@@ -22,16 +22,13 @@
         // Dirección física
         public string? Address { get; set; }
 
-        // Indica si fue certificada por la SIE
-        public bool CertifiedBySie { get; set; } = false;
+        //// Si la empresa está activa
+        //public bool IsActive { get; set; } = true;
 
-        // Fecha en que fue certificada
-        public DateTime? CertificationDate { get; set; }
 
-        // Si la empresa está activa
-        public bool IsActive { get; set; } = true;
 
         // Relaciones
+        public ICollection<EngineerUser>? Users { get; set; }
         public ICollection<ConnectionRequest>? ConnectionRequests { get; set; }
     }
 

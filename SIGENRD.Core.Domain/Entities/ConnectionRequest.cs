@@ -27,7 +27,7 @@ namespace SIGENRD.Core.Domain.Entities
         public int TransformerId { get; set; }
 
         // Fecha de solicitud
-        public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
+        public DateTime RequestedAt { get; set; } = DateTime.UtcNow; 
 
         // Estado de la solicitud (En revisión, Aprobada, Rechazada, etc.)
         public string Status { get; set; } = "UnderReview";

@@ -6,18 +6,17 @@ namespace SIGENRD.Infrastructure.Persistences.Contexts
 {
     public class AppContextSIGENRD(DbContextOptions<AppContextSIGENRD> options) : DbContext(options)
     {
-        public DbSet<Customer> Customers { get; set; }
-        public DbSet<ConnectionRequest> ConnectionRequests { get; set; }
-        public DbSet<Distributor> Distributors { get; set; }
-        public DbSet<InstallerCompany> InstallerCompanies { get; set; }
-        public DbSet<Transformer> Transformers { get; set; }
-
-        public DbSet<ServiceZone> ServiceZones { get; set; }
-
-        public DbSet<TechnicalDocument> TechnicalDocuments { get; set; }
-        public DbSet<StateHistory> StateHistories { get; set; }
-        public DbSet<ReviewObservation> ReviewObservations { get; set; }
-        public DbSet<NetMeteringRequest> NetMeteringRequests { get; set; }
+        public DbSet<Customer> Customers => Set<Customer>();
+        public DbSet<InstallerCompany> InstallerCompanies => Set<InstallerCompany>();
+        public DbSet<EngineerUser> EngineerUsers => Set<EngineerUser>();
+        public DbSet<Distributor> Distributors => Set<Distributor>();
+        public DbSet<ServiceZone> ServiceZones => Set<ServiceZone>();
+        public DbSet<Transformer> Transformers => Set<Transformer>();
+        public DbSet<ConnectionRequest> ConnectionRequests => Set<ConnectionRequest>();
+        public DbSet<NetMeteringRequest> NetMeteringRequests => Set<NetMeteringRequest>();
+        public DbSet<TechnicalDocument> TechnicalDocuments => Set<TechnicalDocument>();
+        public DbSet<StateHistory> StateHistories => Set<StateHistory>();
+        public DbSet<ReviewObservation> ReviewObservations => Set<ReviewObservation>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
