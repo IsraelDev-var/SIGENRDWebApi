@@ -1,27 +1,44 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>56bcb052-dce0-4d5b-af5e-1fd6f5cfb2d1</UserSecretsId>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Asp.Versioning.Http" Version="8.1.0" />
-    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="10.0.0" />
-    <PackageReference Include="System.Text.Json" Version="10.0.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<!-- Versionamiento de API -->
+		<PackageReference Include="Asp.Versioning.Http" Version="8.1.0" />
+		<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
 
-  <ItemGroup>
-    <ProjectReference Include="..\SIGENRD.Core.Application\SIGENRD.Core.Application.csproj" />
-    <ProjectReference Include="..\SIGENRD.Infrastruture.Identity\SIGENRD.Infrastructure.Identity.csproj" />
-  </ItemGroup>
+		<!-- 
+       IMPORTANTE: Microsoft.AspNetCore.OpenApi suele causar conflicto con Swashbuckle 
+       porque trae una versión de Microsoft.OpenApi incompatible (v2.0 vs v1.6).
+       Si usas Swashbuckle, generalmente no necesitas este paquete, o debes forzar la versión de abajo.
+    -->
+		<!-- <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" /> -->
+
+		<!-- Herramientas de EF Core (Alineadas a .NET 9) -->
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+
+		<!-- Swagger / OpenAPI -->
+		<!-- Usamos la versión estable 6.6.2 -->
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+
+		<!-- 
+       🚑 SOLUCIÓN MÁGICA AL ERROR: Could not load type 'IOpenApiAny'
+       Esto obliga al proyecto a usar la versión de OpenApi que Swashbuckle entiende.
+    -->
+		<PackageReference Include="Microsoft.OpenApi" Version="1.6.14" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\SIGENRD.Core.Application\SIGENRD.Core.Application.csproj" />
+		<ProjectReference Include="..\SIGENRD.Infrastruture.Identity\SIGENRD.Infrastructure.Identity.csproj" />
+	</ItemGroup>
 
 </Project>

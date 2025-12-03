@@ -1,6 +1,6 @@
 ﻿
 
-namespace SIGENRD.Infrastruture.Identity.JWT
+namespace SIGENRD.Infrastructure.Identity.JWT
 {
     public class JwtSettings
     {

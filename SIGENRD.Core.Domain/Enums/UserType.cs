@@ -12,6 +12,8 @@ namespace SIGENRD.Core.Domain.Enums
         Engineer,
         InstallerCompany,
         DistributorAdmin,
+        Company,
+        Admin
 
     }
     

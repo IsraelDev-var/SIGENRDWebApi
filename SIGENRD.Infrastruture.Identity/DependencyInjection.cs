@@ -9,7 +9,7 @@ using SIGENRD.Infrastructure.Identity.Entities;
 using SIGENRD.Infrastructure.Identity.Interfaces;
 using SIGENRD.Infrastructure.Identity.JWT;
 using SIGENRD.Infrastructure.Identity.Services;
-using SIGENRD.Infrastruture.Identity.JWT;
+
 using System.Text;
 
 namespace SIGENRD.Infrastructure.Identity
@@ -19,55 +19,79 @@ namespace SIGENRD.Infrastructure.Identity
         public static IServiceCollection AddIdentityInfrastructure(
             this IServiceCollection services, IConfiguration configuration)
         {
-            // 🔹 Configurar contexto Identity
-            services.AddDbContext<IdentityDbContextSIGENRD>(options =>
-                options.UseNpgsql(configuration.GetConnectionString("Postgres")));
 
-            // 🔹 Configurar Identity Core
-            services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+
+            // ---------------------------------------------------------
+            // 1. CONFIGURACIÓN DEL DB CONTEXT (CONDICIONAL)
+            // ---------------------------------------------------------
+            if (configuration.GetValue<bool>("UseInMemoryDatabase"))
             {
-                options.Password.RequiredLength = 6;
-                options.Password.RequireDigit = true;
-                options.Password.RequireUppercase = false;
-                options.User.RequireUniqueEmail = true;
-            })
-            .AddEntityFrameworkStores<IdentityDbContextSIGENRD>()
-            .AddDefaultTokenProviders();
-
-            // 🔹 Configurar JWT
-            var jwtSettings = new JwtSettings();
-            configuration.GetSection("JwtSettings").Bind(jwtSettings);
-            services.AddSingleton(jwtSettings);
-
-            var key = Encoding.UTF8.GetBytes(jwtSettings.Key);
-
-            services.AddAuthentication(opt =>
+                services.AddDbContext<IdentityDbContextSIGENRD>(options =>
+                    options.UseInMemoryDatabase("SIGENRD_IdentityDB")); // Nombre único para Identity
+            }
+            else
             {
-                opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(opt =>
-            {
-                opt.RequireHttpsMetadata = false;
-                opt.SaveToken = true;
-                opt.TokenValidationParameters = new TokenValidationParameters
+                services.AddDbContext<IdentityDbContextSIGENRD>(options =>
+                    options.UseNpgsql(configuration.GetConnectionString("IdentityServerDB")));
+            }
+            
+
+                // 🔹 Configurar Identity Core
+                services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSettings.Issuer,
-                    ValidAudience = jwtSettings.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(key)
-                };
-            });
+                    options.Password.RequiredLength = 6;
+                    options.Password.RequireDigit = true;
+                    options.Password.RequireUppercase = false;
+                    options.User.RequireUniqueEmail = true;
+                })
+                .AddEntityFrameworkStores<IdentityDbContextSIGENRD>()
+                .AddDefaultTokenProviders();
 
-            // 🔹 JWT generator
-            services.AddScoped<JwtTokenGenerator>();
+                // 🔹 Configurar JWT
+                var jwtSettings = new JwtSettings();
+                configuration.GetSection("JwtSettings").Bind(jwtSettings);
+                // VALIDACIÓN DE SEGURIDAD
+                if (string.IsNullOrEmpty(jwtSettings.Key))
+                    throw new Exception("JwtSettings:Key no está configurada en appsettings.json");
+                services.AddSingleton(jwtSettings);
 
-            services.AddScoped<IAuthService, AuthService>();
+                var key = Encoding.UTF8.GetBytes(jwtSettings.Key);
 
-            return services;
+                services.AddAuthentication(opt =>
+                {
+                    opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(opt =>
+                {
+                    opt.RequireHttpsMetadata = false;
+                    opt.SaveToken = true;
+                    opt.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings.Issuer,
+                        ValidAudience = jwtSettings.Audience,
+                        IssuerSigningKey = new SymmetricSecurityKey(key)
+                    };
+                });
+
+                // 🔹 JWT generator
+                services.AddScoped<JwtTokenGenerator>();
+
+                services.AddScoped<IAuthService, AuthService>();
+            
+
+
+
+
+
+                
+
+                return services;
+            
         }
     }
 }
