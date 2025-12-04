@@ -19,7 +19,9 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
 
             builder.Property(o => o.DocumentType)
                    .HasConversion<int>()
-                   .HasDefaultValue(ObservationType.Technical);
+                   .HasDefaultValue(DocumentType.TechnicalSheet);
+
+            
 
             builder.Property(o => o.Comment)
                    .HasMaxLength(500)

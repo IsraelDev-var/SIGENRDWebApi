@@ -1,15 +1,24 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using SIGENRD.Infrastructure.Identity.Entities;
-using SIGENRD.Infrastructure.Identity.JWT;
-using System.IdentityModel.Tokens.Jwt;  
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
 namespace SIGENRD.Infrastructure.Identity.JWT
 {
-    public class JwtTokenGenerator(JwtSettings jwtSettings)
+    public class JwtTokenGenerator
     {
-        private readonly JwtSettings _jwtSettings = jwtSettings;
+        private readonly JwtSettings _jwtSettings;
+        private readonly SymmetricSecurityKey _securityKey;
+        private readonly SigningCredentials _credentials;
+
+        public JwtTokenGenerator(JwtSettings jwtSettings)
+        {
+            _jwtSettings = jwtSettings;
+
+            _securityKey = BuildSecurityKey(jwtSettings.Key);
+            _credentials = new SigningCredentials(_securityKey, SecurityAlgorithms.HmacSha256);
+        }
 
         public string GenerateToken(ApplicationUser user, IList<string> roles)
         {
@@ -18,45 +27,57 @@ namespace SIGENRD.Infrastructure.Identity.JWT
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email!),
                 new Claim("FullName", user.FullName),
-                new Claim("UserType", user.UserType.ToString())
+                new Claim("UserType", user.UserType.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            foreach (var role in roles)
-                claims.Add(new Claim(ClaimTypes.Role, role));
-
-            var keyBytes = GetKeyBytes(_jwtSettings.Key);
-            // Recommended: at least 32 bytes (256 bits) for HMAC-SHA256
-            if (keyBytes.Length < 16)
-                throw new InvalidOperationException("The JWT signing key is too short. Use at least 128 bits (16 bytes), recommended 256 bits (32 bytes).");
-
-            var key = new SymmetricSecurityKey(keyBytes);
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            // Agregar roles
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
             var token = new JwtSecurityToken(
                 issuer: _jwtSettings.Issuer,
                 audience: _jwtSettings.Audience,
                 claims: claims,
                 expires: DateTime.UtcNow.AddMinutes(_jwtSettings.DurationInMinutes),
-                signingCredentials: creds
+                signingCredentials: _credentials
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        private static byte[] GetKeyBytes(string key)
+
+        // ==========================
+        // MÉTODOS PRIVADOS
+        // ==========================
+
+        private static SymmetricSecurityKey BuildSecurityKey(string key)
         {
             if (string.IsNullOrWhiteSpace(key))
-                throw new ArgumentException("JwtSettings.Key is not configured or is empty.", nameof(key));
+                throw new ArgumentException("JwtSettings.Key is empty or missing.");
 
-            // Try Base64 first (existing deployments may store Base64)
+            var keyBytes = DecodeBase64Key(key);
+
+            if (keyBytes.Length < 32) // 32 bytes = 256 bits
+            {
+                throw new InvalidOperationException(
+                    $"JWT key too short: {keyBytes.Length * 8} bits. Minimum 256 bits required."
+                );
+            }
+
+            return new SymmetricSecurityKey(keyBytes);
+        }
+
+        private static byte[] DecodeBase64Key(string key)
+        {
             try
             {
                 return Convert.FromBase64String(key);
             }
-            catch (FormatException)
+            catch
             {
-                // Not Base64: treat as plain-text secret (UTF-8)
-                return Encoding.UTF8.GetBytes(key);
+                throw new InvalidOperationException(
+                    "JwtSettings.Key must be a valid Base64 string representing at least 32 bytes."
+                );
             }
         }
     }

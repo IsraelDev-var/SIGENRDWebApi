@@ -2,7 +2,7 @@
 
 using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Enums;
-using System.Drawing;
+using NetTopologySuite.Geometries;
 
 namespace SIGENRD.Core.Domain.Entities
 {
