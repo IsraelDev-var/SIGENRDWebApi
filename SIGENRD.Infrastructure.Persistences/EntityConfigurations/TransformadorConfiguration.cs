@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIGENRD.Core.Domain.Entities;
+using SIGENRD.Core.Domain.Enums;
 
 namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
 {
@@ -21,7 +22,7 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
 
             builder.Property(t => t.Status)
                    .HasMaxLength(50)
-                   .HasDefaultValue("Available");
+                   .HasDefaultValue(TransformerStatus.Available);
 
             builder.Property(t => t.TotalCapacityKva)
                    .HasColumnType("numeric(10,2)");
@@ -30,11 +31,8 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
                    .HasColumnType("numeric(10,2)");
 
             // 🔹 Convierte el ValueObject (GeoCoordinate) a Point de NTS
-            builder.OwnsOne(t => t.Location, loc =>
-            {
-                loc.Property(l => l.Latitude).HasColumnName("Latitude").IsRequired();
-                loc.Property(l => l.Longitude).HasColumnName("Longitude").IsRequired();
-            });
+            builder.Property(t => t.Location)
+                 .HasColumnType("geography (Point, 4326)");
             #endregion
 
 

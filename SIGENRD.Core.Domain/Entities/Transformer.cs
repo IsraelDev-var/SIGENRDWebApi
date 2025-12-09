@@ -1,8 +1,9 @@
 ﻿
+using NetTopologySuite.Geometries;
 using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Enums;
 using SIGENRD.Core.Domain.ValueObjects;
-using System.Drawing;
+
 
 namespace SIGENRD.Core.Domain.Entities
 {
@@ -24,7 +25,10 @@ namespace SIGENRD.Core.Domain.Entities
         public TransformerStatus Status { get; set; } = TransformerStatus.Available;
 
         // Ubicación geográfica
-        public GeoCoordinate Location { get; set; } = default!;
+        
+        // CAMBIO AQUÍ: Usar Point para compatibilidad nativa con PostGIS
+        // ColumnType "geography" es mejor para coordenadas GPS (lat/lon) que "geometry"
+        public Point Location { get; set; } = default!;
 
         // Fecha de actualización
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;

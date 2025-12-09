@@ -5,8 +5,15 @@ using SIGENRD.Infrastructure.Identity.Entities;
 using SIGENRD.Infrastructure.Identity.Seeds;
 using SIGENRD.Infrastructure.Persistences;
 using SIGENRD.Presentation.WebApi;
+using SIGENRDWebApi.Middlewares;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configurar Serilog (Antes de construir la app)
+// 1. Configurar Serilog (Lo primero de todo)
+builder.Host.UseSerilog((context, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));
 
 // ===========================================================
 // 🧱 REGISTRO DE CAPAS
@@ -19,6 +26,9 @@ builder.Services.AddPresentationLayer();
 
 // HealthChecks
 builder.Services.AddHealthChecks();
+
+
+
 
 // ===========================================================
 // 🧱 PIPELINE
@@ -74,6 +84,12 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// 2. Registrar Middleware de Errores Globales
+app.UseMiddleware<ErrorHandlerMiddleware>();
+
+// 3. Registrar Logging de Peticiones HTTP (Importante para ver GET/POST en logs)
+app.UseSerilogRequestLogging();
+
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 
@@ -85,7 +101,7 @@ app.UseHealthChecks("/health");
 
 try
 {
-    app.MapControllers(); // 👈 Aquí está el error
+    app.MapControllers(); 
 }
 catch (System.Reflection.ReflectionTypeLoadException ex)
 {

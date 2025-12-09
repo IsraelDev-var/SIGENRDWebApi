@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SIGENRD.Core.Domain.Base
 {
@@ -8,12 +9,14 @@ namespace SIGENRD.Core.Domain.Base
     public abstract class AuditableEntity
     {
         // Fecha de creación
+        
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Usuario que creó el registro (puede vincularse con Identity)
         public string? CreatedBy { get; set; }
 
         // Fecha de última modificación
+        
         public DateTime? UpdatedAt { get; set; }
 
         // Usuario que realizó la modificación
