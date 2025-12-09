@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SIGENRD.Infrastructure.Identity.Interfaces;
 using SIGENRD.Infrastructure.Identity.DTOs;
-using SIGENRDWebApi.Controllers;
+
 
 
 namespace SIGENRDWebApi.Controllers.v1.Auth

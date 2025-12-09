@@ -2,7 +2,7 @@
 using SIGENRD.Infrastructure.Identity.Entities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
+
 
 namespace SIGENRD.Infrastructure.Identity.JWT
 {

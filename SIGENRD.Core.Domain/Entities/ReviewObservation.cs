@@ -17,7 +17,7 @@ namespace SIGENRD.Core.Domain.Entities
         public string Comment { get; set; } = string.Empty;
 
         // Tipo de observación (Técnica / Documental)
-        public DocumentType DocumentType { get; set; } = DocumentType.TechnicalSheet;
+        public ObservationType DocumentType { get; set; } = ObservationType.Technical;
 
        
 

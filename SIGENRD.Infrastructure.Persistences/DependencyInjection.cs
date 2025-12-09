@@ -1,7 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SIGENRD.Core.Domain.Interfaces;
+using SIGENRD.Core.Domain.Repositories;
 using SIGENRD.Infrastructure.Persistences.Contexts;
+using SIGENRD.Infrastructure.Persistences.Repositories;
 
 
 namespace SIGENRD.Infrastructure.Persistences
@@ -26,6 +29,8 @@ namespace SIGENRD.Infrastructure.Persistences
 
 
             // Repositorios
+            services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
             // services.AddScoped<ICustomerRepository, CustomerRepository>();
             // services.AddScoped<IConnectionRequestRepository, ConnectionRequestRepository>();
 

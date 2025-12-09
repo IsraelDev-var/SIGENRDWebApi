@@ -26,7 +26,9 @@ namespace SIGENRD.Infrastructure.Persistences.Contexts
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            
+            // Habilita la extensión para mapas/GPS en Postgres
+            modelBuilder.HasPostgresExtension("postgis");
+
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
         }

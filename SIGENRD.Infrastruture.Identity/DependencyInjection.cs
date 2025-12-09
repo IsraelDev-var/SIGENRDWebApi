@@ -84,12 +84,6 @@ namespace SIGENRD.Infrastructure.Identity
                 services.AddScoped<IAuthService, AuthService>();
             
 
-
-
-
-
-                
-
                 return services;
             
         }
