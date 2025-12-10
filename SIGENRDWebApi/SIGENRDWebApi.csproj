@@ -39,6 +39,9 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\SIGENRD.Core.Application\SIGENRD.Core.Application.csproj" />
+		<ProjectReference Include="..\SIGENRD.Core.Domain\SIGENRD.Core.Domain.csproj" />
+		<ProjectReference Include="..\SIGENRD.Infrastructure.Persistences\SIGENRD.Infrastructure.Persistences.csproj" />
+		<ProjectReference Include="..\SIGENRD.Infrastructure.Shared\SIGENRD.Infrastructure.Shared.csproj" />
 		<ProjectReference Include="..\SIGENRD.Infrastruture.Identity\SIGENRD.Infrastructure.Identity.csproj" />
 	</ItemGroup>
 

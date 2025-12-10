@@ -8,5 +8,6 @@ namespace SIGENRD.Infrastructure.Identity.Interfaces
     {
         Task<AuthResponse> RegisterAsync(RegisterRequest request);
         Task<AuthResponse> LoginAsync(LoginRequest request);
+        Task<string> ConfirmEmailAsync(string userId, string code);
     }
 }

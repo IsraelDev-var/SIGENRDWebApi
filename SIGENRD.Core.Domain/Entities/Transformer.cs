@@ -1,7 +1,7 @@
-﻿using NetTopologySuite.Geometries; // 👈 Importante
+﻿using NetTopologySuite; // 👈 Importante
 using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Enums;
-using SIGENRD.Core.Domain.ValueObjects;
+
 using System.Drawing;
 
 

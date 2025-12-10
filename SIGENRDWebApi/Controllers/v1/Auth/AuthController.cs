@@ -1,48 +1,53 @@
 ﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using SIGENRD.Infrastructure.Identity.Interfaces;
+using Microsoft.Extensions.Options;
+using SIGENRD.Core.Application.Exceptions;
+using SIGENRD.Core.Domain.Settings;
 using SIGENRD.Infrastructure.Identity.DTOs;
+using SIGENRD.Infrastructure.Identity.Interfaces;
+
 
 
 
 namespace SIGENRDWebApi.Controllers.v1.Auth
 {
+    // AuthController.cs - Versión final limpia
     [ApiVersion("1.0")]
-    public class AuthController(IAuthService authService) : BaseApiController  // Ojo: BasecApiController parece un error de dedo (BaseApiController)
+    public class AuthController(IAuthService authService) : BaseApiController
     {
         private readonly IAuthService _authService = authService;
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            try
-            {
-                // Ahora 'request' es de tipo SIGENRD.Infrastructure.Identity.DTOs.RegisterRequest
-                if (request == null) return BadRequest("Invalid registration request.");
+            var mailSettings = HttpContext.RequestServices.GetRequiredService<IOptions<MailSettings>>().Value;
+            Console.WriteLine($"EmailFrom: '{mailSettings.EmailFrom}'");
+            Console.WriteLine($"DisplayName: '{mailSettings.DisplayName}'");
 
-                var result = await _authService.RegisterAsync(request);
+            var result = await _authService.RegisterAsync(request);
 
-                if (!result.Success)
-                    return BadRequest(result);
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                // Recomendación: No devuelvas el objeto 'ex' completo al cliente por seguridad, solo el mensaje.
-                return StatusCode(StatusCodes.Status500InternalServerError, new { error = ex.Message });
-            }
+            return Ok(result); // Si falla, lanza excepción → la atrapa el middleware
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            // LoginRequest también tenía el mismo conflicto, al quitar el using de Microsoft se arregla solo.
             var result = await _authService.LoginAsync(request);
 
             if (!result.Success)
-                return Unauthorized(result);
+                throw new ApiException("Credenciales inválidas"); // ← el middleware lo convierte en 400
 
+            return Ok(result);
+        }
+
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail(string userId, string code)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(code))
+                throw new ApiException("Parámetros inválidos");
+
+            var result = await _authService.ConfirmEmailAsync(userId, code);
             return Ok(result);
         }
     }

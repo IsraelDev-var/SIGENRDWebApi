@@ -5,6 +5,7 @@ using SIGENRD.Infrastructure.Identity.Entities;
 using SIGENRD.Infrastructure.Identity.Seeds;
 using SIGENRD.Infrastructure.Persistences;
 using SIGENRD.Presentation.WebApi;
+using SIGENRD.Infrastructure.Shared;
 using SIGENRDWebApi.Middlewares;
 using Serilog;
 
@@ -21,15 +22,13 @@ builder.Host.UseSerilog((context, configuration) =>
 builder.Services.AddApplicationLayer();
 builder.Services.AddInfrastructurePersistence(builder.Configuration);
 builder.Services.AddIdentityInfrastructure(builder.Configuration);
+builder.Services.AddSharedInfrastructure(builder.Configuration);
+
 // Aquí ya se configura Controllers, Versioning y Swagger gracias al paso 2
 builder.Services.AddPresentationLayer();
 
 // HealthChecks
 builder.Services.AddHealthChecks();
-
-
-
-
 // ===========================================================
 // 🧱 PIPELINE
 // ===========================================================
