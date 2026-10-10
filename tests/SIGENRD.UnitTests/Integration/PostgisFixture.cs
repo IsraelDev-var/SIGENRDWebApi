@@ -29,9 +29,11 @@ public sealed class FactIfDatabaseAttribute : FactAttribute
     }
 }
 
-public class FakeCurrentUser(string? userId) : ICurrentUserService
+public class FakeCurrentUser(string? userId, params string[] roles) : ICurrentUserService
 {
     public string? UserId => userId;
+
+    public bool IsInRole(string role) => roles.Contains(role);
 }
 
 public class PostgisFixture : IAsyncLifetime

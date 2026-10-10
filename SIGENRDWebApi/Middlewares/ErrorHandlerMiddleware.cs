@@ -1,4 +1,4 @@
-﻿using SIGENRD.Core.Application.Exceptions;
+using SIGENRD.Core.Application.Exceptions;
 using SIGENRD.Core.Application.Wrappers;
 using System.Net;
 using System.Text.Json;
@@ -7,6 +7,9 @@ namespace SIGENRDWebApi.Middlewares
 {
     public class ErrorHandlerMiddleware
     {
+        // Mismo formato (camelCase) que las respuestas correctas de los controladores.
+        private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
         private readonly RequestDelegate _next;
         private readonly ILogger<ErrorHandlerMiddleware> _logger;
 
@@ -45,6 +48,11 @@ namespace SIGENRDWebApi.Middlewares
                         _logger.LogWarning($"⚠️ Error de API: {e.Message}");
                         break;
 
+                    case ForbiddenException e:
+                        // Autenticado pero sin derecho sobre el recurso (403 Forbidden)
+                        response.StatusCode = (int)HttpStatusCode.Forbidden;
+                        _logger.LogWarning("Acceso denegado: {Message}", e.Message);
+                        break;
                     case KeyNotFoundException e:
                         // No encontrado (404 Not Found)
                         response.StatusCode = (int)HttpStatusCode.NotFound;
@@ -69,7 +77,7 @@ namespace SIGENRDWebApi.Middlewares
                 }
 
                 // Devolvemos el JSON
-                var result = JsonSerializer.Serialize(responseModel);
+                var result = JsonSerializer.Serialize(responseModel, JsonOptions);
                 await response.WriteAsync(result);
             }
         }

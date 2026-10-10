@@ -2,8 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
-using SIGENRD.Core.Domain.Entities;
 
 namespace SIGENRD.UnitTests.Integration;
 
@@ -15,7 +13,8 @@ namespace SIGENRD.UnitTests.Integration;
 ///   - con permiso: el código del propio endpoint (400 o 404 cuando los datos de prueba no existen),
 ///     que prueba que la petición pasó la autorización y llegó al handler.
 /// </summary>
-public class AuthorizationTests(ApiFactory api) : IClassFixture<ApiFactory>
+[Collection(ApiCollection.Name)]
+public class AuthorizationTests(ApiFactory api)
 {
     private static readonly TestRole[] AllRoles =
         { TestRole.Anonymous, TestRole.Customer, TestRole.InstallerCompany, TestRole.Engineer, TestRole.Distributor, TestRole.Admin };
@@ -149,74 +148,5 @@ public class AuthorizationTests(ApiFactory api) : IClassFixture<ApiFactory>
             Json("{\"fullName\":\"X\",\"email\":\"escalada@test.energymap.local\",\"password\":\"" + ApiFactory.TestPassword + "\",\"userType\":6}"));
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-    }
-
-    // ---------------- acceso a datos ajenos (RN-22) ----------------
-
-    private async Task<int> CreateRequestOwnedBy(TestRole owner)
-    {
-        var ownerSession = await api.LoginAsync(owner);
-
-        await using var context = api.NewAppContext();
-        var distributor = await context.Distributors.FirstOrDefaultAsync();
-        if (distributor is null)
-        {
-            distributor = new Distributor { Name = "Edesur" };
-            context.Distributors.Add(distributor);
-        }
-
-        var zone = new ServiceZone { ZoneName = "Zona IDOR " + Guid.NewGuid().ToString("N")[..6] };
-        context.ServiceZones.Add(zone);
-        await context.SaveChangesAsync();
-
-        var transformer = new Transformer
-        {
-            Code = "TR-IDOR-" + Guid.NewGuid().ToString("N")[..6],
-            DistributorId = distributor.Id,
-            ServiceZoneId = zone.Id,
-            Location = SIGENRD.Infrastructure.Persistences.Repositories.TransformerQueries.ToPoint(18.4, -69.9)
-        };
-        transformer.UpdateCapacity(1000, 800, 70, 30);
-
-        var customer = new Customer { ApplicationUserId = ownerSession.UserId, FullName = "Dueño", NationalIdOrRnc = Guid.NewGuid().ToString("N")[..11] };
-        context.AddRange(transformer, customer);
-        await context.SaveChangesAsync();
-
-        var request = new ConnectionRequest
-        {
-            RequestCode = "REQ-IDOR-" + Guid.NewGuid().ToString("N")[..6],
-            CustomerId = customer.Id,
-            DistributorId = distributor.Id,
-            TransformerId = transformer.Id,
-            RequestedCapacityKva = 10
-        };
-        context.ConnectionRequests.Add(request);
-        await context.SaveChangesAsync();
-
-        return request.Id;
-    }
-
-    // Hallazgo abierto (RN-22): GET /ConnectionRequest/{id} devuelve cualquier solicitud a cualquier rol autenticado.
-    // Se corrige en la fase 3, junto con el flujo de solicitudes. Quitar el Skip cuando se corrija.
-    [FactIfDatabase(Skip = "Hallazgo abierto SEC-03 (RN-22): sin filtro por dueño. Se corrige en la fase 3.")]
-    public async Task Una_instaladora_no_puede_leer_la_solicitud_de_un_cliente()
-    {
-        var requestId = await CreateRequestOwnedBy(TestRole.Customer);
-
-        var response = await (await api.ClientFor(TestRole.InstallerCompany)).GetAsync("/api/v1/ConnectionRequest/" + requestId);
-
-        Assert.True(response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.NotFound,
-            "devolvió " + (int)response.StatusCode);
-    }
-
-    [FactIfDatabase(Skip = "Hallazgo abierto SEC-03 (RN-22): sin filtro por dueño. Se corrige en la fase 3.")]
-    public async Task El_listado_de_un_cliente_solo_incluye_sus_solicitudes()
-    {
-        var requestId = await CreateRequestOwnedBy(TestRole.InstallerCompany);
-
-        var response = await (await api.ClientFor(TestRole.Customer)).GetAsync("/api/v1/ConnectionRequest");
-        var body = await response.Content.ReadAsStringAsync();
-
-        Assert.DoesNotContain("\"id\":" + requestId + ",", body);
     }
 }

@@ -32,6 +32,7 @@ namespace SIGENRD.Infrastructure.Persistences
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<ITransformerRepository, TransformerRepository>();
+            services.AddScoped<IConnectionRequestRepository, ConnectionRequestRepository>();
             // services.AddScoped<ICustomerRepository, CustomerRepository>();
             // services.AddScoped<IConnectionRequestRepository, ConnectionRequestRepository>();
 

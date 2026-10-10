@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Configuration;
 using SIGENRD.Core.Application.DTOs.Email;
 using SIGENRD.Core.Application.Interfaces.Services;
 using SIGENRD.Infrastructure.Identity.DTOs;
@@ -17,19 +18,22 @@ namespace SIGENRD.Infrastructure.Identity.Services
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly JwtTokenGenerator _jwtTokenGenerator;
         private readonly IEmailService _emailService;
+        private readonly IConfiguration _configuration;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<ApplicationRole> roleManager,
             JwtTokenGenerator jwtTokenGenerator,
-            IEmailService emailService)
+            IEmailService emailService,
+            IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _jwtTokenGenerator = jwtTokenGenerator;
             _emailService = emailService;
+            _configuration = configuration;
         }
 
         // -------------------------
@@ -87,8 +91,8 @@ namespace SIGENRD.Infrastructure.Identity.Services
             verificationToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(verificationToken));
 
             // 3. Construir URL de confirmación
-            // (En producción, "https://localhost:7135" debe venir de appsettings como 'ClientUrl')
-            var origin = "https://localhost:7135";
+            // La URL pública viene de la configuración (App:PublicBaseUrl).
+            var origin = (_configuration["App:PublicBaseUrl"] ?? "https://localhost:7135").TrimEnd('/');
             var route = "api/v1/Auth/confirm-email";
             var verificationUri = $"{origin}/{route}?userId={user.Id}&code={verificationToken}";
 
@@ -109,15 +113,12 @@ namespace SIGENRD.Infrastructure.Identity.Services
             // 📧 FIN LÓGICA DE CORREO
             // =========================================================================
 
-            // Nota: Opcionalmente, podrías NO devolver el token JWT aquí para obligar 
-            // al usuario a confirmar el correo antes de loguearse.
-            var jwtToken = _jwtTokenGenerator.GenerateToken(user, new List<string> { role });
+            // No se entrega token en el registro: la cuenta debe confirmarse por correo antes de iniciar sesión.
 
             return new AuthResponse
             {
                 Success = true,
                 Message = "Usuario registrado. Por favor revise su correo para confirmar la cuenta.",
-                Token = jwtToken,
                 Email = user.Email,
                 FullName = user.FullName,
                 Role = role,
@@ -150,6 +151,16 @@ namespace SIGENRD.Infrastructure.Identity.Services
                 };
             }
 
+            // Las credenciales ya son válidas: se puede indicar el motivo sin revelar nada nuevo.
+            if (!user.EmailConfirmed)
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Debes confirmar tu correo antes de iniciar sesión."
+                };
+            }
+
             var roles = await _userManager.GetRolesAsync(user);
             var token = _jwtTokenGenerator.GenerateToken(user, roles);
 
@@ -177,7 +188,14 @@ namespace SIGENRD.Infrastructure.Identity.Services
 
             var result = await _userManager.ConfirmEmailAsync(user, decodedCode);
 
-            return result.Succeeded ? "Correo confirmado exitosamente" : "Error confirmando correo";
+            if (!result.Succeeded)
+                return "Error confirmando correo";
+
+            // Se mantiene sincronizada la bandera propia del usuario con la de Identity.
+            user.IsEmailConfirmed = true;
+            await _userManager.UpdateAsync(user);
+
+            return "Correo confirmado exitosamente";
         }
 
 

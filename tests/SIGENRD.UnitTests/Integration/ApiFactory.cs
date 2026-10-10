@@ -27,13 +27,31 @@ public sealed class TheoryIfDatabaseAttribute : TheoryAttribute
     }
 }
 
-/// <summary>El registro envía un correo de confirmación: en las pruebas no sale ninguno.</summary>
-public class NoopEmailService : IEmailService
+/// <summary>En las pruebas no sale ningún correo: se guardan para poder leer los enlaces de confirmación.</summary>
+public class RecordingEmailService : IEmailService
 {
-    public Task SendAsync(EmailRequest request) => Task.CompletedTask;
+    private readonly System.Collections.Concurrent.ConcurrentBag<EmailRequest> _sent = new();
+
+    public IReadOnlyCollection<EmailRequest> Sent => _sent;
+
+    public Task SendAsync(EmailRequest request)
+    {
+        _sent.Add(request);
+        return Task.CompletedTask;
+    }
 }
 
 public record LoggedUser(string UserId, string Token);
+
+/// <summary>
+/// Una sola API y una sola base para todas las pruebas HTTP: la configuración viaja por variables de entorno
+/// del proceso, así que dos fábricas a la vez se pisarían entre sí.
+/// </summary>
+[CollectionDefinition(Name)]
+public class ApiCollection : ICollectionFixture<ApiFactory>
+{
+    public const string Name = "api";
+}
 
 /// <summary>
 /// Arranca la API real (WebApplicationFactory) contra una base PostgreSQL con PostGIS propia de la ejecución.
@@ -47,6 +65,8 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     private string _connectionString = string.Empty;
     private readonly Dictionary<TestRole, LoggedUser> _sessions = new();
+
+    public RecordingEmailService Emails { get; } = new();
 
     public string ConnectionString => _connectionString;
 
@@ -100,7 +120,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IEmailService>();
-            services.AddSingleton<IEmailService, NoopEmailService>();
+            services.AddSingleton<IEmailService>(Emails);
         });
     }
 
