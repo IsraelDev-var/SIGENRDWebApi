@@ -27,6 +27,12 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
 
             builder.HasIndex(t => t.Code).IsUnique();
 
+            // Concurrencia optimista (xmin): dos reservas simultáneas no pueden sobrepasar la capacidad.
+            builder.Property<uint>("xmin")
+                   .HasColumnType("xid")
+                   .ValueGeneratedOnAddOrUpdate()
+                   .IsConcurrencyToken();
+
             builder.Property(t => t.TotalCapacityKva)
                    .HasColumnType("numeric(10,2)");
 

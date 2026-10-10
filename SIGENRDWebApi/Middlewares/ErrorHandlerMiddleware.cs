@@ -1,4 +1,5 @@
 using SIGENRD.Core.Application.Exceptions;
+using SIGENRD.Core.Domain.Exceptions;
 using SIGENRD.Core.Application.Wrappers;
 using System.Net;
 using System.Text.Json;
@@ -52,6 +53,11 @@ namespace SIGENRDWebApi.Middlewares
                         // Autenticado pero sin derecho sobre el recurso (403 Forbidden)
                         response.StatusCode = (int)HttpStatusCode.Forbidden;
                         _logger.LogWarning("Acceso denegado: {Message}", e.Message);
+                        break;
+                    case InvalidStateTransitionException or InsufficientCapacityException or ConcurrencyConflictException:
+                        // Conflicto con el estado actual del recurso (409 Conflict)
+                        response.StatusCode = (int)HttpStatusCode.Conflict;
+                        _logger.LogWarning("Conflicto: {Message}", error.Message);
                         break;
                     case KeyNotFoundException e:
                         // No encontrado (404 Not Found)

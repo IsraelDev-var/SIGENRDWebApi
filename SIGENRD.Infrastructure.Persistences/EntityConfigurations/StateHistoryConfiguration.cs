@@ -14,7 +14,7 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
 
             builder.Property(h => h.PreviousState).HasMaxLength(50);
             builder.Property(h => h.NewState).HasMaxLength(50);
-            builder.Property(h => h.Comment).HasMaxLength(250);
+            builder.Property(h => h.Comment).HasMaxLength(500);
             builder.Property(h => h.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             builder.HasOne(h => h.ConnectionRequest)

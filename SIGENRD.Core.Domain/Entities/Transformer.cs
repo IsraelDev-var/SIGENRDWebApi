@@ -1,6 +1,7 @@
 using NetTopologySuite.Geometries;
 using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Enums;
+using SIGENRD.Core.Domain.Exceptions;
 using SIGENRD.Core.Domain.Rules;
 
 
@@ -51,6 +52,37 @@ namespace SIGENRD.Core.Domain.Entities
         {
             TotalCapacityKva = totalKva;
             AvailableCapacityKva = availableKva;
+            LastUpdated = DateTime.UtcNow;
+            RecalculateStatus(availableThresholdPct, conditionedThresholdPct);
+        }
+
+        /// <summary>Capacidad libre para solicitudes nuevas: lo disponible menos lo ya reservado.</summary>
+        public decimal EffectiveAvailableKva => AvailableCapacityKva - ReservedCapacityKva;
+
+        /// <summary>RN-03: reserva capacidad para una solicitud que entra en revisión.</summary>
+        public void Reserve(decimal kva, decimal availableThresholdPct, decimal conditionedThresholdPct)
+        {
+            if (Status == TransformerStatus.Maintenance || EffectiveAvailableKva < kva)
+                throw new InsufficientCapacityException(kva, Status == TransformerStatus.Maintenance ? 0 : EffectiveAvailableKva);
+
+            ReservedCapacityKva += kva;
+            LastUpdated = DateTime.UtcNow;
+            RecalculateStatus(availableThresholdPct, conditionedThresholdPct);
+        }
+
+        /// <summary>RN-03: libera una reserva (solicitud rechazada o cancelada).</summary>
+        public void ReleaseReservation(decimal kva, decimal availableThresholdPct, decimal conditionedThresholdPct)
+        {
+            ReservedCapacityKva = Math.Max(0m, ReservedCapacityKva - kva);
+            LastUpdated = DateTime.UtcNow;
+            RecalculateStatus(availableThresholdPct, conditionedThresholdPct);
+        }
+
+        /// <summary>RN-03: al aprobar, la reserva pasa a descontarse de la capacidad disponible.</summary>
+        public void ConsumeReservation(decimal kva, decimal availableThresholdPct, decimal conditionedThresholdPct)
+        {
+            ReservedCapacityKva = Math.Max(0m, ReservedCapacityKva - kva);
+            AvailableCapacityKva = Math.Max(0m, AvailableCapacityKva - kva);
             LastUpdated = DateTime.UtcNow;
             RecalculateStatus(availableThresholdPct, conditionedThresholdPct);
         }

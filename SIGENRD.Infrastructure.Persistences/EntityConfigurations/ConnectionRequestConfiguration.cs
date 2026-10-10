@@ -47,6 +47,16 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
 
             builder.HasIndex(c => c.RequestCode).IsUnique();
 
+            builder.Property(c => c.ReservedKva)
+                .HasColumnType("numeric(10,2)")
+                .HasDefaultValue(0m);
+
+            // Concurrencia optimista con la columna de sistema xmin: dos revisores no pisan el mismo cambio.
+            builder.Property<uint>("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
             builder.Property(c => c.UsageType)
                 .HasConversion<string>()
                 .HasMaxLength(50);

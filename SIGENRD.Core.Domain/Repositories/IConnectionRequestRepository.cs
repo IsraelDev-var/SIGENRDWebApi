@@ -27,5 +27,14 @@ namespace SIGENRD.Core.Domain.Repositories
 
         /// <summary>Devuelve null si no existe o no es visible: no se revela que existe.</summary>
         Task<ConnectionRequest?> GetVisibleByIdAsync(int id, RequestScope scope, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Carga la solicitud con lo que el flujo necesita (transformador y su distribuidora, documentos, solicitante)
+        /// para modificarla. Respeta el alcance: null si no existe o no es del usuario.
+        /// </summary>
+        Task<ConnectionRequest?> GetForUpdateAsync(int id, RequestScope scope, CancellationToken cancellationToken = default);
+
+        /// <summary>Historial de cambios de estado, del más antiguo al más reciente.</summary>
+        Task<IReadOnlyList<StateHistory>> GetHistoryAsync(int requestId, CancellationToken cancellationToken = default);
     }
 }

@@ -25,6 +25,7 @@ namespace SIGENRD.Core.Application
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
             // Servicios de aplicación
+            services.AddScoped<SIGENRD.Core.Application.Services.RequestWorkflowService>();
 
             return services;
         }

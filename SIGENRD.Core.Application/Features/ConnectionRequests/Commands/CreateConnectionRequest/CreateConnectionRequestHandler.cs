@@ -5,6 +5,7 @@ using SIGENRD.Core.Application.Wrappers;
 using SIGENRD.Core.Domain.Entities;
 using SIGENRD.Core.Domain.Enums;
 using SIGENRD.Core.Domain.Interfaces;
+using SIGENRD.Core.Domain.Repositories;
 
 namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateConnectionRequest
 {
@@ -13,16 +14,29 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUser;
+        private readonly ITransformerRepository _transformers;
 
-        public CreateConnectionRequestHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUser)
+        public CreateConnectionRequestHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUser, ITransformerRepository transformers)
         {
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _transformers = transformers;
         }
 
         public async Task<Response<int>> Handle(CreateConnectionRequestCommand request, CancellationToken cancellationToken)
         {
             await EnsureCallerOwnsTheRequestParties(request);
+
+            // RN-08: la solicitud necesita un transformador real. RN-03: uno saturado o en mantenimiento no admite solicitudes nuevas.
+            var transformer = await _transformers.GetByIdAsync(request.TransformerId, asTracking: false, cancellationToken)
+                ?? throw new ApiException("El transformador indicado no existe.");
+
+            if (transformer.DistributorId != request.DistributorId)
+                throw new ApiException("El transformador no pertenece a la distribuidora indicada.");
+
+            if (!transformer.AcceptsNewRequests)
+                throw new ApiException("El transformador " + transformer.Code + " está " + transformer.Status +
+                                       " y no admite solicitudes nuevas.");
 
             var entity = new ConnectionRequest
             {
@@ -45,6 +59,12 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
 
                 // Coordenadas
                 Coordinates = new Point(request.Longitude, request.Latitude) { SRID = 4326 }
+            };
+
+            // RN-10: la creación es la primera entrada del historial.
+            entity.StateHistories = new List<StateHistory>
+            {
+                new() { PreviousState = null, NewState = RequestStatus.Received.ToString(), Comment = "Solicitud creada" }
             };
 
             await _unitOfWork.Repository<ConnectionRequest>().AddAsync(entity);
