@@ -15,6 +15,39 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<PagedResult<ConnectionRequest>> SearchAsync(
+            RequestScope scope, RequestSearchFilter filter, int page, int pageSize, CancellationToken cancellationToken = default)
+        {
+            var query = Visible(scope);
+
+            if (filter.Status.HasValue) query = query.Where(r => r.Status == filter.Status.Value);
+            if (filter.RequestType.HasValue) query = query.Where(r => r.RequestType == filter.RequestType.Value);
+            if (filter.TransformerId.HasValue) query = query.Where(r => r.TransformerId == filter.TransformerId.Value);
+            if (filter.From.HasValue) query = query.Where(r => r.RequestedAt >= filter.From.Value);
+            if (filter.To.HasValue) query = query.Where(r => r.RequestedAt <= filter.To.Value);
+
+            if (!string.IsNullOrWhiteSpace(filter.Text))
+            {
+                // Los comodines de LIKE se escapan para que el texto no cambie el significado de la búsqueda.
+                var escaped = filter.Text.Trim().Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
+                var pattern = "%" + escaped + "%";
+                query = query.Where(r => EF.Functions.ILike(r.RequestCode, pattern)
+                                         || (r.ProjectAddress != null && EF.Functions.ILike(r.ProjectAddress, pattern)));
+            }
+
+            var total = await query.CountAsync(cancellationToken);
+
+            var items = await query
+                .OrderByDescending(r => r.RequestedAt).ThenByDescending(r => r.Id)
+                .Skip((page - 1) * pageSize).Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            return new PagedResult<ConnectionRequest>(items, page, pageSize, total);
+        }
+
+        public Task<ConnectionRequest?> GetByCodeAsync(string requestCode, CancellationToken cancellationToken = default)
+            => context.ConnectionRequests.AsNoTracking().FirstOrDefaultAsync(r => r.RequestCode == requestCode, cancellationToken);
+
         public Task<ConnectionRequest?> GetVisibleByIdAsync(int id, RequestScope scope, CancellationToken cancellationToken = default)
         {
             return Visible(scope).FirstOrDefaultAsync(r => r.Id == id, cancellationToken);

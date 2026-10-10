@@ -53,16 +53,9 @@ public class RequestWorkflowTests(ApiFactory api)
         transformer.UpdateCapacity(total, available, 70, 30);
 
         var email = "cliente-" + Unique() + "@test.energymap.local";
-        var customer = new Customer
-        {
-            ApplicationUserId = customerUser.UserId, FullName = "Dueño", NationalIdOrRnc = Unique() + "000", Email = email
-        };
-        var company = new InstallerCompany
-        {
-            TradeName = "Instaladora " + Unique(), Rnc = Unique(), ApplicationUserId = installerUser.UserId,
-            ValidationStatus = InstallerValidationStatus.Validated
-        };
-        context.AddRange(transformer, customer, company);
+        var customer = await TestData.CustomerForAsync(context, customerUser.UserId, email: email);
+        var company = await TestData.CompanyForAsync(context, installerUser.UserId);
+        context.Transformers.Add(transformer);
         await context.SaveChangesAsync();
 
         var request = new ConnectionRequest

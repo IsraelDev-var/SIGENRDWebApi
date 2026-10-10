@@ -1,6 +1,10 @@
 using MediatR;
 using NetTopologySuite.Geometries;
+using Microsoft.Extensions.Logging;
+using SIGENRD.Core.Application.DTOs.Email;
 using SIGENRD.Core.Application.Exceptions;
+using SIGENRD.Core.Application.Interfaces.Services;
+using SIGENRD.Core.Application.Services;
 using SIGENRD.Core.Application.Wrappers;
 using SIGENRD.Core.Domain.Entities;
 using SIGENRD.Core.Domain.Enums;
@@ -15,12 +19,20 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUser;
         private readonly ITransformerRepository _transformers;
+        private readonly StaffNotifier _staffNotifier;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<CreateConnectionRequestHandler> _logger;
 
-        public CreateConnectionRequestHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUser, ITransformerRepository transformers)
+        public CreateConnectionRequestHandler(
+            IUnitOfWork unitOfWork, ICurrentUserService currentUser, ITransformerRepository transformers,
+            StaffNotifier staffNotifier, IEmailService emailService, ILogger<CreateConnectionRequestHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
             _transformers = transformers;
+            _staffNotifier = staffNotifier;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         public async Task<Response<int>> Handle(CreateConnectionRequestCommand request, CancellationToken cancellationToken)
@@ -109,7 +121,45 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
             };
 
             await _unitOfWork.Repository<ConnectionRequest>().AddAsync(entity);
+
+            // RN-16: se avisa a la distribuidora y se confirma al solicitante.
+            await _staffNotifier.NotifyAsync(
+                "Nueva solicitud " + entity.RequestCode,
+                "Llegó una solicitud de " + (entity.RequestType == RequestType.NetMetering ? "medición neta" : "conexión") +
+                " por " + entity.RequestedCapacityKva.ToString("0.##") + " kVA en el transformador " + transformer.Code + ".",
+                NotificationType.NewRequestForReview);
+
+            var customer = await _unitOfWork.Repository<Customer>().GetByIdAsync(request.CustomerId);
+            if (customer is not null && !string.IsNullOrWhiteSpace(customer.ApplicationUserId))
+            {
+                await _unitOfWork.Repository<Notification>().AddAsync(new Notification
+                {
+                    UserId = customer.ApplicationUserId,
+                    Title = "Solicitud " + entity.RequestCode + " recibida",
+                    Message = "Recibimos tu solicitud " + entity.RequestCode + ". Puedes darle seguimiento con ese número.",
+                    NotificationType = NotificationType.RequestReceived
+                });
+            }
+
             await _unitOfWork.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(customer?.Email))
+            {
+                try
+                {
+                    await _emailService.SendAsync(new EmailRequest
+                    {
+                        To = customer.Email,
+                        Subject = "Solicitud " + entity.RequestCode + " recibida",
+                        Body = "<p>Recibimos tu solicitud <b>" + System.Net.WebUtility.HtmlEncode(entity.RequestCode) +
+                               "</b>. Puedes darle seguimiento con ese número.</p>"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo enviar el aviso de la solicitud {Code}", entity.RequestCode);
+                }
+            }
 
             return new Response<int>(entity.Id, "Solicitud creada exitosamente.");
         }

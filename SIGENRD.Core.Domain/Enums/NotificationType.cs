@@ -7,6 +7,8 @@ namespace SIGENRD.Core.Domain.Enums
         ObservationAdded = 3,
         RequestApproved = 4,
         RequestRejected = 5,
-        InstallerValidated = 6
+        InstallerValidated = 6,
+        InstallerPendingValidation = 7,
+        NewRequestForReview = 8
     }
 }

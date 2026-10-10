@@ -87,6 +87,7 @@ namespace SIGENRD.Infrastructure.Identity
                 services.AddScoped<JwtTokenGenerator>();
 
                 services.AddScoped<IAuthService, AuthService>();
+                services.AddScoped<SIGENRD.Core.Application.Interfaces.Services.IStaffDirectory, StaffDirectory>();
             
 
                 return services;

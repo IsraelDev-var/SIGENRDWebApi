@@ -23,6 +23,7 @@ namespace SIGENRD.Core.Application.Services
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUser,
         IEmailService emailService,
+        StaffNotifier staffNotifier,
         ILogger<RequestWorkflowService> logger)
     {
         private static readonly RequestScope Staff = new(RequestScopeKind.All);
@@ -108,6 +109,12 @@ namespace SIGENRD.Core.Application.Services
             // RN-11: los documentos mínimos se revalidan al reenviar.
             EnsureDocuments(request);
             request.Resubmit();
+
+            // El personal debe saber que la solicitud volvió a su bandeja.
+            await staffNotifier.NotifyAsync(
+                "Solicitud " + request.RequestCode + " reenviada",
+                "El solicitante atendió las observaciones de la solicitud " + request.RequestCode + " y espera nueva revisión.",
+                NotificationType.NewRequestForReview, ct);
 
             return await SaveAsync(request, from, null, null, ct);
         }

@@ -51,15 +51,9 @@ public class RequestAccessTests(ApiFactory api)
         };
         transformer.UpdateCapacity(1000, 800, 70, 30);
 
-        var customer = new Customer { ApplicationUserId = customerUser.UserId, FullName = "Dueño", NationalIdOrRnc = Unique() + "000" };
-        var company = new InstallerCompany
-        {
-            TradeName = "Instaladora " + Unique(),
-            Rnc = Unique(),
-            ApplicationUserId = installerUser.UserId,
-            ValidationStatus = installerValidated ? InstallerValidationStatus.Validated : InstallerValidationStatus.Pending
-        };
-        context.AddRange(transformer, customer, company);
+        var customer = await TestData.CustomerForAsync(context, customerUser.UserId);
+        var company = await TestData.CompanyForAsync(context, installerUser.UserId, installerValidated);
+        context.Transformers.Add(transformer);
         await context.SaveChangesAsync();
 
         var request = new ConnectionRequest
@@ -186,8 +180,7 @@ public class RequestAccessTests(ApiFactory api)
         int otherCustomerId;
         await using (var context = api.NewAppContext())
         {
-            var installerUser = await api.LoginAsync(TestRole.InstallerCompany);
-            var other = new Customer { ApplicationUserId = installerUser.UserId, FullName = "Otro", NationalIdOrRnc = Unique() + "111" };
+            var other = new Customer { ApplicationUserId = "otro-usuario-" + Unique(), FullName = "Otro", NationalIdOrRnc = Unique() + "111" };
             context.Customers.Add(other);
             await context.SaveChangesAsync();
             otherCustomerId = other.Id;
@@ -244,7 +237,7 @@ public class RequestAccessTests(ApiFactory api)
             {
                 TradeName = "Ajena " + Unique(),
                 Rnc = Unique(),
-                ApplicationUserId = "otro-usuario",
+                ApplicationUserId = "otro-usuario-" + Unique(),
                 ValidationStatus = InstallerValidationStatus.Validated
             };
             context.InstallerCompanies.Add(other);

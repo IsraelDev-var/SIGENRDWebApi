@@ -1,4 +1,5 @@
 using SIGENRD.Core.Domain.Entities;
+using SIGENRD.Core.Domain.Enums;
 
 namespace SIGENRD.Core.Domain.Repositories
 {
@@ -20,8 +21,24 @@ namespace SIGENRD.Core.Domain.Repositories
     /// <summary>Qué solicitudes puede ver el usuario actual.</summary>
     public record RequestScope(RequestScopeKind Kind, string? UserId = null);
 
+    /// <summary>Filtros de la lista de solicitudes. Todos son opcionales.</summary>
+    public record RequestSearchFilter(
+        RequestStatus? Status = null,
+        RequestType? RequestType = null,
+        int? TransformerId = null,
+        string? Text = null,
+        DateTime? From = null,
+        DateTime? To = null);
+
     public interface IConnectionRequestRepository
     {
+        /// <summary>Búsqueda paginada dentro del alcance del usuario, más recientes primero.</summary>
+        Task<PagedResult<ConnectionRequest>> SearchAsync(
+            RequestScope scope, RequestSearchFilter filter, int page, int pageSize, CancellationToken cancellationToken = default);
+
+        /// <summary>Seguimiento público por número de expediente. null si no existe.</summary>
+        Task<ConnectionRequest?> GetByCodeAsync(string requestCode, CancellationToken cancellationToken = default);
+
         /// <summary>Solicitudes visibles para el alcance indicado, más recientes primero.</summary>
         Task<IReadOnlyList<ConnectionRequest>> GetVisibleAsync(RequestScope scope, CancellationToken cancellationToken = default);
 

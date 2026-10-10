@@ -152,6 +152,35 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         return session;
     }
 
+    /// <summary>
+    /// Un usuario nuevo y sin perfil: se registra por la API, confirma el correo con el enlace enviado y inicia sesión.
+    /// Sirve para probar el alta de perfiles, que es única por usuario.
+    /// </summary>
+    public async Task<(HttpClient Client, string UserId, string Email)> NewUserAsync(bool installer = false)
+    {
+        var client = CreateClient();
+        var email = (installer ? "inst-" : "cli-") + Guid.NewGuid().ToString("N")[..8] + "@test.energymap.local";
+
+        var register = await client.PostAsJsonAsync("/api/v1/Auth/register",
+            new { fullName = "Usuario nuevo", email, password = TestPassword, userType = installer ? 3 : 1 });
+        register.EnsureSuccessStatusCode();
+
+        var mail = Emails.Sent.Single(e => e.To == email);
+        var href = System.Text.RegularExpressions.Regex.Match(mail.Body, "href='([^']+)'").Groups[1].Value;
+        (await client.GetAsync(new Uri(href).PathAndQuery)).EnsureSuccessStatusCode();
+
+        var login = await client.PostAsJsonAsync("/api/v1/Auth/login", new { email, password = TestPassword });
+        login.EnsureSuccessStatusCode();
+
+        using var doc = JsonDocument.Parse(await login.Content.ReadAsStringAsync());
+        var token = doc.RootElement.GetProperty("token").GetString()!;
+        var userId = doc.RootElement.GetProperty("userId").GetString()!;
+
+        var authenticated = CreateClient();
+        authenticated.DefaultRequestHeaders.Authorization = new("Bearer", token);
+        return (authenticated, userId, email);
+    }
+
     async Task IAsyncLifetime.DisposeAsync()
     {
         await base.DisposeAsync();

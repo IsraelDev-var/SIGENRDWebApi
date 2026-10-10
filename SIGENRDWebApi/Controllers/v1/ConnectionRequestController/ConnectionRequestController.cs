@@ -6,6 +6,7 @@ using SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateConnec
 using SIGENRD.Core.Application.Features.ConnectionRequests.Commands.Workflow;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetRequestHistory;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetRequiredDocuments;
+using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.SearchAndTrack;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetAllConnectionRequests;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetConnectionRequestById;
 using SIGENRDWebApi.Constants;
@@ -45,6 +46,20 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
             // Enviamos el Query al Handler correspondiente
             return Ok(await _mediator.Send(new GetAllConnectionRequestsQuery()));
         }
+
+        // ---------- Búsqueda y seguimiento ----------
+
+        /// <summary>Lista paginada con filtros, dentro de lo que el rol puede ver (RN-22).</summary>
+        [HttpGet("search")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
+        public async Task<IActionResult> Search([FromQuery] SearchConnectionRequestsQuery query)
+            => Ok(await _mediator.Send(query));
+
+        /// <summary>Seguimiento público por número de expediente: solo estado y fechas (RF-14).</summary>
+        [HttpGet("track/{code}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Track(string code)
+            => Ok(await _mediator.Send(new TrackRequestQuery(code)));
 
         // ---------- Historial ----------
 

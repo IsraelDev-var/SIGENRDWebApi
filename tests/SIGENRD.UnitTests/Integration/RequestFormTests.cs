@@ -45,12 +45,8 @@ public class RequestFormTests(ApiFactory api)
         };
         transformer.UpdateCapacity(1000, 800, 70, 30);
 
-        var customer = new Customer
-        {
-            ApplicationUserId = customerUser.UserId, FullName = "Dueño", NationalIdOrRnc = Unique() + "000",
-            IsLegalEntity = legalEntity
-        };
-        context.AddRange(transformer, customer);
+        var customer = await TestData.CustomerForAsync(context, customerUser.UserId, legalEntity);
+        context.Transformers.Add(transformer);
         await context.SaveChangesAsync();
 
         return new Parties(customer.Id, distributor.Id, transformer.Id);

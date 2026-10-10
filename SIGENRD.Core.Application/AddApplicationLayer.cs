@@ -26,6 +26,7 @@ namespace SIGENRD.Core.Application
 
             // Servicios de aplicación
             services.AddScoped<SIGENRD.Core.Application.Services.RequestWorkflowService>();
+            services.AddScoped<SIGENRD.Core.Application.Services.StaffNotifier>();
 
             return services;
         }

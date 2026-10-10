@@ -28,6 +28,9 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
             builder.Property(c => c.ContactPhone)
                    .HasMaxLength(20);
 
+            builder.HasIndex(c => c.Rnc).IsUnique();
+            builder.HasIndex(c => c.ApplicationUserId).IsUnique();
+
             builder.Property(c => c.ValidationStatus)
                    .HasConversion<string>()
                    .HasMaxLength(50)

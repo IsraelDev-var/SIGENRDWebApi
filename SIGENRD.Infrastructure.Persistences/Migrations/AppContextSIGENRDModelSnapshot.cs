@@ -284,6 +284,12 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ApplicationUserId")
+                        .IsUnique();
+
+                    b.HasIndex("NationalIdOrRnc")
+                        .IsUnique();
+
                     b.ToTable("customer", (string)null);
                 });
 
@@ -543,6 +549,12 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
                         .HasDefaultValue("Pending");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId")
+                        .IsUnique();
+
+                    b.HasIndex("Rnc")
+                        .IsUnique();
 
                     b.ToTable("InstallerCompanies", (string)null);
                 });
