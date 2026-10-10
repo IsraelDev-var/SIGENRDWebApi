@@ -1,4 +1,4 @@
-﻿
+
 
 using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Enums;
@@ -20,7 +20,7 @@ namespace SIGENRD.Core.Domain.Entities
         public int CustomerId { get; set; }
 
         // Empresa instaladora responsable
-        public int InstallerCompanyId { get; set; }
+        public int? InstallerCompanyId { get; set; }
 
         // Distribuidora receptora
         public int DistributorId { get; set; }
@@ -31,8 +31,14 @@ namespace SIGENRD.Core.Domain.Entities
         // Fecha de solicitud
         public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
 
-        // Estado del trámite (UnderReview, Approved, etc.)
-        public RequestStatus Status { get; set; } = RequestStatus.UnderReview;
+        // Conexión estándar o medición neta
+        public RequestType RequestType { get; set; } = RequestType.Connection;
+
+        // Capacidad requerida en kVA (RN-03, RN-15)
+        public decimal RequestedCapacityKva { get; set; }
+
+        // Estado del trámite (RN-12)
+        public RequestStatus Status { get; set; } = RequestStatus.Received;
 
         // Tipo de uso (residencial, comercial, etc.)
         public UsageType UsageType { get; set; }

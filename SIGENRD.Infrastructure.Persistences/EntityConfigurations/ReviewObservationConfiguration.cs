@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIGENRD.Core.Domain.Entities;
 using SIGENRD.Core.Domain.Enums;
@@ -13,9 +13,9 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
             builder.ToTable("ReviewObservations");
             builder.HasKey(o => o.Id);
 
-            builder.Property(o => o.DocumentType)
+            builder.Property(o => o.ObservationType)
                    .HasConversion<int>()
-                   .HasDefaultValue(DocumentType.TechnicalSheet);
+                   .HasDefaultValue(ObservationType.Technical);
 
             
 

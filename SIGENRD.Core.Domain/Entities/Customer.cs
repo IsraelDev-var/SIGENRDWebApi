@@ -25,8 +25,6 @@ namespace SIGENRD.Core.Domain.Entities
         // Dirección física
         public string? Address { get; set; }
 
-        
-       
 
         // Relaciones
         public ICollection<ConnectionRequest>? ConnectionRequests { get; set; }

@@ -1,8 +1,7 @@
-﻿using NetTopologySuite; // 👈 Importante
+using NetTopologySuite.Geometries;
 using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Enums;
 
-using System.Drawing;
 
 
 namespace SIGENRD.Core.Domain.Entities
@@ -16,6 +15,9 @@ namespace SIGENRD.Core.Domain.Entities
 
         public decimal TotalCapacityKva { get; set; }
         public decimal AvailableCapacityKva { get; set; }
+
+        // Capacidad reservada por solicitudes En revisión (RN-03)
+        public decimal ReservedCapacityKva { get; set; }
         public TransformerStatus Status { get; set; } = TransformerStatus.Available;
 
         // CAMBIO AQUÍ: Usar Point para compatibilidad nativa con PostGIS

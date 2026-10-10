@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using SIGENRD.Core.Application.Wrappers;
 using SIGENRD.Core.Domain.Enums;
 
@@ -9,9 +9,11 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
     public class CreateConnectionRequestCommand : IRequest<Response<int>>
     {
         public int CustomerId { get; set; }
-        public int InstallerCompanyId { get; set; }
+        public int? InstallerCompanyId { get; set; }
         public int DistributorId { get; set; }
         public int TransformerId { get; set; }
+        public RequestType RequestType { get; set; } = RequestType.Connection;
+        public decimal RequestedCapacityKva { get; set; }
         public UsageType UsageType { get; set; }
         public TariffType TariffType { get; set; }
         public InterconnectionType InterconnectionType { get; set; }

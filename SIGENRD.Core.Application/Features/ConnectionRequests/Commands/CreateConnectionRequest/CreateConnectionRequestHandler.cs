@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using SIGENRD.Core.Application.Wrappers;
 using SIGENRD.Core.Domain.Entities;
 using SIGENRD.Core.Domain.Enums;
@@ -25,7 +25,9 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
                 CustomerId = request.CustomerId,
                 InstallerCompanyId = request.InstallerCompanyId,
                 DistributorId = request.DistributorId,
-                TransformerId = (int)request.TransformerId,
+                TransformerId = request.TransformerId,
+                RequestType = request.RequestType,
+                RequestedCapacityKva = request.RequestedCapacityKva,
                 UsageType = request.UsageType,
                 TariffType = request.TariffType,
                 InterconnectionType = request.InterconnectionType,
@@ -33,7 +35,7 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
                 ProjectAddress = request.ProjectAddress,
 
                 // Lógica de negocio
-                Status = RequestStatus.UnderReview,
+                Status = RequestStatus.Received,
                 RequestedAt = DateTime.UtcNow,
                 RequestCode = $"REQ-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
 

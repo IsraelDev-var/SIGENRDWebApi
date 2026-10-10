@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIGENRD.Core.Domain.Entities;
 using SIGENRD.Core.Domain.Enums;
@@ -37,6 +37,15 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
             builder.Property(c => c.Status)
                 .HasConversion<string>()
                 .HasMaxLength(50);
+
+            builder.Property(c => c.RequestType)
+                .HasConversion<string>()
+                .HasMaxLength(50);
+
+            builder.Property(c => c.RequestedCapacityKva)
+                .HasColumnType("numeric(10,2)");
+
+            builder.HasIndex(c => c.RequestCode).IsUnique();
 
             builder.Property(c => c.UsageType)
                 .HasConversion<string>()

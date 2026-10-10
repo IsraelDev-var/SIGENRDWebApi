@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIGENRD.Core.Domain.Entities;
 
@@ -24,7 +24,11 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
                    .HasMaxLength(300)
                    .IsRequired();
 
-            builder.Property(d => d.UpdatedAt)
+            builder.Property(d => d.ContentType)
+                   .HasMaxLength(100)
+                   .IsRequired();
+
+            builder.Property(d => d.CreatedAt)
                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
         }
     }

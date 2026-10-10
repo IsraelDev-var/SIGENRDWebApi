@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIGENRD.Core.Domain.Entities;
@@ -21,8 +21,11 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
                    .IsRequired();
 
             builder.Property(t => t.Status)
+                   .HasConversion<string>()
                    .HasMaxLength(50)
                    .HasDefaultValue(TransformerStatus.Available);
+
+            builder.HasIndex(t => t.Code).IsUnique();
 
             builder.Property(t => t.TotalCapacityKva)
                    .HasColumnType("numeric(10,2)");
@@ -30,11 +33,18 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
             builder.Property(t => t.AvailableCapacityKva)
                    .HasColumnType("numeric(10,2)");
 
+            builder.Property(t => t.ReservedCapacityKva)
+                   .HasColumnType("numeric(10,2)")
+                   .HasDefaultValue(0m);
+
             // 🔹 Convierte el ValueObject (GeoCoordinate) a Point de NTS
             // Configuración correcta para PostGIS
             builder.Property(t => t.Location)
                 .HasColumnType("geography (Point, 4326)");
             // 4326 es el SRID estándar para GPS (WGS 84)
+
+            // Índice espacial para las consultas del mapa (RNF-02)
+            builder.HasIndex(t => t.Location).HasMethod("gist");
 
             #endregion
 

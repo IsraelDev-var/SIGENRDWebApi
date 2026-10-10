@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -9,20 +10,69 @@ using SIGENRD.Infrastructure.Persistences.Contexts;
 
 #nullable disable
 
-namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
+namespace SIGENRD.Infrastructure.Persistences.Migrations
 {
     [DbContext(typeof(AppContextSIGENRD))]
-    partial class AppContextSIGENRDModelSnapshot : ModelSnapshot
+    [Migration("20261004050626_ModeloV12")]
+    partial class ModeloV12
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.10")
+                .HasAnnotation("ProductVersion", "9.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("SIGENRD.Core.Domain.Entities.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EntityName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NewValues")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("EntityName", "EntityId");
+
+                    b.ToTable("AuditLogs", (string)null);
+                });
 
             modelBuilder.Entity("SIGENRD.Core.Domain.Entities.ConnectionRequest", b =>
                 {
@@ -47,7 +97,7 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                     b.Property<int>("DistributorId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("InstallerCompanyId")
+                    b.Property<int?>("InstallerCompanyId")
                         .HasColumnType("integer");
 
                     b.Property<string>("InterconnectionType")
@@ -71,8 +121,16 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("RequestType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<DateTime>("RequestedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("RequestedCapacityKva")
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -105,6 +163,9 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                     b.HasIndex("DistributorId");
 
                     b.HasIndex("InstallerCompanyId");
+
+                    b.HasIndex("RequestCode")
+                        .IsUnique();
 
                     b.HasIndex("TransformerId");
 
@@ -173,6 +234,16 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("AvailableThresholdPct")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(70m);
+
+                    b.Property<decimal>("ConditionedThresholdPct")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(30m);
+
                     b.Property<string>("ContactEmail")
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
@@ -186,6 +257,11 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
+
+                    b.Property<decimal>("DefaultPowerFactor")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(4,3)")
+                        .HasDefaultValue(0.9m);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -339,6 +415,10 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("text");
 
+                    b.Property<string>("ApplicationUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
                     b.Property<string>("ContactEmail")
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
@@ -373,6 +453,13 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("text");
+
+                    b.Property<string>("ValidationStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("Pending");
 
                     b.HasKey("Id");
 
@@ -414,9 +501,6 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -429,6 +513,126 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                         .IsUnique();
 
                     b.ToTable("NetMeteringRequests");
+                });
+
+            modelBuilder.Entity("SIGENRD.Core.Domain.Entities.NetMeteringSimulation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AnnualProductionKwh")
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<decimal>("AnnualSavings")
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("DistributorId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("InstalledCapacityKw")
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<decimal>("InvestmentCost")
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("PaybackYears")
+                        .HasColumnType("numeric(8,2)");
+
+                    b.Property<decimal>("Roi")
+                        .HasColumnType("numeric(8,2)");
+
+                    b.Property<int?>("TransformerId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<string>("ViabilityStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DistributorId");
+
+                    b.HasIndex("TransformerId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("NetMeteringSimulations", (string)null);
+                });
+
+            modelBuilder.Entity("SIGENRD.Core.Domain.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NotificationType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "IsRead");
+
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("SIGENRD.Core.Domain.Entities.ReviewObservation", b =>
@@ -455,13 +659,13 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
-                    b.Property<int>("DocumentType")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(2);
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("ObservationType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -523,6 +727,58 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                     b.ToTable("ServiceZones", (string)null);
                 });
 
+            modelBuilder.Entity("SIGENRD.Core.Domain.Entities.SimulationGenerator", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("GenerationSystemType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("InverterModel")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("NetMeteringSimulationId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PanelModel")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("RatedPowerKw")
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NetMeteringSimulationId");
+
+                    b.ToTable("SimulationGenerators", (string)null);
+                });
+
             modelBuilder.Entity("SIGENRD.Core.Domain.Entities.StateHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -539,7 +795,9 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
@@ -556,9 +814,7 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("text");
@@ -581,8 +837,15 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                     b.Property<int>("ConnectionRequestId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
@@ -603,10 +866,11 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("text");
@@ -653,14 +917,20 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                         .IsRequired()
                         .HasColumnType("geography (Point, 4326)");
 
+                    b.Property<decimal>("ReservedCapacityKva")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(10,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<int>("ServiceZoneId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Status")
+                    b.Property<string>("Status")
+                        .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("integer")
-                        .HasDefaultValue(1);
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("Available");
 
                     b.Property<decimal>("TotalCapacityKva")
                         .HasColumnType("numeric(10,2)");
@@ -673,11 +943,66 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Code")
+                        .IsUnique();
+
                     b.HasIndex("DistributorId");
+
+                    b.HasIndex("Location");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Location"), "gist");
 
                     b.HasIndex("ServiceZoneId");
 
                     b.ToTable("Transformers", (string)null);
+                });
+
+            modelBuilder.Entity("SIGENRD.Core.Domain.Entities.UserProfile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserProfiles", (string)null);
                 });
 
             modelBuilder.Entity("SIGENRD.Core.Domain.Entities.ConnectionRequest", b =>
@@ -697,8 +1022,7 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                     b.HasOne("SIGENRD.Core.Domain.Entities.InstallerCompany", "InstallerCompany")
                         .WithMany("ConnectionRequests")
                         .HasForeignKey("InstallerCompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SIGENRD.Core.Domain.Entities.Transformer", "Transformer")
                         .WithMany("ConnectionRequests")
@@ -748,6 +1072,23 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                     b.Navigation("ConnectionRequest");
                 });
 
+            modelBuilder.Entity("SIGENRD.Core.Domain.Entities.NetMeteringSimulation", b =>
+                {
+                    b.HasOne("SIGENRD.Core.Domain.Entities.Distributor", "Distributor")
+                        .WithMany()
+                        .HasForeignKey("DistributorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SIGENRD.Core.Domain.Entities.Transformer", "Transformer")
+                        .WithMany()
+                        .HasForeignKey("TransformerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Distributor");
+
+                    b.Navigation("Transformer");
+                });
+
             modelBuilder.Entity("SIGENRD.Core.Domain.Entities.ReviewObservation", b =>
                 {
                     b.HasOne("SIGENRD.Core.Domain.Entities.ConnectionRequest", "ConnectionRequest")
@@ -759,12 +1100,23 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                     b.Navigation("ConnectionRequest");
                 });
 
+            modelBuilder.Entity("SIGENRD.Core.Domain.Entities.SimulationGenerator", b =>
+                {
+                    b.HasOne("SIGENRD.Core.Domain.Entities.NetMeteringSimulation", "NetMeteringSimulation")
+                        .WithMany("Generators")
+                        .HasForeignKey("NetMeteringSimulationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("NetMeteringSimulation");
+                });
+
             modelBuilder.Entity("SIGENRD.Core.Domain.Entities.StateHistory", b =>
                 {
                     b.HasOne("SIGENRD.Core.Domain.Entities.ConnectionRequest", "ConnectionRequest")
                         .WithMany("StateHistories")
                         .HasForeignKey("ConnectionRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ConnectionRequest");
@@ -831,6 +1183,11 @@ namespace SIGENRD.Infrastructure.Persistences.Persistences.Migrations
                 });
 
             modelBuilder.Entity("SIGENRD.Core.Domain.Entities.NetMeteringRequest", b =>
+                {
+                    b.Navigation("Generators");
+                });
+
+            modelBuilder.Entity("SIGENRD.Core.Domain.Entities.NetMeteringSimulation", b =>
                 {
                     b.Navigation("Generators");
                 });

@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +15,17 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
                 .GreaterThan(0).WithMessage("El ID del cliente es obligatorio.");
 
             RuleFor(p => p.InstallerCompanyId)
-                .GreaterThan(0).WithMessage("La compañía instaladora es obligatoria.");
+                .GreaterThan(0).When(p => p.InstallerCompanyId.HasValue)
+                .WithMessage("La compañía instaladora no es válida.");
+
+            RuleFor(p => p.TransformerId)
+                .GreaterThan(0).WithMessage("El transformador es obligatorio (RN-08).");
+
+            RuleFor(p => p.RequestType)
+                .IsInEnum().WithMessage("Tipo de solicitud inválido.");
+
+            RuleFor(p => p.RequestedCapacityKva)
+                .GreaterThan(0).WithMessage("La capacidad requerida en kVA debe ser mayor que cero.");
 
             RuleFor(p => p.DistributorId)
                 .GreaterThan(0).WithMessage("La distribuidora es obligatoria.");

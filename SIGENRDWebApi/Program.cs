@@ -96,8 +96,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseHealthChecks("/health");
 
-app.UseHealthChecks("/health");
-
 try
 {
     app.MapControllers(); 

@@ -1,4 +1,4 @@
-﻿
+
 
 using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Enums;
@@ -20,6 +20,10 @@ namespace SIGENRD.Core.Domain.Entities
 
         // Tipo de documento (Plano, Permiso, Ficha técnica)
         public DocumentType DocumentType { get; set; } = DocumentType.Other;
+
+        // Tipo MIME validado y tamaño (RN-18)
+        public string ContentType { get; set; } = string.Empty;
+        public long SizeBytes { get; set; }
 
         // URL del archivo
         public string FileUrl { get; set; } = string.Empty;
