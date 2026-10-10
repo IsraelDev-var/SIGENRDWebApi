@@ -1,4 +1,4 @@
-﻿using MailKit.Security;
+using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using SIGENRD.Core.Application.DTOs.Email;
@@ -21,31 +21,29 @@ namespace SIGENRD.Infrastructure.Shared.Services
 
         public async Task SendAsync(EmailRequest request)
         {
+            // EmailRequest.From viene vacío (no nulo) por defecto: se usa el remitente configurado.
+            var address = string.IsNullOrWhiteSpace(request.From) ? _mailSettings.EmailFrom : request.From;
+            var from = new MailboxAddress(_mailSettings.DisplayName, address);
+
             var email = new MimeMessage();
-
-            // Remitente
-            email.Sender = MailboxAddress.Parse(request.From ?? _mailSettings.EmailFrom);
-            email.From.Add(MailboxAddress.Parse(request.From ?? _mailSettings.EmailFrom));
-
-            // Destinatario
+            email.Sender = from;
+            email.From.Add(from);
             email.To.Add(MailboxAddress.Parse(request.To));
-
-            // Asunto
             email.Subject = request.Subject;
-
-            // Cuerpo del correo
-            var builder = new BodyBuilder();
-            builder.HtmlBody = request.Body;
-            email.Body = builder.ToMessageBody();
+            email.Body = new BodyBuilder { HtmlBody = request.Body }.ToMessageBody();
 
             using var smtp = new SmtpClient();
             try
             {
                 // Conectar
-                await smtp.ConnectAsync(_mailSettings.SmtpHost, _mailSettings.SmtpPort, SecureSocketOptions.StartTls);
+                await smtp.ConnectAsync(
+                    _mailSettings.SmtpHost,
+                    _mailSettings.SmtpPort,
+                    _mailSettings.UseStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.None);
 
-                // Autenticar
-                await smtp.AuthenticateAsync(_mailSettings.SmtpUser, _mailSettings.SmtpPass);
+                // Un servidor de desarrollo local no pide credenciales.
+                if (!string.IsNullOrWhiteSpace(_mailSettings.SmtpUser))
+                    await smtp.AuthenticateAsync(_mailSettings.SmtpUser, _mailSettings.SmtpPass);
 
                 // Enviar
                 await smtp.SendAsync(email);
@@ -53,11 +51,12 @@ namespace SIGENRD.Infrastructure.Shared.Services
             catch (Exception ex)
             {
                 // Aquí podrías loguear el error con Serilog
-                throw new Exception($"Error enviando correo: {ex.Message}");
+                throw new InvalidOperationException("Error enviando correo: " + ex.Message, ex);
             }
             finally
             {
-                await smtp.DisconnectAsync(true);
+                if (smtp.IsConnected)
+                    await smtp.DisconnectAsync(true);
             }
         }
     }

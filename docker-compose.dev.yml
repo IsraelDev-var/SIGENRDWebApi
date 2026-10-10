@@ -24,5 +24,14 @@ services:
       timeout: 3s
       retries: 10
 
+  # Servidor SMTP de desarrollo (smtp4dev, gratuito): recibe los correos sin enviarlos a nadie.
+  # Interfaz web: http://localhost:5080
+  mail:
+    image: rnwood/smtp4dev:latest
+    container_name: energymap-mail
+    ports:
+      - "5025:25"
+      - "5080:80"
+
 volumes:
   energymap-pgdata:
