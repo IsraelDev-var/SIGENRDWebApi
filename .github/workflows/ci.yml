@@ -8,6 +8,20 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    services:
+      postgis:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      ENERGYMAP_TEST_DB: Host=localhost;Port=5432;Username=postgres;Password=ci-only-password
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
