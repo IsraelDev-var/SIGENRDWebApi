@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -53,9 +53,14 @@ namespace SIGENRD.Infrastructure.Identity
                 // VALIDACIÓN DE SEGURIDAD
                 if (string.IsNullOrEmpty(jwtSettings.Key))
                     throw new Exception("JwtSettings:Key no está configurada en appsettings.json");
+                // Sin emisor y audiencia los tokens se firman pero nunca se validan: mejor fallar al arrancar.
+                if (string.IsNullOrWhiteSpace(jwtSettings.Issuer) || string.IsNullOrWhiteSpace(jwtSettings.Audience))
+                    throw new InvalidOperationException("JwtSettings:Issuer y JwtSettings:Audience son obligatorios.");
+
                 services.AddSingleton(jwtSettings);
 
-                var key = Encoding.UTF8.GetBytes(jwtSettings.Key);
+                // La misma llave (Base64 decodificada) que usa JwtTokenGenerator para firmar.
+                var signingKey = JwtTokenGenerator.BuildSecurityKey(jwtSettings.Key);
 
                 services.AddAuthentication(opt =>
                 {
@@ -74,7 +79,7 @@ namespace SIGENRD.Infrastructure.Identity
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = jwtSettings.Issuer,
                         ValidAudience = jwtSettings.Audience,
-                        IssuerSigningKey = new SymmetricSecurityKey(key)
+                        IssuerSigningKey = signingKey
                     };
                 });
 

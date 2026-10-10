@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -26,6 +27,8 @@
     <ProjectReference Include="..\..\SIGENRD.Core.Domain\SIGENRD.Core.Domain.csproj" />
     <ProjectReference Include="..\..\SIGENRD.Core.Application\SIGENRD.Core.Application.csproj" />
     <ProjectReference Include="..\..\SIGENRD.Infrastructure.Persistences\SIGENRD.Infrastructure.Persistences.csproj" />
+    <ProjectReference Include="..\..\SIGENRDWebApi\SIGENRDWebApi.csproj" />
+    <ProjectReference Include="..\..\SIGENRD.Infrastructure.Identity\SIGENRD.Infrastructure.Identity.csproj" />
   </ItemGroup>
 
 </Project>

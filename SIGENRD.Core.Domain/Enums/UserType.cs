@@ -1,4 +1,4 @@
-﻿
+
 
 namespace SIGENRD.Core.Domain.Enums
 {
@@ -9,11 +9,11 @@ namespace SIGENRD.Core.Domain.Enums
     public enum UserType
     {
         Customer = 1,
-        Engineer,
-        InstallerCompany,
-        DistributorAdmin,
-        Company,
-        Admin
+        Engineer = 2,
+        InstallerCompany = 3,
+        Distributor = 4,
+        Company = 5,
+        Admin = 6
 
     }
     

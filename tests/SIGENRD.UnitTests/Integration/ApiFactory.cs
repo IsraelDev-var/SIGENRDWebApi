@@ -1,0 +1,145 @@
+using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Npgsql;
+using SIGENRD.Core.Application.DTOs.Email;
+using SIGENRD.Core.Application.Interfaces.Services;
+using SIGENRD.Infrastructure.Identity.Configurations;
+using SIGENRD.Infrastructure.Identity.Seeds;
+using SIGENRD.Infrastructure.Persistences.Contexts;
+
+namespace SIGENRD.UnitTests.Integration;
+
+public enum TestRole { Anonymous, Customer, InstallerCompany, Engineer, Distributor, Admin }
+
+public sealed class TheoryIfDatabaseAttribute : TheoryAttribute
+{
+    public TheoryIfDatabaseAttribute()
+    {
+        if (string.IsNullOrWhiteSpace(TestDatabase.ServerConnection))
+            Skip = "Define " + TestDatabase.EnvironmentVariable + " para ejecutar las pruebas contra PostGIS.";
+    }
+}
+
+/// <summary>El registro envía un correo de confirmación: en las pruebas no sale ninguno.</summary>
+public class NoopEmailService : IEmailService
+{
+    public Task SendAsync(EmailRequest request) => Task.CompletedTask;
+}
+
+public record LoggedUser(string UserId, string Token);
+
+/// <summary>
+/// Arranca la API real (WebApplicationFactory) contra una base PostgreSQL con PostGIS propia de la ejecución.
+/// La configuración se pasa por variables de entorno del proceso de pruebas, que ganan sobre los User Secrets:
+/// así las pruebas nunca tocan la base de desarrollo.
+/// </summary>
+public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
+{
+    // Valor solo para pruebas: la base se crea y se borra en cada ejecución.
+    public const string TestPassword = "Prueba-Roles-2026!";
+
+    private string _connectionString = string.Empty;
+    private readonly Dictionary<TestRole, LoggedUser> _sessions = new();
+
+    public string ConnectionString => _connectionString;
+
+    public static string Email(TestRole role) => role switch
+    {
+        TestRole.Customer => "customer@" + DevelopmentTestUsers.Domain,
+        TestRole.InstallerCompany => "installer@" + DevelopmentTestUsers.Domain,
+        TestRole.Engineer => "engineer@" + DevelopmentTestUsers.Domain,
+        TestRole.Distributor => "distributor@" + DevelopmentTestUsers.Domain,
+        TestRole.Admin => "admin@sigenrd.com",
+        _ => throw new ArgumentOutOfRangeException(nameof(role))
+    };
+
+    public AppContextSIGENRD NewAppContext()
+    {
+        var options = new DbContextOptionsBuilder<AppContextSIGENRD>()
+            .UseNpgsql(_connectionString, npgsql => npgsql.UseNetTopologySuite())
+            .Options;
+        return new AppContextSIGENRD(options);
+    }
+
+    public async Task InitializeAsync()
+    {
+        var server = TestDatabase.ServerConnection;
+        if (string.IsNullOrWhiteSpace(server)) return;
+
+        _connectionString = new NpgsqlConnectionStringBuilder(server)
+        {
+            Database = "it_api_" + Guid.NewGuid().ToString("N")[..12]
+        }.ConnectionString;
+
+        await using (var app = NewAppContext())
+            await app.Database.MigrateAsync();
+
+        var identityOptions = new DbContextOptionsBuilder<IdentityDbContextSIGENRD>().UseNpgsql(_connectionString).Options;
+        await using (var identity = new IdentityDbContextSIGENRD(identityOptions))
+            await identity.Database.MigrateAsync();
+
+        Environment.SetEnvironmentVariable("ConnectionStrings__Postgres", _connectionString);
+        Environment.SetEnvironmentVariable("ConnectionStrings__IdentityServerDB", _connectionString);
+        Environment.SetEnvironmentVariable("JwtSettings__Key", Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)));
+        Environment.SetEnvironmentVariable("Seed__AdminPassword", TestPassword);
+        Environment.SetEnvironmentVariable("Seed__TestUsersPassword", TestPassword);
+        Environment.SetEnvironmentVariable("UseInMemoryDatabase", "false");
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.UseEnvironment("Development"); // siembra los usuarios de prueba por rol
+
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<IEmailService>();
+            services.AddSingleton<IEmailService, NoopEmailService>();
+        });
+    }
+
+    /// <summary>Cliente HTTP autenticado con el token del rol indicado, o anónimo.</summary>
+    public async Task<HttpClient> ClientFor(TestRole role)
+    {
+        var client = CreateClient();
+        if (role == TestRole.Anonymous) return client;
+
+        var session = await LoginAsync(role);
+        client.DefaultRequestHeaders.Authorization = new("Bearer", session.Token);
+        return client;
+    }
+
+    public async Task<LoggedUser> LoginAsync(TestRole role)
+    {
+        if (_sessions.TryGetValue(role, out var cached)) return cached;
+
+        var response = await CreateClient().PostAsJsonAsync("/api/v1/Auth/login",
+            new { email = Email(role), password = TestPassword });
+        response.EnsureSuccessStatusCode();
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var session = new LoggedUser(
+            doc.RootElement.GetProperty("userId").GetString()!,
+            doc.RootElement.GetProperty("token").GetString()!);
+
+        _sessions[role] = session;
+        return session;
+    }
+
+    async Task IAsyncLifetime.DisposeAsync()
+    {
+        await base.DisposeAsync();
+
+        if (string.IsNullOrEmpty(_connectionString)) return;
+
+        await using var app = NewAppContext();
+        await app.Database.EnsureDeletedAsync();
+        NpgsqlConnection.ClearAllPools();
+    }
+}

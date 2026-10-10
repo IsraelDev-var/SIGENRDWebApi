@@ -1,4 +1,4 @@
-﻿using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Tokens;
 using SIGENRD.Infrastructure.Identity.Entities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -50,7 +50,8 @@ namespace SIGENRD.Infrastructure.Identity.JWT
         // MÉTODOS PRIVADOS
         // ==========================
 
-        private static SymmetricSecurityKey BuildSecurityKey(string key)
+        /// <summary>Única forma de construir la llave: la firma y la validación deben usar los mismos bytes.</summary>
+        public static SymmetricSecurityKey BuildSecurityKey(string key)
         {
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("JwtSettings.Key is empty or missing.");

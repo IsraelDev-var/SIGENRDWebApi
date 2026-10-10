@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using SIGENRD.Core.Domain.Enums;
 using SIGENRD.Infrastructure.Identity.Entities;
 
@@ -6,8 +6,15 @@ namespace SIGENRD.Infrastructure.Identity.Seeds
 {
     public static class DefaultSuperAdmin
     {
-        public static async Task SeedAsync(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager)
+        public static async Task SeedAsync(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, string? password)
         {
+            // Sin contraseña configurada no se crea el administrador: no hay credenciales por defecto.
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                Console.WriteLine("Seed:AdminPassword no está configurada: no se crea el administrador por defecto.");
+                return;
+            }
+
             // Definir el usuario Admin por defecto
             var defaultUser = new ApplicationUser
             {
@@ -27,7 +34,7 @@ namespace SIGENRD.Infrastructure.Identity.Seeds
                 if (user == null)
                 {
                     // Crear usuario con contraseña segura
-                    var result = await userManager.CreateAsync(defaultUser, "Pa$$word123!");
+                    var result = await userManager.CreateAsync(defaultUser, password);
 
                     if (result.Succeeded)
                     {
