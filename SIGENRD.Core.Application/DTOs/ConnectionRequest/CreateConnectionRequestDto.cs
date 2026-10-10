@@ -1,4 +1,4 @@
-﻿using SIGENRD.Core.Domain.Enums;
+using SIGENRD.Core.Domain.Enums;
 
 using System.ComponentModel.DataAnnotations;
 
@@ -12,7 +12,7 @@ namespace SIGENRD.Core.Application.DTOs.ConnectionRequest
         public int CustomerId { get; set; }
 
         [Required(ErrorMessage = "La compañía instaladora es obligatoria.")]
-        public int InstallerCompanyId { get; set; }
+        public int? InstallerCompanyId { get; set; }
 
         [Required(ErrorMessage = "La distribuidora es obligatoria.")]
         public int DistributorId { get; set; }

@@ -1,8 +1,12 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateConnectionRequest;
+using SIGENRD.Core.Application.Features.ConnectionRequests.Commands.Workflow;
+using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetRequestHistory;
+using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetRequiredDocuments;
+using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.SearchAndTrack;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetAllConnectionRequests;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetConnectionRequestById;
 using SIGENRDWebApi.Constants;
@@ -41,6 +45,92 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         {
             // Enviamos el Query al Handler correspondiente
             return Ok(await _mediator.Send(new GetAllConnectionRequestsQuery()));
+        }
+
+        // ---------- Búsqueda y seguimiento ----------
+
+        /// <summary>Lista paginada con filtros, dentro de lo que el rol puede ver (RN-22).</summary>
+        [HttpGet("search")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
+        public async Task<IActionResult> Search([FromQuery] SearchConnectionRequestsQuery query)
+            => Ok(await _mediator.Send(query));
+
+        /// <summary>Seguimiento público por número de expediente: solo estado y fechas (RF-14).</summary>
+        [HttpGet("track/{code}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Track(string code)
+            => Ok(await _mediator.Send(new TrackRequestQuery(code)));
+
+        // ---------- Historial ----------
+
+        /// <summary>Cambios de estado de la solicitud, del más antiguo al más reciente (RN-10).</summary>
+        [HttpGet("{id:int}/history")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
+        public async Task<IActionResult> History(int id)
+            => Ok(await _mediator.Send(new GetRequestHistoryQuery(id)));
+
+        // ---------- Documentos ----------
+
+        /// <summary>Documentos que exige la solicitud y cuáles ya están presentes (RN-09, RN-11).</summary>
+        [HttpGet("{id:int}/required-documents")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
+        public async Task<IActionResult> RequiredDocuments(int id)
+            => Ok(await _mediator.Send(new GetRequiredDocumentsQuery(id)));
+
+        // ---------- Flujo de estados: personal de la distribuidora ----------
+
+        /// <summary>Recibida a En revisión: valida documentos y reserva la capacidad.</summary>
+        [HttpPost("{id:int}/start-review")]
+        [Authorize(Roles = $"{Roles.Engineer}, {Roles.Distributor}, {Roles.Admin}")]
+        public async Task<IActionResult> StartReview(int id)
+            => Ok(await _mediator.Send(new StartReviewCommand { Id = id }));
+
+        /// <summary>En revisión a Observaciones. Requiere comentario.</summary>
+        [HttpPost("{id:int}/observe")]
+        [Authorize(Roles = $"{Roles.Engineer}, {Roles.Distributor}, {Roles.Admin}")]
+        public async Task<IActionResult> Observe(int id, [FromBody] ObserveRequestCommand command)
+        {
+            command.Id = id;
+            return Ok(await _mediator.Send(command));
+        }
+
+        /// <summary>En revisión a Aprobada. Verifica documentos y capacidad (RN-09, RN-15).</summary>
+        [HttpPost("{id:int}/approve")]
+        [Authorize(Roles = $"{Roles.Distributor}, {Roles.Admin}")]
+        public async Task<IActionResult> Approve(int id)
+            => Ok(await _mediator.Send(new ApproveRequestCommand { Id = id }));
+
+        /// <summary>En revisión a Rechazada. Requiere comentario.</summary>
+        [HttpPost("{id:int}/reject")]
+        [Authorize(Roles = $"{Roles.Distributor}, {Roles.Admin}")]
+        public async Task<IActionResult> Reject(int id, [FromBody] RejectRequestCommand command)
+        {
+            command.Id = id;
+            return Ok(await _mediator.Send(command));
+        }
+
+        // ---------- Flujo de estados: solicitante ----------
+
+        /// <summary>Observaciones a En corrección.</summary>
+        [HttpPost("{id:int}/start-correction")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
+        public async Task<IActionResult> StartCorrection(int id)
+            => Ok(await _mediator.Send(new StartCorrectionCommand { Id = id }));
+
+        /// <summary>En corrección a En revisión.</summary>
+        [HttpPost("{id:int}/resubmit")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
+        public async Task<IActionResult> Resubmit(int id)
+            => Ok(await _mediator.Send(new ResubmitRequestCommand { Id = id }));
+
+        /// <summary>Cancela la solicitud mientras sea Recibida, Observaciones o En corrección (RN-23).</summary>
+        [HttpPost("{id:int}/cancel")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
+        public async Task<IActionResult> Cancel(int id, [FromBody] CancelRequestCommand? command)
+        {
+            command ??= new CancelRequestCommand();
+            command.Id = id;
+            return Ok(await _mediator.Send(command));
         }
     }
 }

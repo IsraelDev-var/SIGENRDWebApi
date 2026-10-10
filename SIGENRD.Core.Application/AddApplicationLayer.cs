@@ -1,4 +1,4 @@
-﻿
+
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,9 +14,6 @@ namespace SIGENRD.Core.Application
     {
         public static IServiceCollection AddApplicationLayer(this IServiceCollection services)
         {
-            // Automapper
-
-            services.AddAutoMapper(typeof(GeneralProfile).Assembly);
             // 2. MediatR (⚡ NUEVO)
             // Esto escanea todo el proyecto en busca de IRequest e IRequestHandler
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
@@ -28,6 +25,8 @@ namespace SIGENRD.Core.Application
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
             // Servicios de aplicación
+            services.AddScoped<SIGENRD.Core.Application.Services.RequestWorkflowService>();
+            services.AddScoped<SIGENRD.Core.Application.Services.StaffNotifier>();
 
             return services;
         }

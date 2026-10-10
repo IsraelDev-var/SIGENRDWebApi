@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIGENRD.Core.Domain.Entities;
 using SIGENRD.Core.Domain.Enums;
@@ -37,6 +37,38 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
             builder.Property(c => c.Status)
                 .HasConversion<string>()
                 .HasMaxLength(50);
+
+            builder.Property(c => c.RequestType)
+                .HasConversion<string>()
+                .HasMaxLength(50);
+
+            builder.Property(c => c.RequestedCapacityKva)
+                .HasColumnType("numeric(10,2)");
+
+            builder.HasIndex(c => c.RequestCode).IsUnique();
+
+            // Formulario de solicitud (Anexo A del reglamento de interconexión)
+            builder.Property(c => c.PropertyRelation).HasConversion<string>().HasMaxLength(50);
+            builder.Property(c => c.OwnerFullName).HasMaxLength(150);
+            builder.Property(c => c.OwnerNationalId).HasMaxLength(20);
+            builder.Property(c => c.OwnerPhone).HasMaxLength(30);
+            builder.Property(c => c.EngineerFullName).HasMaxLength(150);
+            builder.Property(c => c.EngineerCodiaNumber).HasMaxLength(50);
+            builder.Property(c => c.EngineerCompany).HasMaxLength(150);
+            builder.Property(c => c.EngineerPhone).HasMaxLength(30);
+            builder.Property(c => c.EngineerEmail).HasMaxLength(150);
+            builder.Property(c => c.ServiceContractNumber).HasMaxLength(50);
+            builder.Property(c => c.MeterNumber).HasMaxLength(50);
+
+            builder.Property(c => c.ReservedKva)
+                .HasColumnType("numeric(10,2)")
+                .HasDefaultValue(0m);
+
+            // Concurrencia optimista con la columna de sistema xmin: dos revisores no pisan el mismo cambio.
+            builder.Property<uint>("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
 
             builder.Property(c => c.UsageType)
                 .HasConversion<string>()

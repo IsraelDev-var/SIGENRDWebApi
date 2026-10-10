@@ -1,6 +1,7 @@
-﻿
+
 
 using Microsoft.EntityFrameworkCore;
+using SIGENRD.Core.Domain.Enums;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIGENRD.Core.Domain.Entities;
 
@@ -26,6 +27,17 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
 
             builder.Property(c => c.ContactPhone)
                    .HasMaxLength(20);
+
+            builder.HasIndex(c => c.Rnc).IsUnique();
+            builder.HasIndex(c => c.ApplicationUserId).IsUnique();
+
+            builder.Property(c => c.ValidationStatus)
+                   .HasConversion<string>()
+                   .HasMaxLength(50)
+                   .HasDefaultValue(InstallerValidationStatus.Pending);
+
+            builder.Property(c => c.ApplicationUserId)
+                   .HasMaxLength(450);
 
             builder.Property(c => c.CreatedAt)
                    .HasDefaultValueSql("CURRENT_TIMESTAMP");

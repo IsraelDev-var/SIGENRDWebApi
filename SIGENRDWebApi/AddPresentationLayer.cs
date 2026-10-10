@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.OpenApi.Models; // 👈 NECESARIO PARA OpenApiSecurityScheme
 using SIGENRDWebApi.Options;
 
@@ -9,6 +9,10 @@ namespace SIGENRD.Presentation.WebApi
         public static IServiceCollection AddPresentationLayer(this IServiceCollection services)
         {
             services.AddControllers();
+
+            // Usuario actual para la auditoría
+            services.AddHttpContextAccessor();
+            services.AddScoped<SIGENRD.Core.Domain.Interfaces.ICurrentUserService, SIGENRDWebApi.Services.CurrentUserService>();
 
             services.AddApiVersioningWithSwagger();
 

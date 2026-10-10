@@ -1,19 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace SIGENRD.Core.Domain.Enums
 {
+    /// <summary>
+    /// Estados de una solicitud (RN-12). Cancelled se añade por RN-23.
+    /// </summary>
     public enum RequestStatus
     {
-        UnderReview = 1,
-        InCorrection = 2,
-        Approved = 3,
-        Rejected = 4,
-        Cancelled = 5,
-        Completed = 6
-
+        Received = 1,
+        UnderReview = 2,
+        Observed = 3,
+        InCorrection = 4,
+        Approved = 5,
+        Rejected = 6,
+        Cancelled = 7
     }
 }

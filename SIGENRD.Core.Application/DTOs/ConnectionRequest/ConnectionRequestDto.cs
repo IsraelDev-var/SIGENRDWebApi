@@ -1,4 +1,4 @@
-﻿
+
 
 namespace SIGENRD.Core.Application.DTOs.ConnectionRequest
 {
@@ -15,7 +15,7 @@ namespace SIGENRD.Core.Application.DTOs.ConnectionRequest
 
         // IDs Relacionados
         public int CustomerId { get; set; }
-        public int InstallerCompanyId { get; set; }
+        public int? InstallerCompanyId { get; set; }
         public int DistributorId { get; set; }
         public int? TransformerId { get; set; }
 

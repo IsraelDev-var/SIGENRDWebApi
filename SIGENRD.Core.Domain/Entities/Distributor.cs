@@ -1,4 +1,4 @@
-﻿
+
 
 using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Enums;
@@ -25,6 +25,11 @@ namespace SIGENRD.Core.Domain.Entities
         public string? ContactPhone { get; set; }
 
        
+
+        // Umbrales de disponibilidad configurables (RN-02) y factor de potencia para kW a kVA (RN-01)
+        public decimal AvailableThresholdPct { get; set; } = 70m;
+        public decimal ConditionedThresholdPct { get; set; } = 30m;
+        public decimal DefaultPowerFactor { get; set; } = 0.9m; // valor provisional, por confirmar con Edesur
 
         // Relaciones
         public ICollection<Transformer>? Transformers { get; set; }

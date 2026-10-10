@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SIGENRD.Core.Application.Interfaces.Services;
 using SIGENRD.Core.Domain.Settings;
@@ -12,8 +12,7 @@ namespace SIGENRD.Infrastructure.Shared
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            // Esta línea ahora compilará perfectamente
-            services.Configure<MailSettings>(options => configuration.GetSection("MailSettings"));
+            services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
 
             services.AddTransient<IEmailService, EmailService>();
 

@@ -1,9 +1,15 @@
-﻿using MediatR;
+using MediatR;
+using NetTopologySuite.Geometries;
+using Microsoft.Extensions.Logging;
+using SIGENRD.Core.Application.DTOs.Email;
+using SIGENRD.Core.Application.Exceptions;
+using SIGENRD.Core.Application.Interfaces.Services;
+using SIGENRD.Core.Application.Services;
 using SIGENRD.Core.Application.Wrappers;
 using SIGENRD.Core.Domain.Entities;
 using SIGENRD.Core.Domain.Enums;
 using SIGENRD.Core.Domain.Interfaces;
-using NetTopologySuite.Geometries;
+using SIGENRD.Core.Domain.Repositories;
 
 namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateConnectionRequest
 {
@@ -11,21 +17,59 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
     public class CreateConnectionRequestHandler : IRequestHandler<CreateConnectionRequestCommand, Response<int>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICurrentUserService _currentUser;
+        private readonly ITransformerRepository _transformers;
+        private readonly StaffNotifier _staffNotifier;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<CreateConnectionRequestHandler> _logger;
 
-        public CreateConnectionRequestHandler(IUnitOfWork unitOfWork)
+        public CreateConnectionRequestHandler(
+            IUnitOfWork unitOfWork, ICurrentUserService currentUser, ITransformerRepository transformers,
+            StaffNotifier staffNotifier, IEmailService emailService, ILogger<CreateConnectionRequestHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _currentUser = currentUser;
+            _transformers = transformers;
+            _staffNotifier = staffNotifier;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         public async Task<Response<int>> Handle(CreateConnectionRequestCommand request, CancellationToken cancellationToken)
         {
-            // Mapeo manual para control total (o podrías usar AutoMapper si prefieres)
+            await EnsureCallerOwnsTheRequestParties(request);
+
+            // RN-08: la solicitud necesita un transformador real. RN-03: uno saturado o en mantenimiento no admite solicitudes nuevas.
+            var transformer = await _transformers.GetByIdAsync(request.TransformerId, asTracking: false, cancellationToken)
+                ?? throw new ApiException("El transformador indicado no existe.");
+
+            if (transformer.DistributorId != request.DistributorId)
+                throw new ApiException("El transformador no pertenece a la distribuidora indicada.");
+
+            if (!transformer.AcceptsNewRequests)
+                throw new ApiException("El transformador " + transformer.Code + " está " + transformer.Status +
+                                       " y no admite solicitudes nuevas.");
+
             var entity = new ConnectionRequest
             {
                 CustomerId = request.CustomerId,
                 InstallerCompanyId = request.InstallerCompanyId,
                 DistributorId = request.DistributorId,
-                TransformerId = (int)request.TransformerId,
+                TransformerId = request.TransformerId,
+                RequestType = request.RequestType,
+                RequestedCapacityKva = request.RequestedCapacityKva,
+                PropertyRelation = request.PropertyRelation,
+                OwnerFullName = request.OwnerFullName?.Trim(),
+                OwnerNationalId = request.OwnerNationalId?.Trim(),
+                OwnerPhone = request.OwnerPhone?.Trim(),
+                EngineerFullName = request.EngineerFullName?.Trim(),
+                EngineerCodiaNumber = request.EngineerCodiaNumber?.Trim(),
+                EngineerCompany = request.EngineerCompany?.Trim(),
+                EngineerPhone = request.EngineerPhone?.Trim(),
+                EngineerEmail = request.EngineerEmail?.Trim(),
+                ServiceContractNumber = request.ServiceContractNumber?.Trim(),
+                MeterNumber = request.MeterNumber?.Trim(),
+                DeclarationAcceptedAt = DateTime.UtcNow,
                 UsageType = request.UsageType,
                 TariffType = request.TariffType,
                 InterconnectionType = request.InterconnectionType,
@@ -33,7 +77,7 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
                 ProjectAddress = request.ProjectAddress,
 
                 // Lógica de negocio
-                Status = RequestStatus.UnderReview,
+                Status = RequestStatus.Received,
                 RequestedAt = DateTime.UtcNow,
                 RequestCode = $"REQ-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
 
@@ -41,10 +85,126 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
                 Coordinates = new Point(request.Longitude, request.Latitude) { SRID = 4326 }
             };
 
+            // Medición neta: datos del sistema y de sus generadores (Anexo A, parte I)
+            if (request.RequestType == RequestType.NetMetering && request.NetMetering is not null)
+            {
+                entity.NetMeteringRequest = new NetMeteringRequest
+                {
+                    GenerationSystemType = request.NetMetering.GenerationSystemType,
+                    InstalledCapacityKw = request.NetMetering.InstalledCapacityKw,
+                    Comments = request.NetMetering.Comments,
+                    Generators = request.NetMetering.Generators.Select(g => new Generator
+                    {
+                        GenerationSystemType = g.GenerationSystemType,
+                        GeneratorKind = g.GeneratorKind,
+                        Manufacturer = g.Manufacturer.Trim(),
+                        InverterModel = g.InverterModel?.Trim(),
+                        SerialNumber = g.SerialNumber?.Trim(),
+                        Phases = g.Phases,
+                        RatedPowerKva = g.RatedPowerKva,
+                        ConnectionVoltage = g.ConnectionVoltage,
+                        NominalCurrent = g.NominalCurrent,
+                        PowerFactorMin = g.PowerFactorMin,
+                        PowerFactorMax = g.PowerFactorMax,
+                        SwitchingType = g.SwitchingType,
+                        HarmonicDistortionPercent = g.HarmonicDistortionPercent,
+                        CertificationStandard = g.CertificationStandard,
+                        CertifyingUnit = g.CertifyingUnit
+                    }).ToList()
+                };
+            }
+
+            // RN-10: la creación es la primera entrada del historial.
+            entity.StateHistories = new List<StateHistory>
+            {
+                new() { PreviousState = null, NewState = RequestStatus.Received.ToString(), Comment = "Solicitud creada" }
+            };
+
             await _unitOfWork.Repository<ConnectionRequest>().AddAsync(entity);
+
+            // RN-16: se avisa a la distribuidora y se confirma al solicitante.
+            await _staffNotifier.NotifyAsync(
+                "Nueva solicitud " + entity.RequestCode,
+                "Llegó una solicitud de " + (entity.RequestType == RequestType.NetMetering ? "medición neta" : "conexión") +
+                " por " + entity.RequestedCapacityKva.ToString("0.##") + " kVA en el transformador " + transformer.Code + ".",
+                NotificationType.NewRequestForReview);
+
+            var customer = await _unitOfWork.Repository<Customer>().GetByIdAsync(request.CustomerId);
+            if (customer is not null && !string.IsNullOrWhiteSpace(customer.ApplicationUserId))
+            {
+                await _unitOfWork.Repository<Notification>().AddAsync(new Notification
+                {
+                    UserId = customer.ApplicationUserId,
+                    Title = "Solicitud " + entity.RequestCode + " recibida",
+                    Message = "Recibimos tu solicitud " + entity.RequestCode + ". Puedes darle seguimiento con ese número.",
+                    NotificationType = NotificationType.RequestReceived
+                });
+            }
+
             await _unitOfWork.SaveChangesAsync();
 
+            if (!string.IsNullOrWhiteSpace(customer?.Email))
+            {
+                try
+                {
+                    await _emailService.SendAsync(new EmailRequest
+                    {
+                        To = customer.Email,
+                        Subject = "Solicitud " + entity.RequestCode + " recibida",
+                        Body = "<p>Recibimos tu solicitud <b>" + System.Net.WebUtility.HtmlEncode(entity.RequestCode) +
+                               "</b>. Puedes darle seguimiento con ese número.</p>"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo enviar el aviso de la solicitud {Code}", entity.RequestCode);
+                }
+            }
+
             return new Response<int>(entity.Id, "Solicitud creada exitosamente.");
+        }
+
+        /// <summary>
+        /// RN-22: un cliente solo crea solicitudes a su nombre y una instaladora solo con su propia empresa.
+        /// El administrador puede crear en nombre de cualquiera.
+        /// </summary>
+        private async Task EnsureCallerOwnsTheRequestParties(CreateConnectionRequestCommand request)
+        {
+            if (_currentUser.IsInRole(nameof(UserType.Admin)))
+                return;
+
+            var userId = _currentUser.UserId ?? throw new ForbiddenException();
+
+            if (_currentUser.IsInRole(nameof(UserType.Customer)))
+            {
+                var customer = await _unitOfWork.Repository<Customer>().GetByIdAsync(request.CustomerId);
+
+                if (customer is null || customer.ApplicationUserId != userId)
+                    throw new ForbiddenException("La solicitud debe crearse a nombre del cliente autenticado.");
+
+                if (request.InstallerCompanyId.HasValue)
+                    throw new ForbiddenException("Un cliente no puede asignar una empresa instaladora.");
+
+                return;
+            }
+
+            if (_currentUser.IsInRole(nameof(UserType.InstallerCompany)))
+            {
+                if (!request.InstallerCompanyId.HasValue)
+                    throw new ForbiddenException("La solicitud debe indicar la empresa instaladora del usuario.");
+
+                var company = await _unitOfWork.Repository<InstallerCompany>().GetByIdAsync(request.InstallerCompanyId.Value);
+
+                if (company is null || company.ApplicationUserId != userId)
+                    throw new ForbiddenException("La empresa instaladora no pertenece al usuario autenticado.");
+
+                if (company.ValidationStatus != InstallerValidationStatus.Validated)
+                    throw new ForbiddenException("La empresa instaladora aún no ha sido validada (RN-05).");
+
+                return;
+            }
+
+            throw new ForbiddenException();
         }
     }
 }

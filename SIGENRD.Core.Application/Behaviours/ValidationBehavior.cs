@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using MediatR;
 
 namespace SIGENRD.Core.Application.Behaviours
@@ -24,7 +24,7 @@ namespace SIGENRD.Core.Application.Behaviours
                 var failures = validationResults.SelectMany(r => r.Errors).Where(f => f != null).ToList();
 
                 if (failures.Count != 0)
-                    throw new ValidationException(failures);
+                    throw new Exceptions.ValidationException(failures);
             }
 
             return await next();

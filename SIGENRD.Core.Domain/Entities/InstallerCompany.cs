@@ -1,4 +1,5 @@
-﻿using SIGENRD.Core.Domain.Base;
+using SIGENRD.Core.Domain.Base;
+using SIGENRD.Core.Domain.Enums;
 
 namespace SIGENRD.Core.Domain.Entities
 {
@@ -23,6 +24,12 @@ namespace SIGENRD.Core.Domain.Entities
 
         // Dirección física
         public string? Address { get; set; }
+
+        // Validación por la distribuidora (RN-05)
+        public InstallerValidationStatus ValidationStatus { get; set; } = InstallerValidationStatus.Pending;
+
+        // Usuario de Identity de la empresa
+        public string? ApplicationUserId { get; set; }
 
         //// Si la empresa está activa
         //public bool IsActive { get; set; } = true;

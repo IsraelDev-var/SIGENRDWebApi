@@ -1,5 +1,7 @@
-﻿
 
+
+using Microsoft.EntityFrameworkCore;
+using SIGENRD.Core.Domain.Exceptions;
 using SIGENRD.Core.Domain.Interfaces;
 using SIGENRD.Core.Domain.Repositories;
 using SIGENRD.Infrastructure.Persistences.Contexts;
@@ -28,7 +30,14 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
 
         public async Task<int> SaveChangesAsync()
         {
-            return await _context.SaveChangesAsync();
+            try
+            {
+                return await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new ConcurrencyConflictException();
+            }
         }
         public void Dispose()
         {

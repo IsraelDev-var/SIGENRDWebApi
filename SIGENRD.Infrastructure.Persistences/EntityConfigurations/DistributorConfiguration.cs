@@ -1,4 +1,4 @@
-﻿
+
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -26,6 +26,18 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
 
             builder.Property(d => d.ContactPhone)
                    .HasMaxLength(20);
+
+            builder.Property(d => d.AvailableThresholdPct)
+                   .HasColumnType("numeric(5,2)")
+                   .HasDefaultValue(70m);
+
+            builder.Property(d => d.ConditionedThresholdPct)
+                   .HasColumnType("numeric(5,2)")
+                   .HasDefaultValue(30m);
+
+            builder.Property(d => d.DefaultPowerFactor)
+                   .HasColumnType("numeric(4,3)")
+                   .HasDefaultValue(0.9m);
         }
     }
 }

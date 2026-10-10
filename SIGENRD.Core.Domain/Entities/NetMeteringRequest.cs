@@ -1,4 +1,4 @@
-﻿
+
 
 using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Enums;
@@ -20,9 +20,6 @@ namespace SIGENRD.Core.Domain.Entities
 
         // Capacidad instalada en kW
         public decimal InstalledCapacityKw { get; set; }
-
-        // Estado de la solicitud
-        public RequestStatus Status { get; set; } = RequestStatus.UnderReview;
 
         // Fecha de aprobación
         public DateTime? ApprovedAt { get; set; }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using SIGENRD.Core.Application;
 using SIGENRD.Infrastructure.Identity;
 using SIGENRD.Infrastructure.Identity.Entities;
@@ -47,8 +47,14 @@ using (var scope = app.Services.CreateScope())
         var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
 
         // Ejecutar los Seeds
+        var configuration = services.GetRequiredService<IConfiguration>();
+
         await DefaultRoles.SeedAsync(userManager, roleManager);
-        await DefaultSuperAdmin.SeedAsync(userManager, roleManager);
+        await DefaultSuperAdmin.SeedAsync(userManager, roleManager, configuration["Seed:AdminPassword"]);
+
+        // Usuarios de prueba por rol: solo en desarrollo
+        if (app.Environment.IsDevelopment())
+            await DevelopmentTestUsers.SeedAsync(userManager, configuration["Seed:TestUsersPassword"]);
     }
     catch (Exception ex)
     {
@@ -96,8 +102,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseHealthChecks("/health");
 
-app.UseHealthChecks("/health");
-
 try
 {
     app.MapControllers(); 
@@ -112,3 +116,6 @@ catch (System.Reflection.ReflectionTypeLoadException ex)
     throw; // Detiene la app
 }
 app.Run();
+
+// Permite que las pruebas de integración arranquen la aplicación con WebApplicationFactory<Program>.
+public partial class Program { }

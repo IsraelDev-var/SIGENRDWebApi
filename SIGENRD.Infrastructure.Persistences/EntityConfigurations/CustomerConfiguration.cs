@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIGENRD.Core.Domain.Entities;
 
@@ -22,6 +22,13 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
             builder.Property(c => c.NationalIdOrRnc)
                    .HasMaxLength(20)
                    .IsRequired();
+
+            // Un perfil de cliente por usuario y una cédula o RNC por perfil
+            builder.HasIndex(c => c.ApplicationUserId).IsUnique();
+            builder.HasIndex(c => c.NationalIdOrRnc).IsUnique();
+
+            builder.Property(c => c.IsLegalEntity)
+                   .HasDefaultValue(false);
 
             builder.Property(c => c.Email)
                    .HasMaxLength(150);

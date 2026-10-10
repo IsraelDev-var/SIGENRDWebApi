@@ -1,4 +1,4 @@
-﻿using SIGENRD.Core.Domain.Base;
+using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Enums;
 
 namespace SIGENRD.Core.Domain.Entities
@@ -17,7 +17,7 @@ namespace SIGENRD.Core.Domain.Entities
         public string Comment { get; set; } = string.Empty;
 
         // Tipo de observación (Técnica / Documental)
-        public ObservationType DocumentType { get; set; } = ObservationType.Technical;
+        public ObservationType ObservationType { get; set; } = ObservationType.Technical;
 
        
 
