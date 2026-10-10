@@ -80,8 +80,9 @@ public class RequestWorkflowTests(ApiFactory api)
 
         if (withDocuments)
         {
-            foreach (var documentType in RequiredDocuments.For(type))
+            foreach (var requirement in RequiredDocuments.For(request, customer.IsLegalEntity))
             {
+                var documentType = requirement.AnyOf[0];
                 context.TechnicalDocuments.Add(new TechnicalDocument
                 {
                     ConnectionRequestId = request.Id,
@@ -205,7 +206,7 @@ public class RequestWorkflowTests(ApiFactory api)
         var result = await Send(TestRole.Distributor, flow.RequestId + "/start-review");
 
         Assert.Equal(HttpStatusCode.BadRequest, result.Status);
-        Assert.Contains("InterconnectionScheme", Errors(result.Body));
+        Assert.Contains("Plano de situación", Errors(result.Body));
         Assert.Equal(RequestStatus.Received, (await Reload(flow.RequestId)).Status);
         Assert.Equal(0, (await ReloadTransformer(flow.TransformerId)).ReservedCapacityKva);
     }
@@ -391,10 +392,10 @@ public class RequestWorkflowTests(ApiFactory api)
             context.ConnectionRequests.Add(second);
             await context.SaveChangesAsync();
 
-            foreach (var documentType in RequiredDocuments.For(RequestType.Connection))
+            foreach (var requirement in RequiredDocuments.For(second, false))
                 context.TechnicalDocuments.Add(new TechnicalDocument
                 {
-                    ConnectionRequestId = second.Id, DocumentType = documentType, FileName = "d.pdf",
+                    ConnectionRequestId = second.Id, DocumentType = requirement.AnyOf[0], FileName = "d.pdf",
                     FileUrl = "https://blob.test/" + Unique(), ContentType = "application/pdf", SizeBytes = 1
                 });
             await context.SaveChangesAsync();
@@ -422,9 +423,9 @@ public class RequestWorkflowTests(ApiFactory api)
         var template = await context.ConnectionRequests.AsNoTracking().SingleAsync(r => r.Id == seeded.RequestId);
 
         var body = "{\"customerId\":" + template.CustomerId + ",\"distributorId\":" + template.DistributorId +
-                   ",\"transformerId\":" + template.TransformerId + ",\"requestType\":1,\"requestedCapacityKva\":50," +
+                   ",\"transformerId\":" + template.TransformerId + ",\"requestType\":1,\"requestedCapacityKva\":5," +
                    "\"usageType\":1,\"tariffType\":1,\"interconnectionType\":1,\"projectAddress\":\"Calle 1\"," +
-                   "\"latitude\":18.4,\"longitude\":-69.9}";
+                   "\"latitude\":18.4,\"longitude\":-69.9,\"declarationAccepted\":true}";
 
         var created = await Send(TestRole.Customer, "", body);
         Assert.Equal(HttpStatusCode.OK, created.Status);
@@ -441,9 +442,9 @@ public class RequestWorkflowTests(ApiFactory api)
         var template = await context.ConnectionRequests.AsNoTracking().SingleAsync(r => r.Id == seeded.RequestId);
 
         var body = "{\"customerId\":" + template.CustomerId + ",\"distributorId\":" + template.DistributorId +
-                   ",\"transformerId\":" + template.TransformerId + ",\"requestType\":1,\"requestedCapacityKva\":50," +
+                   ",\"transformerId\":" + template.TransformerId + ",\"requestType\":1,\"requestedCapacityKva\":5," +
                    "\"usageType\":1,\"tariffType\":1,\"interconnectionType\":1,\"projectAddress\":\"Calle 1\"," +
-                   "\"latitude\":18.4,\"longitude\":-69.9}";
+                   "\"latitude\":18.4,\"longitude\":-69.9,\"declarationAccepted\":true}";
 
         var created = await Send(TestRole.Customer, "", body);
 

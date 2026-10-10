@@ -91,8 +91,31 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
                     b.Property<int>("CustomerId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("DeclarationAcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("DistributorId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("EngineerCodiaNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("EngineerCompany")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("EngineerEmail")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("EngineerFullName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("EngineerPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<int?>("InstallerCompanyId")
                         .HasColumnType("integer");
@@ -105,6 +128,22 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("MeterNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("OwnerFullName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("OwnerNationalId")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("OwnerPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<string>("ProjectAddress")
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
@@ -112,6 +151,11 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
                     b.Property<string>("ProjectDescription")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<string>("PropertyRelation")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("RequestCode")
                         .IsRequired()
@@ -133,6 +177,10 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("numeric(10,2)")
                         .HasDefaultValue(0m);
+
+                    b.Property<string>("ServiceContractNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -214,6 +262,11 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<bool>("IsLegalEntity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("NationalIdOrRnc")
                         .IsRequired()
@@ -354,6 +407,14 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CertificationStandard")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CertifyingUnit")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
                     b.Property<decimal>("ConnectionVoltage")
                         .HasColumnType("numeric(10,2)");
 
@@ -365,6 +426,11 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
 
                     b.Property<int>("GenerationSystemType")
                         .HasColumnType("integer");
+
+                    b.Property<string>("GeneratorKind")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<decimal>("HarmonicDistortionPercent")
                         .HasColumnType("numeric(5,2)");
@@ -386,6 +452,9 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
                     b.Property<decimal>("NominalCurrent")
                         .HasColumnType("numeric(10,2)");
 
+                    b.Property<int>("Phases")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("PowerFactorMax")
                         .HasColumnType("numeric(5,2)");
 
@@ -394,6 +463,10 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
 
                     b.Property<decimal>("RatedPowerKva")
                         .HasColumnType("numeric(10,2)");
+
+                    b.Property<string>("SerialNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("SwitchingType")
                         .HasMaxLength(100)

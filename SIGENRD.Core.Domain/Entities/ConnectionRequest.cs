@@ -63,6 +63,30 @@ namespace SIGENRD.Core.Domain.Entities
         // Coordenadas geográficas
         public Point? Coordinates { get; set; }
 
+        // ---- Datos del formulario de solicitud (Anexo A del reglamento de interconexión) ----
+
+        // Relación del solicitante con la propiedad (parte B)
+        public PropertyRelation PropertyRelation { get; set; } = PropertyRelation.Owner;
+
+        // Datos del dueño cuando el solicitante no lo es (parte C)
+        public string? OwnerFullName { get; set; }
+        public string? OwnerNationalId { get; set; }
+        public string? OwnerPhone { get; set; }
+
+        // Ingeniero Colegiado responsable (parte D)
+        public string? EngineerFullName { get; set; }
+        public string? EngineerCodiaNumber { get; set; }
+        public string? EngineerCompany { get; set; }
+        public string? EngineerPhone { get; set; }
+        public string? EngineerEmail { get; set; }
+
+        // Localización del sistema (parte E)
+        public string? ServiceContractNumber { get; set; }
+        public string? MeterNumber { get; set; }
+
+        // El solicitante certifica que la información es correcta (parte J)
+        public DateTime? DeclarationAcceptedAt { get; set; }
+
         // Relaciones
         public Customer? Customer { get; set; }
         public InstallerCompany? InstallerCompany { get; set; }

@@ -91,7 +91,7 @@ public class RequestAccessTests(ApiFactory api)
         (installerCompanyId.HasValue ? ",\"installerCompanyId\":" + installerCompanyId : "") +
         ",\"distributorId\":" + s.DistributorId + ",\"transformerId\":" + s.TransformerId +
         ",\"requestType\":1,\"requestedCapacityKva\":10,\"usageType\":1,\"tariffType\":1,\"interconnectionType\":1," +
-        "\"projectAddress\":\"Calle 1\",\"latitude\":18.4,\"longitude\":-69.9}";
+        "\"projectAddress\":\"Calle 1\",\"latitude\":18.4,\"longitude\":-69.9,\"declarationAccepted\":true}";
 
     // ---------------- lectura ----------------
 

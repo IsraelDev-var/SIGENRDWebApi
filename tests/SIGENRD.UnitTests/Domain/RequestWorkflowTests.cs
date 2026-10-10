@@ -270,34 +270,4 @@ public class RequestWorkflowTests
         Assert.Equal(200, request.ReservedKva);
         Assert.Equal(200, transformer.ReservedCapacityKva);
     }
-
-    // ---------------- documentos mínimos ----------------
-
-    [Fact]
-    public void Medicion_neta_exige_los_cuatro_documentos_de_RN_11()
-    {
-        var required = RequiredDocuments.For(RequestType.NetMetering);
-
-        Assert.Equal(
-            new[] { DocumentType.Blueprint, DocumentType.InterconnectionScheme, DocumentType.InverterSpecification, DocumentType.CalculationMemory },
-            required.ToArray());
-    }
-
-    [Fact]
-    public void Faltantes_son_los_requeridos_que_no_estan_presentes()
-    {
-        var missing = RequiredDocuments.Missing(
-            RequestType.NetMetering,
-            new[] { DocumentType.Blueprint, DocumentType.Other, DocumentType.CalculationMemory });
-
-        Assert.Equal(new[] { DocumentType.InterconnectionScheme, DocumentType.InverterSpecification }, missing.ToArray());
-    }
-
-    [Fact]
-    public void Con_todo_presente_no_falta_nada()
-    {
-        var all = RequiredDocuments.For(RequestType.Connection);
-
-        Assert.Empty(RequiredDocuments.Missing(RequestType.Connection, all));
-    }
 }

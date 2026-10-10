@@ -1,4 +1,4 @@
-﻿
+
 
 using SIGENRD.Core.Domain.Base;
 using SIGENRD.Core.Domain.Enums;
@@ -37,6 +37,18 @@ namespace SIGENRD.Core.Domain.Entities
         // 🔹 Factor de potencia mínimo y máximo
         public decimal PowerFactorMin { get; set; }
         public decimal PowerFactorMax { get; set; }
+
+        // Tipo de generador y datos del equipo (Anexo A, parte I)
+        public GeneratorKind GeneratorKind { get; set; } = GeneratorKind.InverterBased;
+
+        // 1 monofásico, 3 trifásico
+        public int Phases { get; set; } = 1;
+
+        public string? SerialNumber { get; set; }
+
+        // Estándar y entidad que certifican el equipo (parte G; IEEE 1547 o UL 1741)
+        public string? CertificationStandard { get; set; }
+        public string? CertifyingUnit { get; set; }
 
         // 🔹 Tipo de conmutación
         public string? SwitchingType { get; set; }

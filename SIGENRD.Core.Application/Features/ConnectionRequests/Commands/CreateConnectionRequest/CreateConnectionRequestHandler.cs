@@ -46,6 +46,18 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
                 TransformerId = request.TransformerId,
                 RequestType = request.RequestType,
                 RequestedCapacityKva = request.RequestedCapacityKva,
+                PropertyRelation = request.PropertyRelation,
+                OwnerFullName = request.OwnerFullName?.Trim(),
+                OwnerNationalId = request.OwnerNationalId?.Trim(),
+                OwnerPhone = request.OwnerPhone?.Trim(),
+                EngineerFullName = request.EngineerFullName?.Trim(),
+                EngineerCodiaNumber = request.EngineerCodiaNumber?.Trim(),
+                EngineerCompany = request.EngineerCompany?.Trim(),
+                EngineerPhone = request.EngineerPhone?.Trim(),
+                EngineerEmail = request.EngineerEmail?.Trim(),
+                ServiceContractNumber = request.ServiceContractNumber?.Trim(),
+                MeterNumber = request.MeterNumber?.Trim(),
+                DeclarationAcceptedAt = DateTime.UtcNow,
                 UsageType = request.UsageType,
                 TariffType = request.TariffType,
                 InterconnectionType = request.InterconnectionType,
@@ -60,6 +72,35 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
                 // Coordenadas
                 Coordinates = new Point(request.Longitude, request.Latitude) { SRID = 4326 }
             };
+
+            // Medición neta: datos del sistema y de sus generadores (Anexo A, parte I)
+            if (request.RequestType == RequestType.NetMetering && request.NetMetering is not null)
+            {
+                entity.NetMeteringRequest = new NetMeteringRequest
+                {
+                    GenerationSystemType = request.NetMetering.GenerationSystemType,
+                    InstalledCapacityKw = request.NetMetering.InstalledCapacityKw,
+                    Comments = request.NetMetering.Comments,
+                    Generators = request.NetMetering.Generators.Select(g => new Generator
+                    {
+                        GenerationSystemType = g.GenerationSystemType,
+                        GeneratorKind = g.GeneratorKind,
+                        Manufacturer = g.Manufacturer.Trim(),
+                        InverterModel = g.InverterModel?.Trim(),
+                        SerialNumber = g.SerialNumber?.Trim(),
+                        Phases = g.Phases,
+                        RatedPowerKva = g.RatedPowerKva,
+                        ConnectionVoltage = g.ConnectionVoltage,
+                        NominalCurrent = g.NominalCurrent,
+                        PowerFactorMin = g.PowerFactorMin,
+                        PowerFactorMax = g.PowerFactorMax,
+                        SwitchingType = g.SwitchingType,
+                        HarmonicDistortionPercent = g.HarmonicDistortionPercent,
+                        CertificationStandard = g.CertificationStandard,
+                        CertifyingUnit = g.CertifyingUnit
+                    }).ToList()
+                };
+            }
 
             // RN-10: la creación es la primera entrada del historial.
             entity.StateHistories = new List<StateHistory>

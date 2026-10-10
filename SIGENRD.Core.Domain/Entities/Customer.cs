@@ -1,4 +1,4 @@
-﻿
+
 
 using SIGENRD.Core.Domain.Base;
 
@@ -15,6 +15,9 @@ namespace SIGENRD.Core.Domain.Entities
 
         // Cedula o RNC
         public string NationalIdOrRnc { get; set; } = string.Empty;
+
+        // Persona jurídica: cambia los documentos que se exigen (RN-09)
+        public bool IsLegalEntity { get; set; }
 
         // Correo electrónico
         public string? Email { get; set; }

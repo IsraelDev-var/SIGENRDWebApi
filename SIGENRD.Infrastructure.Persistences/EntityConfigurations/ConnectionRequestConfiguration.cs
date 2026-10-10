@@ -47,6 +47,19 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
 
             builder.HasIndex(c => c.RequestCode).IsUnique();
 
+            // Formulario de solicitud (Anexo A del reglamento de interconexión)
+            builder.Property(c => c.PropertyRelation).HasConversion<string>().HasMaxLength(50);
+            builder.Property(c => c.OwnerFullName).HasMaxLength(150);
+            builder.Property(c => c.OwnerNationalId).HasMaxLength(20);
+            builder.Property(c => c.OwnerPhone).HasMaxLength(30);
+            builder.Property(c => c.EngineerFullName).HasMaxLength(150);
+            builder.Property(c => c.EngineerCodiaNumber).HasMaxLength(50);
+            builder.Property(c => c.EngineerCompany).HasMaxLength(150);
+            builder.Property(c => c.EngineerPhone).HasMaxLength(30);
+            builder.Property(c => c.EngineerEmail).HasMaxLength(150);
+            builder.Property(c => c.ServiceContractNumber).HasMaxLength(50);
+            builder.Property(c => c.MeterNumber).HasMaxLength(50);
+
             builder.Property(c => c.ReservedKva)
                 .HasColumnType("numeric(10,2)")
                 .HasDefaultValue(0m);

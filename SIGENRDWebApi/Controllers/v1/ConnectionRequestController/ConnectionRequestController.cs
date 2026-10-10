@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateConnectionRequest;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Commands.Workflow;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetRequestHistory;
+using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetRequiredDocuments;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetAllConnectionRequests;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetConnectionRequestById;
 using SIGENRDWebApi.Constants;
@@ -52,6 +53,14 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
         public async Task<IActionResult> History(int id)
             => Ok(await _mediator.Send(new GetRequestHistoryQuery(id)));
+
+        // ---------- Documentos ----------
+
+        /// <summary>Documentos que exige la solicitud y cuáles ya están presentes (RN-09, RN-11).</summary>
+        [HttpGet("{id:int}/required-documents")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
+        public async Task<IActionResult> RequiredDocuments(int id)
+            => Ok(await _mediator.Send(new GetRequiredDocumentsQuery(id)));
 
         // ---------- Flujo de estados: personal de la distribuidora ----------
 

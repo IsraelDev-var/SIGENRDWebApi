@@ -141,10 +141,11 @@ namespace SIGENRD.Core.Application.Services
         private static void EnsureDocuments(ConnectionRequest request)
         {
             var present = (request.TechnicalDocuments ?? new List<TechnicalDocument>()).Select(d => d.DocumentType);
-            var missing = RequiredDocuments.Missing(request.RequestType, present);
+            var missing = RequiredDocuments.Missing(request, request.Customer?.IsLegalEntity ?? false, present);
 
             if (missing.Count > 0)
-                throw new ApiException("Faltan documentos obligatorios: " + string.Join(", ", missing) + ".");
+                throw new ApiException("Faltan documentos obligatorios: " +
+                                       string.Join("; ", missing.Select(m => m.Description)) + ".");
         }
 
         /// <summary>

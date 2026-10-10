@@ -22,6 +22,17 @@ namespace SIGENRD.Core.Application.DTOs.ConnectionRequest
         public string TariffType { get; set; } = string.Empty;
         public string InterconnectionType { get; set; } = string.Empty;
 
+        public string RequestType { get; set; } = string.Empty;
+        public decimal RequestedCapacityKva { get; set; }
+
+        // Formulario de solicitud
+        public string PropertyRelation { get; set; } = string.Empty;
+        public string? OwnerFullName { get; set; }
+        public string? EngineerFullName { get; set; }
+        public string? EngineerCodiaNumber { get; set; }
+        public string? ServiceContractNumber { get; set; }
+        public string? MeterNumber { get; set; }
+
         // IDs Relacionados
         public int CustomerId { get; set; }
         public int? InstallerCompanyId { get; set; }

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIGENRD.Core.Domain.Entities;
 using SIGENRD.Core.Domain.Enums;
@@ -43,6 +43,14 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
 
             builder.Property(g => g.HarmonicDistortionPercent)
                    .HasColumnType("numeric(5,2)");
+
+            builder.Property(g => g.GeneratorKind)
+                   .HasConversion<string>()
+                   .HasMaxLength(50);
+
+            builder.Property(g => g.SerialNumber).HasMaxLength(100);
+            builder.Property(g => g.CertificationStandard).HasMaxLength(100);
+            builder.Property(g => g.CertifyingUnit).HasMaxLength(150);
 
             // 🔹 Relación con NetMeteringRequest
             builder.HasOne(g => g.NetMeteringRequest)
