@@ -61,6 +61,16 @@ La imagen no lleva secretos. Se definen como *Application settings* de la Web Ap
 | `Storage__AzureBlob__ConnectionString` | Cuenta de Azure Storage de los documentos y certificados. Es un secreto (Key Vault). Obligatoria en producción |
 | `Storage__AzureBlob__ContainerName` | Contenedor de los expedientes (`expedientes` por defecto). Se crea privado si no existe |
 | `Storage__Provider` | `AzureBlob` (por defecto) o `Local`. `Local` es solo para desarrollo: el disco del contenedor se pierde al reiniciar |
+| `KeyVault__Uri` | URI del Azure Key Vault, por ejemplo `https://energymap-kv.vault.azure.net/`. Con ella, los secretos se leen del almacén (ver abajo) |
+| `KeyVault__ManagedIdentityClientId` | Solo si se usa una identidad administrada **asignada por el usuario**; con la del sistema se deja vacía |
+
+**Key Vault.** Con `KeyVault__Uri` definida, al arrancar la API lee todos los secretos del almacén con su **identidad administrada** (sin contraseñas en la configuración) y estos ganan sobre las variables de entorno. Pasos:
+
+1. Activar la identidad administrada de la Web App o Container App.
+2. Darle el rol *Key Vault Secrets User* sobre el almacén.
+3. Crear los secretos con `--` en lugar de `__` o `:`. Por ejemplo, `JwtSettings--PrivateKey`, `ConnectionStrings--Postgres`, `ConnectionStrings--IdentityServerDB`, `Storage--AzureBlob--ConnectionString`, `MailSettings--SmtpPass`, `Seed--AdminPassword`.
+
+Si el almacén no responde o la identidad no tiene permiso, la API **no arranca** y el log dice por qué: es preferible a arrancar sin sus secretos. Probado en local con un almacén inexistente; la conexión con un Key Vault real se verifica en el primer despliegue.
 
 **Documentos.** Los archivos van a un contenedor de Blob Storage **privado**: nunca se exponen por URL. Toda descarga pasa por la API, que comprueba en cada una que el usuario pueda ver la solicitud (RN-22). Se aceptan PDF, JPG y PNG de hasta 10 MB, identificados por su contenido; los PDF con JavaScript, acciones de lanzamiento o archivos incrustados se rechazan. Esto no reemplaza un antivirus (ver abajo). Al aprobar una solicitud se genera el certificado en PDF (QuestPDF, licencia Community: gratuita mientras los ingresos anuales de la organización no superen 1 M USD).
 
