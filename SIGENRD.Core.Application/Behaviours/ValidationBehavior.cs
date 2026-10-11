@@ -1,5 +1,5 @@
 using FluentValidation;
-using MediatR;
+using SIGENRD.Core.Application.Mediator;
 
 namespace SIGENRD.Core.Application.Behaviours
 {

@@ -1,5 +1,5 @@
 using Asp.Versioning;
-using MediatR;
+using SIGENRD.Core.Application.Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;

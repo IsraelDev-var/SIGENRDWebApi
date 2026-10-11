@@ -1,5 +1,5 @@
 using FluentValidation;
-using MediatR;
+using SIGENRD.Core.Application.Mediator;
 using SIGENRD.Core.Application.Behaviours;
 using SIGENRD.Core.Application.Features.Transformers.Queries.GetTransformersInBounds;
 using SIGENRD.Core.Application.DTOs.Transformer;

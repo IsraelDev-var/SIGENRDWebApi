@@ -31,11 +31,6 @@ namespace SIGENRD.Core.Domain.Entities
         // Usuario de Identity de la empresa
         public string? ApplicationUserId { get; set; }
 
-        //// Si la empresa está activa
-        //public bool IsActive { get; set; } = true;
-
-
-
         // Relaciones
         public ICollection<EngineerUser>? Engineers { get; set; }
         public ICollection<ConnectionRequest>? ConnectionRequests { get; set; }

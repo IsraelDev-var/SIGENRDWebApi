@@ -1,4 +1,4 @@
-using MediatR;
+using SIGENRD.Core.Application.Mediator;
 using SIGENRD.Core.Application.DTOs.Transformer;
 using SIGENRD.Core.Application.Wrappers;
 using SIGENRD.Core.Domain.Repositories;
