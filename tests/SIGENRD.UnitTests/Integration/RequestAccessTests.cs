@@ -71,13 +71,15 @@ public class RequestAccessTests(ApiFactory api)
         return new Seeded(request.Id, customer.Id, company.Id, transformer.Id, distributor.Id);
     }
 
-    private static async Task<bool> ListContains(HttpClient client, int requestId)
+    private static async Task<bool> ListContains(HttpClient client, Seeded seeded)
     {
-        var response = await client.GetAsync("/api/v1/ConnectionRequest");
+        // El listado es paginado: se filtra por el transformador propio de la prueba para que quepa en una página.
+        var response = await client.GetAsync("/api/v1/ConnectionRequest?transformerId=" + seeded.TransformerId);
         response.EnsureSuccessStatusCode();
 
         using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        return doc.RootElement.GetProperty("data").EnumerateArray().Any(r => r.GetProperty("id").GetInt32() == requestId);
+        return doc.RootElement.GetProperty("data").GetProperty("items").EnumerateArray()
+            .Any(r => r.GetProperty("id").GetInt32() == seeded.RequestId);
     }
 
     private static string CreateBody(Seeded s, int customerId, int? installerCompanyId) =>
@@ -95,7 +97,7 @@ public class RequestAccessTests(ApiFactory api)
         var seeded = await SeedAsync(withInstaller: false);
         var customer = await api.ClientFor(TestRole.Customer);
 
-        Assert.True(await ListContains(customer, seeded.RequestId));
+        Assert.True(await ListContains(customer, seeded));
         Assert.Equal(HttpStatusCode.OK, (await customer.GetAsync("/api/v1/ConnectionRequest/" + seeded.RequestId)).StatusCode);
     }
 
@@ -105,7 +107,7 @@ public class RequestAccessTests(ApiFactory api)
         var seeded = await SeedAsync(withInstaller: false);
         var installer = await api.ClientFor(TestRole.InstallerCompany);
 
-        Assert.False(await ListContains(installer, seeded.RequestId));
+        Assert.False(await ListContains(installer, seeded));
         Assert.Equal(HttpStatusCode.NotFound, (await installer.GetAsync("/api/v1/ConnectionRequest/" + seeded.RequestId)).StatusCode);
     }
 
@@ -117,8 +119,8 @@ public class RequestAccessTests(ApiFactory api)
         var installer = await api.ClientFor(TestRole.InstallerCompany);
         var customer = await api.ClientFor(TestRole.Customer);
 
-        Assert.True(await ListContains(installer, seeded.RequestId));
-        Assert.True(await ListContains(customer, seeded.RequestId));
+        Assert.True(await ListContains(installer, seeded));
+        Assert.True(await ListContains(customer, seeded));
         Assert.Equal(HttpStatusCode.OK, (await installer.GetAsync("/api/v1/ConnectionRequest/" + seeded.RequestId)).StatusCode);
     }
 
@@ -131,7 +133,7 @@ public class RequestAccessTests(ApiFactory api)
         var seeded = await SeedAsync(withInstaller: true);
         var client = await api.ClientFor(role);
 
-        Assert.True(await ListContains(client, seeded.RequestId));
+        Assert.True(await ListContains(client, seeded));
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/v1/ConnectionRequest/" + seeded.RequestId)).StatusCode);
     }
 

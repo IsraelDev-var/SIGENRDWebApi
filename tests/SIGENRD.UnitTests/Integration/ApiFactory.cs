@@ -13,6 +13,7 @@ using SIGENRD.Core.Application.Interfaces.Services;
 using SIGENRD.Infrastructure.Identity.Configurations;
 using SIGENRD.Infrastructure.Identity.Seeds;
 using SIGENRD.Infrastructure.Persistences.Contexts;
+using SIGENRDWebApi.Options;
 
 namespace SIGENRD.UnitTests.Integration;
 
@@ -121,6 +122,14 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         {
             services.RemoveAll<IEmailService>();
             services.AddSingleton<IEmailService>(Emails);
+
+            // Todas las pruebas llegan desde la misma "IP": sin esto el límite de peticiones las frenaría.
+            // SecurityHardeningTests prueba el límite con una instancia propia.
+            services.PostConfigure<RateLimitSettings>(o =>
+            {
+                o.AuthPermitLimit = 100_000;
+                o.PublicTrackingPermitLimit = 100_000;
+            });
         });
     }
 

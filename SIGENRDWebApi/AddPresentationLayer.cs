@@ -1,4 +1,8 @@
+using System.Threading.RateLimiting;
 using Asp.Versioning;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
+using SIGENRDWebApi.Constants;
 using Microsoft.OpenApi.Models; // 👈 NECESARIO PARA OpenApiSecurityScheme
 using SIGENRDWebApi.Options;
 
@@ -6,7 +10,7 @@ namespace SIGENRD.Presentation.WebApi
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddPresentationLayer(this IServiceCollection services)
+        public static IServiceCollection AddPresentationLayer(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddControllers();
 
@@ -16,15 +20,63 @@ namespace SIGENRD.Presentation.WebApi
 
             services.AddApiVersioningWithSwagger();
 
-            services.AddCors(options =>
+            services.AddCorsFromConfiguration(configuration);
+            services.AddRateLimiting(configuration);
+
+            services.AddHsts(options =>
             {
-                options.AddPolicy("AllowAll", policy =>
-                    policy.AllowAnyOrigin()
-                          .AllowAnyHeader()
-                          .AllowAnyMethod());
+                options.MaxAge = TimeSpan.FromDays(365);
+                options.IncludeSubDomains = true;
             });
 
             return services;
+        }
+
+        /// <summary>Solo los orígenes listados en Cors:AllowedOrigins reciben cabeceras CORS.</summary>
+        public static void AddCorsFromConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var settings = configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>() ?? new CorsSettings();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy(CorsSettings.PolicyName, policy =>
+                    policy.WithOrigins(settings.AllowedOrigins)
+                          .AllowAnyHeader()
+                          .AllowAnyMethod());
+            });
+        }
+
+        /// <summary>
+        /// Límite por IP en los endpoints anónimos sensibles; al superarlo responde 429.
+        /// Los límites se leen de IOptions al crear cada partición, así que se ajustan por configuración.
+        /// </summary>
+        public static void AddRateLimiting(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<RateLimitSettings>(configuration.GetSection(RateLimitSettings.SectionName));
+
+            services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                options.AddPolicy(RateLimitPolicies.Auth, context =>
+                    PerIp(context, settings => settings.AuthPermitLimit));
+
+                options.AddPolicy(RateLimitPolicies.PublicTracking, context =>
+                    PerIp(context, settings => settings.PublicTrackingPermitLimit));
+            });
+        }
+
+        private static RateLimitPartition<string> PerIp(HttpContext context, Func<RateLimitSettings, int> permitLimit)
+        {
+            var settings = context.RequestServices.GetRequiredService<IOptions<RateLimitSettings>>().Value;
+            var ip = context.Connection.RemoteIpAddress?.ToString() ?? "desconocida";
+
+            return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = permitLimit(settings),
+                Window = TimeSpan.FromSeconds(settings.WindowSeconds),
+                QueueLimit = 0
+            });
         }
 
         public static void AddApiVersioningWithSwagger(this IServiceCollection services)

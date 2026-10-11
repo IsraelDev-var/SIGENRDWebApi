@@ -7,14 +7,6 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
 {
     public class ConnectionRequestRepository(AppContextSIGENRD context) : IConnectionRequestRepository
     {
-        public async Task<IReadOnlyList<ConnectionRequest>> GetVisibleAsync(RequestScope scope, CancellationToken cancellationToken = default)
-        {
-            return await Visible(scope)
-                .OrderByDescending(r => r.RequestedAt)
-                .ThenByDescending(r => r.Id)
-                .ToListAsync(cancellationToken);
-        }
-
         public async Task<PagedResult<ConnectionRequest>> SearchAsync(
             RequestScope scope, RequestSearchFilter filter, int page, int pageSize, CancellationToken cancellationToken = default)
         {

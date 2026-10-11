@@ -7,9 +7,13 @@ using SIGENRD.Infrastructure.Persistences;
 using SIGENRD.Presentation.WebApi;
 using SIGENRD.Infrastructure.Shared;
 using SIGENRDWebApi.Middlewares;
+using SIGENRDWebApi.Options;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// No anunciar el servidor en la cabecera Server.
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
 
 // Configurar Serilog (Antes de construir la app)
 // 1. Configurar Serilog (Lo primero de todo)
@@ -25,7 +29,7 @@ builder.Services.AddIdentityInfrastructure(builder.Configuration);
 builder.Services.AddSharedInfrastructure(builder.Configuration);
 
 // Aquí ya se configura Controllers, Versioning y Swagger gracias al paso 2
-builder.Services.AddPresentationLayer();
+builder.Services.AddPresentationLayer(builder.Configuration);
 
 // HealthChecks
 builder.Services.AddHealthChecks();
@@ -89,17 +93,24 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// 1. Cabeceras de seguridad en todas las respuestas, incluidas las de error
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
 // 2. Registrar Middleware de Errores Globales
 app.UseMiddleware<ErrorHandlerMiddleware>();
 
 // 3. Registrar Logging de Peticiones HTTP (Importante para ver GET/POST en logs)
 app.UseSerilogRequestLogging();
 
+if (!app.Environment.IsDevelopment())
+    app.UseHsts();
+
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+app.UseCors(CorsSettings.PolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.UseHealthChecks("/health");
 
 try

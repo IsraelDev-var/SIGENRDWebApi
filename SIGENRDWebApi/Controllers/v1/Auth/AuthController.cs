@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using SIGENRD.Core.Application.Exceptions;
 using SIGENRD.Core.Domain.Enums;
@@ -17,6 +18,7 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
 {
     // AuthController.cs - Versión final limpia
     [ApiVersion("1.0")]
+    [EnableRateLimiting(RateLimitPolicies.Auth)]
     public class AuthController(IAuthService authService) : BaseApiController
     {
         private readonly IAuthService _authService = authService;
@@ -51,6 +53,9 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var result = await _authService.LoginAsync(request);
+
+            if (result.IsLockedOut)
+                throw new TooManyRequestsException(result.Message!); // ← 429
 
             if (!result.Success)
                 throw new ApiException("Credenciales inválidas"); // ← el middleware lo convierte en 400

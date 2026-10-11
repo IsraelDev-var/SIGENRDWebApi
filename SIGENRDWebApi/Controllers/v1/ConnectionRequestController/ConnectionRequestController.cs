@@ -2,12 +2,12 @@ using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateConnectionRequest;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Commands.Workflow;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetRequestHistory;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetRequiredDocuments;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.SearchAndTrack;
-using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetAllConnectionRequests;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetConnectionRequestById;
 using SIGENRDWebApi.Constants;
 
@@ -38,14 +38,11 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
             return Ok(await _mediator.Send(new GetConnectionRequestByIdQuery(id)));
         }
 
-        // 🟢 GET: Obtener Todos
+        /// <summary>Listado paginado (tamaño máximo de página acotado), con los mismos filtros que /search.</summary>
         [HttpGet]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
-        public async Task<IActionResult> GetAll()
-        {
-            // Enviamos el Query al Handler correspondiente
-            return Ok(await _mediator.Send(new GetAllConnectionRequestsQuery()));
-        }
+        public async Task<IActionResult> GetAll([FromQuery] SearchConnectionRequestsQuery query)
+            => Ok(await _mediator.Send(query));
 
         // ---------- Búsqueda y seguimiento ----------
 
@@ -58,6 +55,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         /// <summary>Seguimiento público por número de expediente: solo estado y fechas (RF-14).</summary>
         [HttpGet("track/{code}")]
         [AllowAnonymous]
+        [EnableRateLimiting(RateLimitPolicies.PublicTracking)]
         public async Task<IActionResult> Track(string code)
             => Ok(await _mediator.Send(new TrackRequestQuery(code)));
 

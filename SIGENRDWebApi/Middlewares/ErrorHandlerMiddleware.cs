@@ -54,6 +54,11 @@ namespace SIGENRDWebApi.Middlewares
                         response.StatusCode = (int)HttpStatusCode.Forbidden;
                         _logger.LogWarning("Acceso denegado: {Message}", e.Message);
                         break;
+                    case TooManyRequestsException e:
+                        // Cuenta bloqueada temporalmente (429 Too Many Requests)
+                        response.StatusCode = (int)HttpStatusCode.TooManyRequests;
+                        _logger.LogWarning("Demasiados intentos: {Message}", e.Message);
+                        break;
                     case InvalidStateTransitionException or InsufficientCapacityException or ConcurrencyConflictException:
                         // Conflicto con el estado actual del recurso (409 Conflict)
                         response.StatusCode = (int)HttpStatusCode.Conflict;
