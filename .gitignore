@@ -364,3 +364,7 @@ FodyWeavers.xsd
 
 # Documentos subidos en desarrollo (Storage:Provider = Local)
 **/App_Data/
+
+# Pruebas de carga: scripts generados y resultados de cada corrida
+tests/load/.generated/
+tests/load/results/

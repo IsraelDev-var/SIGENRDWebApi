@@ -6,7 +6,9 @@ Lo que falta para terminar EnergyMap, actualizado el 2026-10-11. Al cerrar un pu
 
 | Pendiente | Requisito | Notas |
 |---|---|---|
-| Pruebas de carga | Fase 7 | Medir capacidad sostenida del mapa, la búsqueda y la creación de solicitudes antes de producción |
+| Caché del mapa | RNF-01 | Necesaria para la meta de 5.000 usuarios: sin ella la base de datos es el cuello de botella. Ver [carga.md](carga.md) |
+| Agrupamiento (clustering) del mapa en el servidor | RNF-23 | La vista del país envía hasta 2.000 puntos; agruparlos reduce carga y tamaño |
+| Repetir las pruebas de carga en Azure | Fase 7 | Las de [carga.md](carga.md) son locales; falta medir con la red, la base y el almacenamiento reales |
 | Frontend (Next.js) | Todas las pantallas | Sin empezar. La API ya tiene CORS por configuración para el origen del frontend |
 | Editar el perfil | RF-09 | Datos del usuario, cliente e instaladora |
 | Tokens de refresco | Seguridad | Hoy el JWT dura 60 minutos y luego hay que iniciar sesión otra vez |
