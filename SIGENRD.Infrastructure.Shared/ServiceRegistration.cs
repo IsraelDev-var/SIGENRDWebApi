@@ -14,7 +14,23 @@ namespace SIGENRD.Infrastructure.Shared
         {
             services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
 
-            services.AddTransient<IEmailService, EmailService>();
+            services.Configure<EmailOutboxSettings>(configuration.GetSection(EmailOutboxSettings.SectionName));
+
+            services.AddTransient<SmtpEmailSender>();
+            services.AddTransient<IEmailSender>(sp => sp.GetRequiredService<SmtpEmailSender>());
+
+            if (configuration.GetValue<bool>("UseInMemoryDatabase"))
+            {
+                // Sin base relacional no hay bandeja de salida: envío directo, como antes.
+                services.AddTransient<IEmailService>(sp => sp.GetRequiredService<SmtpEmailSender>());
+                return services;
+            }
+
+            // SCA-01: la petición solo deja el correo en la bandeja; el despachador lo envía y reintenta.
+            services.AddSingleton<EmailOutboxSignal>();
+            services.AddScoped<IEmailService, OutboxEmailService>();
+            services.AddSingleton<EmailOutboxDispatcher>();
+            services.AddHostedService(sp => sp.GetRequiredService<EmailOutboxDispatcher>());
 
             return services;
         }

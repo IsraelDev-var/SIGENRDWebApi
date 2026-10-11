@@ -47,6 +47,18 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
 
             builder.HasIndex(c => c.RequestCode).IsUnique();
 
+            // Listados y cola de trabajo: más recientes primero, con o sin filtro de estado.
+            builder.HasIndex(c => new { c.Status, c.RequestedAt });
+            builder.HasIndex(c => c.RequestedAt);
+
+            // Búsqueda parcial (ILIKE '%texto%') por expediente o dirección: índices trigram (pg_trgm).
+            builder.HasIndex(c => c.RequestCode, "IX_ConnectionRequests_RequestCode_trgm")
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops");
+            builder.HasIndex(c => c.ProjectAddress, "IX_ConnectionRequests_ProjectAddress_trgm")
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops");
+
             // Formulario de solicitud (Anexo A del reglamento de interconexión)
             builder.Property(c => c.PropertyRelation).HasConversion<string>().HasMaxLength(50);
             builder.Property(c => c.OwnerFullName).HasMaxLength(150);

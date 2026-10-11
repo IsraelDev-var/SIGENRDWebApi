@@ -5,11 +5,12 @@ using Microsoft.Extensions.Options;
 using SIGENRD.Core.Application.DTOs.Email;
 using SIGENRD.Core.Application.Interfaces.Services;
 using SIGENRD.Infrastructure.Shared;
+using SIGENRD.Infrastructure.Shared.Services;
 
 namespace SIGENRD.UnitTests.Integration;
 
 /// <summary>
-/// Envía un correo real con EmailService a un servidor SMTP de desarrollo (smtp4dev) y lo busca por su API.
+/// Envía un correo real con SmtpEmailSender a un servidor SMTP de desarrollo (smtp4dev) y lo busca por su API.
 /// Se activa con ENERGYMAP_TEST_SMTP="host;puertoSmtp;urlApi", por ejemplo "localhost;5025;http://localhost:5080".
 /// Levantarlo: docker compose -f docker-compose.dev.yml up -d mail
 /// </summary>
@@ -29,7 +30,7 @@ public class SmtpDeliveryTests
     }
 
     [FactIfSmtp]
-    public async Task EmailService_entrega_un_correo_con_remitente_asunto_y_cuerpo()
+    public async Task SmtpEmailSender_entrega_un_correo_con_remitente_asunto_y_cuerpo()
     {
         var parts = Setting!.Split(';');
         var host = parts[0];
@@ -51,7 +52,7 @@ public class SmtpDeliveryTests
         Assert.Equal("no-reply@energymap.local", settings.EmailFrom); // antes el enlace de configuración no se enlazaba
 
         var subject = "Prueba de entrega " + Guid.NewGuid().ToString("N")[..8];
-        await services.GetRequiredService<IEmailService>().SendAsync(new EmailRequest
+        await services.GetRequiredService<IEmailSender>().SendAsync(new EmailRequest
         {
             To = "destino@test.energymap.local",
             Subject = subject,

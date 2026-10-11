@@ -115,6 +115,8 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         Environment.SetEnvironmentVariable("Seed__AdminPassword", TestPassword);
         Environment.SetEnvironmentVariable("Seed__TestUsersPassword", TestPassword);
         Environment.SetEnvironmentVariable("UseInMemoryDatabase", "false");
+        // Las pruebas HTTP capturan los correos con RecordingEmailService; el despachador probaría el SMTP real.
+        Environment.SetEnvironmentVariable("EmailOutbox__DispatcherEnabled", "false");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

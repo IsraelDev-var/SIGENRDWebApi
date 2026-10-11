@@ -21,6 +21,7 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
                 .HasAnnotation("ProductVersion", "9.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
@@ -223,7 +224,21 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
                     b.HasIndex("RequestCode")
                         .IsUnique();
 
+                    b.HasIndex("RequestedAt");
+
                     b.HasIndex("TransformerId");
+
+                    b.HasIndex("Status", "RequestedAt");
+
+                    b.HasIndex(new[] { "ProjectAddress" }, "IX_ConnectionRequests_ProjectAddress_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "ProjectAddress" }, "IX_ConnectionRequests_ProjectAddress_trgm"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "ProjectAddress" }, "IX_ConnectionRequests_ProjectAddress_trgm"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex(new[] { "RequestCode" }, "IX_ConnectionRequests_RequestCode_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "RequestCode" }, "IX_ConnectionRequests_RequestCode_trgm"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "RequestCode" }, "IX_ConnectionRequests_RequestCode_trgm"), new[] { "gin_trgm_ops" });
 
                     b.ToTable("ConnectionRequests", (string)null);
                 });
@@ -726,6 +741,62 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
                     b.HasIndex("UserId", "IsRead");
 
                     b.ToTable("Notifications", (string)null);
+                });
+
+            modelBuilder.Entity("SIGENRD.Core.Domain.Entities.OutboxEmail", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Body")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FailedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("From")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("To")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NextAttemptAt")
+                        .HasDatabaseName("IX_OutboxEmails_Pending")
+                        .HasFilter("\"SentAt\" IS NULL AND \"FailedAt\" IS NULL");
+
+                    b.HasIndex("SentAt")
+                        .HasFilter("\"SentAt\" IS NOT NULL");
+
+                    b.ToTable("OutboxEmails", (string)null);
                 });
 
             modelBuilder.Entity("SIGENRD.Core.Domain.Entities.ReviewObservation", b =>
