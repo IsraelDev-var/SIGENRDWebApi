@@ -1,6 +1,6 @@
 
 using FluentValidation;
-using MediatR;
+using SIGENRD.Core.Application.Mediator;
 using Microsoft.Extensions.DependencyInjection;
 using SIGENRD.Core.Application.Behaviours;
 using SIGENRD.Core.Application.Mappings;
@@ -14,14 +14,13 @@ namespace SIGENRD.Core.Application
     {
         public static IServiceCollection AddApplicationLayer(this IServiceCollection services)
         {
-            // 2. MediatR (⚡ NUEVO)
-            // Esto escanea todo el proyecto en busca de IRequest e IRequestHandler
-            services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+            // 2. Mediador propio: registra todos los IRequestHandler del proyecto
+            services.AddMediator(Assembly.GetExecutingAssembly());
 
             // 3. FluentValidation (⚡ NUEVO - Lo usaremos pronto)
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             // 4. ⚡ REGISTRAR EL PIPELINE DE VALIDACIÓN 
-            // Esto conecta el ValidationBehavior con MediatR
+            // Envuelve a todos los handlers del mediador
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
             // Servicios de aplicación

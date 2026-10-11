@@ -58,6 +58,11 @@ La imagen no lleva secretos. Se definen como *Application settings* de la Web Ap
 | `RateLimiting__AuthPermitLimit`, `__PublicTrackingPermitLimit`, `__WindowSeconds` | Peticiones por IP y ventana en `/Auth/*` (10) y en el seguimiento público (30), por minuto |
 | `EmailOutbox__DispatcherEnabled`, `__PollIntervalSeconds`, `__MaxAttempts`, `__KeepSentDays` | Bandeja de salida de correo: las peticiones solo guardan el correo; un proceso en segundo plano lo envía y reintenta (1 min, 5 min, 15 min, 1 h, 4 h). Ya vienen en `appsettings.json` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` y relacionadas | Trazas y métricas por OpenTelemetry. Sin ella no se activan. Ver [observabilidad.md](observabilidad.md) |
+| `Storage__AzureBlob__ConnectionString` | Cuenta de Azure Storage de los documentos y certificados. Es un secreto (Key Vault). Obligatoria en producción |
+| `Storage__AzureBlob__ContainerName` | Contenedor de los expedientes (`expedientes` por defecto). Se crea privado si no existe |
+| `Storage__Provider` | `AzureBlob` (por defecto) o `Local`. `Local` es solo para desarrollo: el disco del contenedor se pierde al reiniciar |
+
+**Documentos.** Los archivos van a un contenedor de Blob Storage **privado**: nunca se exponen por URL. Toda descarga pasa por la API, que comprueba en cada una que el usuario pueda ver la solicitud (RN-22). Se aceptan PDF, JPG y PNG de hasta 10 MB, identificados por su contenido; los PDF con JavaScript, acciones de lanzamiento o archivos incrustados se rechazan. Esto no reemplaza un antivirus (ver abajo). Al aprobar una solicitud se genera el certificado en PDF (QuestPDF, licencia Community: gratuita mientras los ingresos anuales de la organización no superen 1 M USD).
 
 **Llave del JWT.** Se genera una vez y se guarda solo en el almacén de secretos:
 
@@ -87,6 +92,8 @@ Cambiar la llave invalida todos los tokens emitidos: los usuarios vuelven a inic
 ## Qué no cubre todavía
 
 - No hay escaneo de la imagen ni tokens de refresco (al vencer el JWT se vuelve a iniciar sesión).
+- Los documentos subidos no pasan por un antivirus. Para producción conviene activar *Microsoft Defender for Storage* (escaneo de malware al subir) en la cuenta de almacenamiento.
+- Plazos de evaluación (20 días) y retiro automático (30 días): pospuestos hasta que Edesur confirme las reglas.
 - Las llaves de Data Protection (códigos de confirmación de correo y de restablecimiento) viven en el contenedor: si se reinicia o hay más de una instancia, los enlaces pendientes dejan de servir. Hay que persistirlas antes de escalar.
 - Los logs salen como JSON por la salida estándar fuera de desarrollo: la plataforma los recoge. Las alertas recomendadas están en [observabilidad.md](observabilidad.md) y se configuran en la herramienta de monitoreo, no en la API.
 - La publicación de imágenes y el despliegue solo se ejecutan en `master`, así que no se pueden probar desde una rama sin activar `workflow_dispatch`.

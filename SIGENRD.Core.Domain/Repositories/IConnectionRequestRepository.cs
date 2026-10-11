@@ -49,6 +49,12 @@ namespace SIGENRD.Core.Domain.Repositories
         Task<ConnectionRequest?> GetForUpdateAsync(int id, RequestScope scope, CancellationToken cancellationToken = default);
 
         /// <summary>Historial de cambios de estado, del más antiguo al más reciente.</summary>
+        /// <summary>Documentos vigentes de la solicitud; null si la solicitud no existe o no es visible (RN-22).</summary>
+        Task<IReadOnlyList<TechnicalDocument>?> GetDocumentsAsync(int requestId, RequestScope scope, CancellationToken cancellationToken = default);
+
+        /// <summary>Un documento vigente, solo si su solicitud es visible para el alcance (RN-22).</summary>
+        Task<TechnicalDocument?> GetDocumentAsync(int requestId, int documentId, RequestScope scope, CancellationToken cancellationToken = default);
+
         Task<IReadOnlyList<StateHistory>> GetHistoryAsync(int requestId, CancellationToken cancellationToken = default);
     }
 }

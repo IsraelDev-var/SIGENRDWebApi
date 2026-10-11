@@ -16,6 +16,18 @@ namespace SIGENRD.Infrastructure.Shared
 
             services.Configure<EmailOutboxSettings>(configuration.GetSection(EmailOutboxSettings.SectionName));
 
+            // Documentos de los expedientes (RF-35) y certificado de aprobación (RN-14).
+            services.Configure<StorageSettings>(configuration.GetSection(StorageSettings.SectionName));
+            var storageProvider = configuration[StorageSettings.SectionName + ":Provider"] ?? "AzureBlob";
+            if (string.Equals(storageProvider, "Local", StringComparison.OrdinalIgnoreCase))
+                services.AddSingleton<IFileStorage, LocalFileStorage>();
+            else if (string.Equals(storageProvider, "AzureBlob", StringComparison.OrdinalIgnoreCase))
+                services.AddSingleton<IFileStorage, AzureBlobFileStorage>();
+            else
+                throw new InvalidOperationException("Storage:Provider debe ser AzureBlob o Local, no '" + storageProvider + "'.");
+
+            services.AddSingleton<ICertificateGenerator, ApprovalCertificateGenerator>();
+
             services.AddTransient<SmtpEmailSender>();
             services.AddTransient<IEmailSender>(sp => sp.GetRequiredService<SmtpEmailSender>());
 

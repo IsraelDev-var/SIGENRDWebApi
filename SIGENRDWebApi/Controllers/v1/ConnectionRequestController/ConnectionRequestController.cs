@@ -1,5 +1,5 @@
 using Asp.Versioning;
-using MediatR;
+using SIGENRD.Core.Application.Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -9,6 +9,10 @@ using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetRequestHis
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetRequiredDocuments;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.SearchAndTrack;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetConnectionRequestById;
+using SIGENRD.Core.Application.Exceptions;
+using SIGENRD.Core.Application.Features.Documents;
+using SIGENRD.Core.Application.Services;
+using SIGENRD.Core.Domain.Enums;
 using SIGENRDWebApi.Constants;
 
 namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
@@ -67,7 +71,71 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         public async Task<IActionResult> History(int id)
             => Ok(await _mediator.Send(new GetRequestHistoryQuery(id)));
 
-        // ---------- Documentos ----------
+        // ---------- Documentos (RF-16, RF-34 a RF-37) ----------
+
+        public class UploadDocumentForm
+        {
+            public IFormFile? File { get; set; }
+            public DocumentType DocumentType { get; set; }
+        }
+
+        // Un poco más que el máximo de 10 MB (RN-18) para el resto del formulario multipart.
+        private const long UploadLimitBytes = DocumentFileInspector.MaxSizeBytes + 512 * 1024;
+
+        /// <summary>Sube un documento PDF, JPG o PNG de hasta 10 MB. Solo con la solicitud Recibida o En corrección.</summary>
+        [HttpPost("{id:int}/documents")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}")]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(UploadLimitBytes)]
+        [RequestFormLimits(MultipartBodyLengthLimit = UploadLimitBytes)]
+        public async Task<IActionResult> UploadDocument(int id, [FromForm] UploadDocumentForm form, CancellationToken cancellationToken)
+        {
+            if (form.File is null || form.File.Length == 0)
+                throw new ApiException("Adjunte el archivo en el campo 'file'.");
+            if (form.File.Length > DocumentFileInspector.MaxSizeBytes)
+                throw new ApiException("El archivo supera el máximo de 10 MB.");
+
+            using var buffer = new MemoryStream((int)form.File.Length);
+            await form.File.CopyToAsync(buffer, cancellationToken);
+
+            return Ok(await _mediator.Send(new UploadDocumentCommand
+            {
+                RequestId = id,
+                DocumentType = form.DocumentType,
+                FileName = form.File.FileName,
+                Content = buffer.ToArray()
+            }, cancellationToken));
+        }
+
+        /// <summary>Documentos vigentes del expediente, incluido el certificado si está aprobada.</summary>
+        [HttpGet("{id:int}/documents")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
+        public async Task<IActionResult> ListDocuments(int id)
+            => Ok(await _mediator.Send(new ListDocumentsQuery(id)));
+
+        /// <summary>Descarga un documento. Una solicitud ajena responde 404 (RN-22).</summary>
+        [HttpGet("{id:int}/documents/{documentId:int}/content")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
+        public async Task<IActionResult> DownloadDocument(int id, int documentId, CancellationToken cancellationToken)
+        {
+            var file = await _mediator.Send(new DownloadDocumentQuery(id, documentId), cancellationToken);
+            return File(file.Content, file.ContentType, file.FileName);
+        }
+
+        /// <summary>Retira un documento (baja lógica). No se puede tras la aprobación (RN-19) ni durante la revisión.</summary>
+        [HttpDelete("{id:int}/documents/{documentId:int}")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}")]
+        public async Task<IActionResult> DeleteDocument(int id, int documentId)
+            => Ok(await _mediator.Send(new DeleteDocumentCommand(id, documentId)));
+
+        /// <summary>Certificado de aprobación en PDF (RN-14, RF-17).</summary>
+        [HttpGet("{id:int}/certificate")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
+        public async Task<IActionResult> DownloadCertificate(int id, CancellationToken cancellationToken)
+        {
+            var file = await _mediator.Send(new DownloadCertificateQuery(id), cancellationToken);
+            return File(file.Content, file.ContentType, file.FileName);
+        }
 
         /// <summary>Documentos que exige la solicitud y cuáles ya están presentes (RN-09, RN-11).</summary>
         [HttpGet("{id:int}/required-documents")]

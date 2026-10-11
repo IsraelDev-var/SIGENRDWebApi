@@ -1,4 +1,4 @@
-using MediatR;
+using SIGENRD.Core.Application.Mediator;
 using SIGENRD.Core.Application.DTOs.ConnectionRequest;
 using SIGENRD.Core.Application.Services;
 using SIGENRD.Core.Application.Wrappers;

@@ -24,6 +24,8 @@ namespace SIGENRD.Core.Application.Services
         ICurrentUserService currentUser,
         IEmailService emailService,
         StaffNotifier staffNotifier,
+        IFileStorage storage,
+        ICertificateGenerator certificates,
         ILogger<RequestWorkflowService> logger)
     {
         private static readonly RequestScope Staff = new(RequestScopeKind.All);
@@ -72,10 +74,22 @@ namespace SIGENRD.Core.Application.Services
                 throw;
             }
 
+            var approvedAt = DateTime.UtcNow;
             if (request.NetMeteringRequest is not null)
-                request.NetMeteringRequest.ApprovedAt = DateTime.UtcNow;
+                request.NetMeteringRequest.ApprovedAt = approvedAt;
 
-            return await SaveAsync(request, from, null, null, ct);
+            // RN-14: la aprobación genera el certificado y lo guarda en el expediente, en el mismo guardado.
+            var certificateKey = await IssueCertificateAsync(request, approvedAt, ct);
+            try
+            {
+                return await SaveAsync(request, from, null, null, ct);
+            }
+            catch
+            {
+                // Si la aprobación no se guarda, el certificado no debe quedar en el almacén.
+                await storage.DeleteAsync(certificateKey, CancellationToken.None);
+                throw;
+            }
         }
 
         public async Task<ConnectionRequestResponseDto> RejectAsync(int id, string comment, CancellationToken ct)
@@ -137,6 +151,37 @@ namespace SIGENRD.Core.Application.Services
             // Una solicitud ajena responde igual que una inexistente (RN-22).
             return await requests.GetForUpdateAsync(id, scope, ct)
                 ?? throw new KeyNotFoundException("Solicitud " + id + " no encontrada.");
+        }
+
+        /// <summary>Genera el PDF del certificado, lo guarda en el almacén y lo agrega como documento. Devuelve su clave.</summary>
+        private async Task<string> IssueCertificateAsync(ConnectionRequest request, DateTime approvedAt, CancellationToken ct)
+        {
+            var pdf = certificates.Generate(new ApprovalCertificateData(
+                RequestCode: request.RequestCode,
+                RequestType: request.RequestType == RequestType.NetMetering ? "Medición neta" : "Conexión",
+                ApplicantName: request.Customer?.FullName ?? request.InstallerCompany?.TradeName ?? "—",
+                ProjectAddress: request.ProjectAddress,
+                DistributorName: request.Transformer!.Distributor!.Name,
+                TransformerCode: request.Transformer.Code,
+                ApprovedCapacityKva: request.RequestedCapacityKva,
+                ApprovedAt: approvedAt,
+                ReviewerName: currentUser.FullName ?? currentUser.UserId ?? "—"));
+
+            var key = "requests/" + request.Id + "/certificado-" + Guid.NewGuid().ToString("N") + ".pdf";
+            using (var content = new MemoryStream(pdf, writable: false))
+                await storage.SaveAsync(key, content, "application/pdf", ct);
+
+            await unitOfWork.Repository<TechnicalDocument>().AddAsync(new TechnicalDocument
+            {
+                ConnectionRequestId = request.Id,
+                DocumentType = DocumentType.ApprovalCertificate,
+                FileName = "Certificado-" + request.RequestCode + ".pdf",
+                ContentType = "application/pdf",
+                SizeBytes = pdf.Length,
+                FileUrl = key
+            });
+
+            return key;
         }
 
         private static (decimal Available, decimal Conditioned) Thresholds(ConnectionRequest request)
@@ -243,7 +288,8 @@ namespace SIGENRD.Core.Application.Services
                 RequestStatus.InCorrection => ("Solicitud " + code + ": en corrección",
                     "Tu solicitud " + code + " pasó a corrección.", NotificationType.StatusChanged),
                 RequestStatus.Approved => ("Solicitud " + code + ": aprobada",
-                    "Tu solicitud " + code + " fue aprobada.", NotificationType.RequestApproved),
+                    "Tu solicitud " + code + " fue aprobada. El certificado de aprobación está disponible en el expediente.",
+                    NotificationType.RequestApproved),
                 RequestStatus.Rejected => ("Solicitud " + code + ": rechazada",
                     "Tu solicitud " + code + " fue rechazada." + detail, NotificationType.RequestRejected),
                 RequestStatus.Cancelled => ("Solicitud " + code + ": cancelada",

@@ -1,5 +1,5 @@
 using FluentValidation;
-using MediatR;
+using SIGENRD.Core.Application.Mediator;
 using Microsoft.Extensions.Logging;
 using SIGENRD.Core.Application.DTOs.Email;
 using SIGENRD.Core.Application.Exceptions;

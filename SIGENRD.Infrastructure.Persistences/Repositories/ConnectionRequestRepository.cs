@@ -51,9 +51,30 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
                 .Include(r => r.Customer)
                 .Include(r => r.InstallerCompany)
                 .Include(r => r.Transformer!).ThenInclude(t => t.Distributor)
-                .Include(r => r.TechnicalDocuments)
+                .Include(r => r.TechnicalDocuments!.Where(d => d.IsActive))
                 .Include(r => r.NetMeteringRequest)
                 .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<TechnicalDocument>?> GetDocumentsAsync(int requestId, RequestScope scope, CancellationToken cancellationToken = default)
+        {
+            if (!await Visible(scope).AnyAsync(r => r.Id == requestId, cancellationToken))
+                return null;
+
+            return await context.TechnicalDocuments.AsNoTracking()
+                .Where(d => d.ConnectionRequestId == requestId && d.IsActive)
+                .OrderBy(d => d.Id)
+                .ToListAsync(cancellationToken);
+        }
+
+        public Task<TechnicalDocument?> GetDocumentAsync(int requestId, int documentId, RequestScope scope, CancellationToken cancellationToken = default)
+        {
+            var visible = Visible(scope);
+
+            return context.TechnicalDocuments.AsNoTracking()
+                .Where(d => d.Id == documentId && d.ConnectionRequestId == requestId && d.IsActive)
+                .Where(d => visible.Any(r => r.Id == d.ConnectionRequestId))
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         public async Task<IReadOnlyList<StateHistory>> GetHistoryAsync(int requestId, CancellationToken cancellationToken = default)

@@ -47,9 +47,18 @@ jobs:
     env:
       ENERGYMAP_TEST_DB: Host=localhost;Port=5432;Username=postgres;Password=ci-only-password
       ENERGYMAP_TEST_SMTP: localhost;5025;http://localhost:5080
+      ENERGYMAP_TEST_BLOB: UseDevelopmentStorage=true
 
     steps:
       - uses: actions/checkout@v4
+
+      # Emulador de Azure Blob Storage para probar el almacén de documentos de producción.
+      # Va como paso y no como servicio porque necesita argumentos (el SDK usa una versión de API más nueva).
+      - name: Azurite
+        run: >-
+          docker run -d --name azurite -p 10000:10000
+          mcr.microsoft.com/azure-storage/azurite:3.33.0
+          azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
 
       - uses: actions/setup-dotnet@v4
         with:

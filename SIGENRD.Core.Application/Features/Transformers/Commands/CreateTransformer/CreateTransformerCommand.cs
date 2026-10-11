@@ -1,4 +1,4 @@
-using MediatR;
+using SIGENRD.Core.Application.Mediator;
 using SIGENRD.Core.Application.Wrappers;
 
 namespace SIGENRD.Core.Application.Features.Transformers.Commands.CreateTransformer

@@ -13,5 +13,7 @@ namespace SIGENRDWebApi.Services
         public bool IsInRole(string role) => accessor.HttpContext?.User.IsInRole(role) ?? false;
 
         public string? IpAddress => accessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+        public string? FullName => accessor.HttpContext?.User.FindFirstValue("FullName");
     }
 }

@@ -1,5 +1,5 @@
 using FluentValidation;
-using MediatR;
+using SIGENRD.Core.Application.Mediator;
 using SIGENRD.Core.Application.Exceptions;
 using SIGENRD.Core.Application.Wrappers;
 using SIGENRD.Core.Domain.Entities;
