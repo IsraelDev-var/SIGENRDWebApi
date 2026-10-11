@@ -43,6 +43,11 @@ namespace SIGENRD.Infrastructure.Identity
                     options.Password.RequireDigit = true;
                     options.Password.RequireUppercase = false;
                     options.User.RequireUniqueEmail = true;
+
+                    // Bloqueo ante fuerza bruta: 5 fallos seguidos bloquean la cuenta 15 minutos.
+                    options.Lockout.AllowedForNewUsers = true;
+                    options.Lockout.MaxFailedAccessAttempts = 5;
+                    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
                 })
                 .AddEntityFrameworkStores<IdentityDbContextSIGENRD>()
                 .AddDefaultTokenProviders();

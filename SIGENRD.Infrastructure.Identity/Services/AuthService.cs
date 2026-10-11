@@ -141,7 +141,18 @@ namespace SIGENRD.Infrastructure.Identity.Services
                 };
             }
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
+            // lockoutOnFailure: cada fallo cuenta para el bloqueo; un acierto reinicia el contador.
+            var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
+            if (result.IsLockedOut)
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    IsLockedOut = true,
+                    Message = "Demasiados intentos fallidos. Intente de nuevo más tarde."
+                };
+            }
+
             if (!result.Succeeded)
             {
                 return new AuthResponse

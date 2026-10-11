@@ -39,9 +39,6 @@ namespace SIGENRD.Core.Domain.Repositories
         /// <summary>Seguimiento público por número de expediente. null si no existe.</summary>
         Task<ConnectionRequest?> GetByCodeAsync(string requestCode, CancellationToken cancellationToken = default);
 
-        /// <summary>Solicitudes visibles para el alcance indicado, más recientes primero.</summary>
-        Task<IReadOnlyList<ConnectionRequest>> GetVisibleAsync(RequestScope scope, CancellationToken cancellationToken = default);
-
         /// <summary>Devuelve null si no existe o no es visible: no se revela que existe.</summary>
         Task<ConnectionRequest?> GetVisibleByIdAsync(int id, RequestScope scope, CancellationToken cancellationToken = default);
 

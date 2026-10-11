@@ -9,5 +9,9 @@
         public string? Token { get; set; }
         public bool Success { get; set; }
         public string? Message { get; set; }
+
+        /// <summary>La cuenta está bloqueada temporalmente por intentos fallidos: no se devuelve en el JSON.</summary>
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool IsLockedOut { get; set; }
     }
 }
