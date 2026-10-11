@@ -21,6 +21,11 @@ namespace SIGENRD.Presentation.WebApi
             services.AddApiVersioningWithSwagger();
 
             services.AddCorsFromConfiguration(configuration);
+
+            // Supuestos de la simulación de medición neta (sección "Simulation"; sin ella, los valores por defecto).
+            services.Configure<SIGENRD.Core.Application.Features.Simulations.SimulationSettings>(
+                configuration.GetSection(SIGENRD.Core.Application.Features.Simulations.SimulationSettings.SectionName));
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<SIGENRD.Core.Application.Features.Simulations.SimulationSettings>>().Value);
             services.AddRateLimiting(configuration);
 
             services.AddHsts(options =>

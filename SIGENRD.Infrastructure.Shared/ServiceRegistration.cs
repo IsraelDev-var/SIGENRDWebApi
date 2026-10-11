@@ -27,6 +27,7 @@ namespace SIGENRD.Infrastructure.Shared
                 throw new InvalidOperationException("Storage:Provider debe ser AzureBlob o Local, no '" + storageProvider + "'.");
 
             services.AddSingleton<ICertificateGenerator, ApprovalCertificateGenerator>();
+            services.AddSingleton<SIGENRD.Core.Application.Features.Simulations.ISimulationReportGenerator, SimulationReportGenerator>();
 
             services.AddTransient<SmtpEmailSender>();
             services.AddTransient<IEmailSender>(sp => sp.GetRequiredService<SmtpEmailSender>());

@@ -37,6 +37,7 @@ namespace SIGENRD.Infrastructure.Persistences
             services.AddScoped<IInstallerCompanyRepository, InstallerCompanyRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            services.AddScoped<ISimulationRepository, SimulationRepository>();
             services.AddScoped<SIGENRD.Core.Domain.Interfaces.ISecurityAuditLog, Services.SecurityAuditLog>();
 
             return services;

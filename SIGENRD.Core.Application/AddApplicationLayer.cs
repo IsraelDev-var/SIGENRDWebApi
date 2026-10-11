@@ -27,6 +27,9 @@ namespace SIGENRD.Core.Application
             services.AddScoped<SIGENRD.Core.Application.Services.RequestWorkflowService>();
             services.AddScoped<SIGENRD.Core.Application.Services.StaffNotifier>();
 
+            // Simulación de medición neta: la fórmula es intercambiable (Strategy).
+            services.AddSingleton<SIGENRD.Core.Domain.Rules.Simulation.INetMeteringFormula, SIGENRD.Core.Domain.Rules.Simulation.NetMeteringFormulaV1>();
+
             return services;
         }
     }
