@@ -9,15 +9,12 @@ namespace SIGENRD.Infrastructure.Identity.JWT
     public class JwtTokenGenerator
     {
         private readonly JwtSettings _jwtSettings;
-        private readonly SymmetricSecurityKey _securityKey;
         private readonly SigningCredentials _credentials;
 
-        public JwtTokenGenerator(JwtSettings jwtSettings)
+        public JwtTokenGenerator(JwtSettings jwtSettings, JwtSigningKeys keys)
         {
             _jwtSettings = jwtSettings;
-
-            _securityKey = BuildSecurityKey(jwtSettings.Key);
-            _credentials = new SigningCredentials(_securityKey, SecurityAlgorithms.HmacSha256);
+            _credentials = keys.SigningCredentials; // RS256 con la llave privada
         }
 
         public string GenerateToken(ApplicationUser user, IList<string> roles)
@@ -46,40 +43,5 @@ namespace SIGENRD.Infrastructure.Identity.JWT
         }
 
 
-        // ==========================
-        // MÉTODOS PRIVADOS
-        // ==========================
-
-        /// <summary>Única forma de construir la llave: la firma y la validación deben usar los mismos bytes.</summary>
-        public static SymmetricSecurityKey BuildSecurityKey(string key)
-        {
-            if (string.IsNullOrWhiteSpace(key))
-                throw new ArgumentException("JwtSettings.Key is empty or missing.");
-
-            var keyBytes = DecodeBase64Key(key);
-
-            if (keyBytes.Length < 32) // 32 bytes = 256 bits
-            {
-                throw new InvalidOperationException(
-                    $"JWT key too short: {keyBytes.Length * 8} bits. Minimum 256 bits required."
-                );
-            }
-
-            return new SymmetricSecurityKey(keyBytes);
-        }
-
-        private static byte[] DecodeBase64Key(string key)
-        {
-            try
-            {
-                return Convert.FromBase64String(key);
-            }
-            catch
-            {
-                throw new InvalidOperationException(
-                    "JwtSettings.Key must be a valid Base64 string representing at least 32 bytes."
-                );
-            }
-        }
     }
 }

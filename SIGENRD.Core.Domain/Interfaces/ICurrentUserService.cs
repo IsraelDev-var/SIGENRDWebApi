@@ -8,5 +8,8 @@ namespace SIGENRD.Core.Domain.Interfaces
         string? UserId { get; }
 
         bool IsInRole(string role);
+
+        /// <summary>IP de origen de la petición, para la auditoría de autenticación. null fuera de una petición HTTP.</summary>
+        string? IpAddress => null;
     }
 }

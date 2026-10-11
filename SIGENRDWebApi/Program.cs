@@ -8,7 +8,11 @@ using SIGENRD.Presentation.WebApi;
 using SIGENRD.Infrastructure.Shared;
 using SIGENRDWebApi.Middlewares;
 using SIGENRDWebApi.Options;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
+using SIGENRDWebApi.HealthChecks;
+using SIGENRD.Infrastructure.Identity.Configurations;
+using SIGENRD.Infrastructure.Persistences.Contexts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,8 +35,10 @@ builder.Services.AddSharedInfrastructure(builder.Configuration);
 // Aquí ya se configura Controllers, Versioning y Swagger gracias al paso 2
 builder.Services.AddPresentationLayer(builder.Configuration);
 
-// HealthChecks
-builder.Services.AddHealthChecks();
+// HealthChecks: /health comprueba las bases de datos (listo para atender); /health/live solo el proceso.
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck<AppContextSIGENRD>>("database")
+    .AddCheck<DatabaseHealthCheck<IdentityDbContextSIGENRD>>("identity-database");
 // ===========================================================
 // 🧱 PIPELINE
 // ===========================================================
@@ -111,7 +117,8 @@ app.UseCors(CorsSettings.PolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
-app.UseHealthChecks("/health");
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
 
 try
 {

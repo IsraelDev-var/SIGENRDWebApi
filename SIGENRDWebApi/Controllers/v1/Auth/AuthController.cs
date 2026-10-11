@@ -10,6 +10,7 @@ using SIGENRD.Core.Domain.Settings;
 using SIGENRDWebApi.Constants;
 using SIGENRD.Infrastructure.Identity.DTOs;
 using SIGENRD.Infrastructure.Identity.Interfaces;
+using SIGENRD.Infrastructure.Identity.Services;
 
 
 
@@ -33,9 +34,12 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
             if (request.UserType is not (UserType.Customer or UserType.InstallerCompany))
                 throw new ApiException("El registro público solo admite los roles Customer e InstallerCompany.");
 
-            var result = await _authService.RegisterAsync(request);
+            // Misma respuesta exista o no la cuenta (SEC-08); solo fallan los datos inválidos.
+            var result = await _authService.RegisterAsync(request, revealExistingAccount: false);
+            if (!result.Success)
+                throw new ApiException(result.Message!); // ← 400
 
-            return Ok(result); // Si falla, lanza excepción → la atrapa el middleware
+            return Ok(result);
         }
 
         /// <summary>Alta de usuarios internos (Engineer, Distributor, Admin). Solo un administrador.</summary>
@@ -46,7 +50,11 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
             if (request.UserType is UserType.Customer or UserType.InstallerCompany)
                 throw new ApiException("Los clientes e instaladoras se registran por el registro público.");
 
-            return Ok(await _authService.RegisterAsync(request));
+            var result = await _authService.RegisterAsync(request, revealExistingAccount: true);
+            if (!result.Success)
+                throw new ApiException(result.Message!);
+
+            return Ok(result);
         }
 
         [HttpPost("login")]
@@ -70,6 +78,25 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
                 throw new ApiException("Parámetros inválidos");
 
             var result = await _authService.ConfirmEmailAsync(userId, code);
+            return Ok(result);
+        }
+
+        /// <summary>Pide el enlace para restablecer la contraseña. Responde lo mismo exista o no la cuenta.</summary>
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            await _authService.ForgotPasswordAsync(request);
+            return Ok(new AuthResponse { Success = true, Message = AuthService.ForgotPasswordMessage });
+        }
+
+        /// <summary>Fija la nueva contraseña con el código recibido por correo y levanta un bloqueo activo.</summary>
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            var result = await _authService.ResetPasswordAsync(request);
+            if (!result.Success)
+                throw new ApiException(result.Message!); // ← 400
+
             return Ok(result);
         }
     }

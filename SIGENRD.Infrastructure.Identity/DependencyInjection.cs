@@ -39,9 +39,12 @@ namespace SIGENRD.Infrastructure.Identity
                 // 🔹 Configurar Identity Core
                 services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
                 {
-                    options.Password.RequiredLength = 6;
+                    // Contraseña: 10 caracteres con mayúscula, minúscula y número; las comunes se rechazan aparte.
+                    options.Password.RequiredLength = 10;
                     options.Password.RequireDigit = true;
-                    options.Password.RequireUppercase = false;
+                    options.Password.RequireUppercase = true;
+                    options.Password.RequireLowercase = true;
+                    options.Password.RequireNonAlphanumeric = false;
                     options.User.RequireUniqueEmail = true;
 
                     // Bloqueo ante fuerza bruta: 5 fallos seguidos bloquean la cuenta 15 minutos.
@@ -50,22 +53,22 @@ namespace SIGENRD.Infrastructure.Identity
                     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
                 })
                 .AddEntityFrameworkStores<IdentityDbContextSIGENRD>()
-                .AddDefaultTokenProviders();
+                .AddDefaultTokenProviders()
+                .AddPasswordValidator<Validators.CommonPasswordValidator>();
 
                 // 🔹 Configurar JWT
                 var jwtSettings = new JwtSettings();
                 configuration.GetSection("JwtSettings").Bind(jwtSettings);
                 // VALIDACIÓN DE SEGURIDAD
-                if (string.IsNullOrEmpty(jwtSettings.Key))
-                    throw new Exception("JwtSettings:Key no está configurada en appsettings.json");
                 // Sin emisor y audiencia los tokens se firman pero nunca se validan: mejor fallar al arrancar.
                 if (string.IsNullOrWhiteSpace(jwtSettings.Issuer) || string.IsNullOrWhiteSpace(jwtSettings.Audience))
                     throw new InvalidOperationException("JwtSettings:Issuer y JwtSettings:Audience son obligatorios.");
 
                 services.AddSingleton(jwtSettings);
 
-                // La misma llave (Base64 decodificada) que usa JwtTokenGenerator para firmar.
-                var signingKey = JwtTokenGenerator.BuildSecurityKey(jwtSettings.Key);
+                // RS256: la llave privada firma (JwtTokenGenerator) y solo la pública valida.
+                var signingKeys = JwtSigningKeys.FromPrivateKey(jwtSettings.PrivateKey);
+                services.AddSingleton(signingKeys);
 
                 services.AddAuthentication(opt =>
                 {
@@ -84,7 +87,9 @@ namespace SIGENRD.Infrastructure.Identity
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = jwtSettings.Issuer,
                         ValidAudience = jwtSettings.Audience,
-                        IssuerSigningKey = signingKey
+                        IssuerSigningKey = signingKeys.ValidationKey,
+                        // Solo RS256: evita que se acepte un token con otro algoritmo (alg=none, HS256 con la llave pública).
+                        ValidAlgorithms = [SecurityAlgorithms.RsaSha256]
                     };
                 });
 

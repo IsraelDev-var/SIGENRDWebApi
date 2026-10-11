@@ -69,6 +69,9 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public RecordingEmailService Emails { get; } = new();
 
+    /// <summary>Llave RSA propia de la ejecución con la que la API firma los tokens.</summary>
+    public RSA SigningKey { get; } = RSA.Create(2048);
+
     public string ConnectionString => _connectionString;
 
     public static string Email(TestRole role) => role switch
@@ -108,7 +111,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
         Environment.SetEnvironmentVariable("ConnectionStrings__Postgres", _connectionString);
         Environment.SetEnvironmentVariable("ConnectionStrings__IdentityServerDB", _connectionString);
-        Environment.SetEnvironmentVariable("JwtSettings__Key", Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)));
+        Environment.SetEnvironmentVariable("JwtSettings__PrivateKey", Convert.ToBase64String(SigningKey.ExportPkcs8PrivateKey()));
         Environment.SetEnvironmentVariable("Seed__AdminPassword", TestPassword);
         Environment.SetEnvironmentVariable("Seed__TestUsersPassword", TestPassword);
         Environment.SetEnvironmentVariable("UseInMemoryDatabase", "false");

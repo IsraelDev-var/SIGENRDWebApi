@@ -11,5 +11,7 @@ namespace SIGENRDWebApi.Services
         public string? UserId => accessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         public bool IsInRole(string role) => accessor.HttpContext?.User.IsInRole(role) ?? false;
+
+        public string? IpAddress => accessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
     }
 }

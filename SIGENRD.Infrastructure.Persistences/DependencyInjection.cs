@@ -36,6 +36,7 @@ namespace SIGENRD.Infrastructure.Persistences
             services.AddScoped<ICustomerRepository, CustomerRepository>();
             services.AddScoped<IInstallerCompanyRepository, InstallerCompanyRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<SIGENRD.Core.Domain.Interfaces.ISecurityAuditLog, Services.SecurityAuditLog>();
             // services.AddScoped<ICustomerRepository, CustomerRepository>();
             // services.AddScoped<IConnectionRequestRepository, ConnectionRequestRepository>();
 
