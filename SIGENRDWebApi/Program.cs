@@ -14,8 +14,12 @@ using SIGENRDWebApi.HealthChecks;
 using SIGENRD.Infrastructure.Identity.Configurations;
 using SIGENRD.Infrastructure.Persistences.Contexts;
 using SIGENRDWebApi.Observability;
+using SIGENRDWebApi.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Secretos desde Azure Key Vault si se configura KeyVault:Uri (producción). Antes de que nada lea la configuración.
+builder.Configuration.AddKeyVaultIfConfigured();
 
 // No anunciar el servidor en la cabecera Server.
 builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);

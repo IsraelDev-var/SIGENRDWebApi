@@ -29,6 +29,10 @@ namespace SIGENRD.Infrastructure.Shared
             services.AddSingleton<ICertificateGenerator, ApprovalCertificateGenerator>();
             services.AddSingleton<SIGENRD.Core.Application.Features.Simulations.ISimulationReportGenerator, SimulationReportGenerator>();
 
+            // Reportes exportables (RF-30)
+            services.AddSingleton<SIGENRD.Core.Application.Features.Reports.IReportExporter, XlsxReportExporter>();
+            services.AddSingleton<SIGENRD.Core.Application.Features.Reports.IReportExporter, PdfReportExporter>();
+
             services.AddTransient<SmtpEmailSender>();
             services.AddTransient<IEmailSender>(sp => sp.GetRequiredService<SmtpEmailSender>());
 

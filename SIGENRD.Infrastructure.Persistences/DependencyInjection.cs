@@ -38,6 +38,7 @@ namespace SIGENRD.Infrastructure.Persistences
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             services.AddScoped<ISimulationRepository, SimulationRepository>();
+            services.AddScoped<IReportRepository, ReportRepository>();
             services.AddScoped<SIGENRD.Core.Domain.Interfaces.ISecurityAuditLog, Services.SecurityAuditLog>();
 
             return services;
