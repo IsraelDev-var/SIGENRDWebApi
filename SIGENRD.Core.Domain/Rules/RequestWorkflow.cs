@@ -27,5 +27,12 @@ namespace SIGENRD.Core.Domain.Rules
             Allowed.TryGetValue(from, out var targets) ? targets : Array.Empty<RequestStatus>();
 
         public static bool IsFinal(RequestStatus status) => NextStates(status).Count == 0;
+
+        /// <summary>
+        /// El solicitante sube o retira documentos antes de la revisión y mientras corrige observaciones (RF-16).
+        /// En revisión no cambian bajo los pies del revisor, y tras Aprobada quedan fijos (RN-19).
+        /// </summary>
+        public static bool AllowsDocumentChanges(RequestStatus status) =>
+            status is RequestStatus.Received or RequestStatus.InCorrection;
     }
 }

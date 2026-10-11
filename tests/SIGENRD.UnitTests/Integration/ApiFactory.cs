@@ -69,6 +69,8 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public RecordingEmailService Emails { get; } = new();
 
+    public string StoragePath { get; } = Path.Combine(Path.GetTempPath(), "energymap-tests-" + Guid.NewGuid().ToString("N")[..8]);
+
     /// <summary>Llave RSA propia de la ejecución con la que la API firma los tokens.</summary>
     public RSA SigningKey { get; } = RSA.Create(2048);
 
@@ -117,6 +119,9 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         Environment.SetEnvironmentVariable("UseInMemoryDatabase", "false");
         // Las pruebas HTTP capturan los correos con RecordingEmailService; el despachador probaría el SMTP real.
         Environment.SetEnvironmentVariable("EmailOutbox__DispatcherEnabled", "false");
+        // Documentos en una carpeta propia de la ejecución.
+        Environment.SetEnvironmentVariable("Storage__Provider", "Local");
+        Environment.SetEnvironmentVariable("Storage__LocalPath", StoragePath);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -198,6 +203,9 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     async Task IAsyncLifetime.DisposeAsync()
     {
         await base.DisposeAsync();
+
+        if (Directory.Exists(StoragePath))
+            Directory.Delete(StoragePath, recursive: true);
 
         if (string.IsNullOrEmpty(_connectionString)) return;
 

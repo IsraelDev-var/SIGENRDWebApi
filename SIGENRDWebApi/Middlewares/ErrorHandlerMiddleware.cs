@@ -59,7 +59,8 @@ namespace SIGENRDWebApi.Middlewares
                         response.StatusCode = (int)HttpStatusCode.TooManyRequests;
                         _logger.LogWarning("Demasiados intentos: {Message}", e.Message);
                         break;
-                    case InvalidStateTransitionException or InsufficientCapacityException or ConcurrencyConflictException:
+                    case InvalidStateTransitionException or InsufficientCapacityException or ConcurrencyConflictException
+                        or DocumentsLockedException:
                         // Conflicto con el estado actual del recurso (409 Conflict)
                         response.StatusCode = (int)HttpStatusCode.Conflict;
                         _logger.LogWarning("Conflicto: {Message}", error.Message);

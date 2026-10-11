@@ -11,5 +11,8 @@ namespace SIGENRD.Core.Domain.Interfaces
 
         /// <summary>IP de origen de la petición, para la auditoría de autenticación. null fuera de una petición HTTP.</summary>
         string? IpAddress => null;
+
+        /// <summary>Nombre del usuario (claim FullName del token), por ejemplo para firmar el certificado.</summary>
+        string? FullName => null;
     }
 }

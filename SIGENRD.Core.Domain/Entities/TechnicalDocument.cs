@@ -25,7 +25,7 @@ namespace SIGENRD.Core.Domain.Entities
         public string ContentType { get; set; } = string.Empty;
         public long SizeBytes { get; set; }
 
-        // URL del archivo
+        // Clave del archivo en el almacén (Blob Storage o disco). No es pública: se descarga por la API (RN-22).
         public string FileUrl { get; set; } = string.Empty;
 
         
