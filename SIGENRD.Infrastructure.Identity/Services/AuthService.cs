@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
+using SIGENRD.Core.Application.Diagnostics;
 using SIGENRD.Core.Application.DTOs.Email;
 using SIGENRD.Core.Application.Interfaces.Services;
 using SIGENRD.Core.Domain.Interfaces;
@@ -193,6 +194,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
             if (user == null)
             {
                 await _securityAudit.RecordAsync(SecurityEvents.LoginFailed, null, request.Email);
+                EnergyMapMetrics.LoginFailed();
                 return new AuthResponse
                 {
                     Success = false,
@@ -205,6 +207,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
             if (result.IsLockedOut)
             {
                 await _securityAudit.RecordAsync(SecurityEvents.LoginLockedOut, user.Id, request.Email);
+                EnergyMapMetrics.LoginLockedOut();
                 return new AuthResponse
                 {
                     Success = false,
@@ -216,6 +219,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
             if (!result.Succeeded)
             {
                 await _securityAudit.RecordAsync(SecurityEvents.LoginFailed, user.Id, request.Email);
+                EnergyMapMetrics.LoginFailed();
                 return new AuthResponse
                 {
                     Success = false,
@@ -227,6 +231,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
             if (!user.EmailConfirmed)
             {
                 await _securityAudit.RecordAsync(SecurityEvents.LoginFailed, user.Id, request.Email);
+                EnergyMapMetrics.LoginFailed();
                 return new AuthResponse
                 {
                     Success = false,
@@ -237,6 +242,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
             var roles = await _userManager.GetRolesAsync(user);
             var token = _jwtTokenGenerator.GenerateToken(user, roles);
             await _securityAudit.RecordAsync(SecurityEvents.LoginSucceeded, user.Id, request.Email);
+            EnergyMapMetrics.LoginSucceeded();
 
             return new AuthResponse
             {

@@ -56,6 +56,8 @@ La imagen no lleva secretos. Se definen como *Application settings* de la Web Ap
 | `App__PasswordResetUrl` | Página del frontend que pide la nueva contraseña; recibe `?email=...&code=...`. Por defecto `{App__PublicBaseUrl}/reset-password` |
 | `Cors__AllowedOrigins__0`, `__1`, ... | Orígenes del frontend que pueden llamar a la API desde el navegador. Vacío: ninguno |
 | `RateLimiting__AuthPermitLimit`, `__PublicTrackingPermitLimit`, `__WindowSeconds` | Peticiones por IP y ventana en `/Auth/*` (10) y en el seguimiento público (30), por minuto |
+| `EmailOutbox__DispatcherEnabled`, `__PollIntervalSeconds`, `__MaxAttempts`, `__KeepSentDays` | Bandeja de salida de correo: las peticiones solo guardan el correo; un proceso en segundo plano lo envía y reintenta (1 min, 5 min, 15 min, 1 h, 4 h). Ya vienen en `appsettings.json` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` y relacionadas | Trazas y métricas por OpenTelemetry. Sin ella no se activan. Ver [observabilidad.md](observabilidad.md) |
 
 **Llave del JWT.** Se genera una vez y se guarda solo en el almacén de secretos:
 
@@ -76,7 +78,8 @@ Cambiar la llave invalida todos los tokens emitidos: los usuarios vuelven a inic
 
 ## Base de datos
 
-- PostgreSQL con la extensión **PostGIS**. En Azure Database for PostgreSQL hay que habilitarla en `azure.extensions` antes de la primera migración.
+- PostgreSQL con las extensiones **PostGIS** y **pg_trgm** (búsqueda parcial por texto). En Azure Database for PostgreSQL hay que habilitar las dos en `azure.extensions` antes de aplicar las migraciones.
+- Después de una carga masiva de solicitudes, correr `VACUUM ANALYZE "ConnectionRequests";`: hasta que se procesa, el planificador puede ignorar los índices trigram (autovacuum lo hace solo con el tiempo).
 - Los scripts son idempotentes (`migraciones-sql`, artefacto del CD): se pueden aplicar más de una vez. Se ejecutan en orden: `1-persistence.sql` y luego `2-identity.sql`.
 - Para aplicarlos a mano: `psql "$URL" -v ON_ERROR_STOP=1 -f 1-persistence.sql`.
 - Respaldo y restauración: ver [respaldo.md](respaldo.md).
@@ -85,4 +88,5 @@ Cambiar la llave invalida todos los tokens emitidos: los usuarios vuelven a inic
 
 - No hay escaneo de la imagen ni tokens de refresco (al vencer el JWT se vuelve a iniciar sesión).
 - Las llaves de Data Protection (códigos de confirmación de correo y de restablecimiento) viven en el contenedor: si se reinicia o hay más de una instancia, los enlaces pendientes dejan de servir. Hay que persistirlas antes de escalar.
+- Los logs salen como JSON por la salida estándar fuera de desarrollo: la plataforma los recoge. Las alertas recomendadas están en [observabilidad.md](observabilidad.md) y se configuran en la herramienta de monitoreo, no en la API.
 - La publicación de imágenes y el despliegue solo se ejecutan en `master`, así que no se pueden probar desde una rama sin activar `workflow_dispatch`.

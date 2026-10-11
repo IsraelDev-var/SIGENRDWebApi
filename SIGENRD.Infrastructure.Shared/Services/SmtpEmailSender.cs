@@ -10,16 +10,22 @@ using MailKit.Net.Smtp;
 
 namespace SIGENRD.Infrastructure.Shared.Services
 {
-    public class EmailService : IEmailService
+    /// <summary>
+    /// Envío real por SMTP (MailKit). La aplicación no lo llama directamente: pasa por la bandeja de salida
+    /// (<see cref="OutboxEmailService"/>), salvo con la base en memoria, que no la soporta.
+    /// </summary>
+    public class SmtpEmailSender : IEmailSender, IEmailService
     {
         public MailSettings _mailSettings { get; }
 
-        public EmailService(IOptions<MailSettings> mailSettings)
+        public SmtpEmailSender(IOptions<MailSettings> mailSettings)
         {
             _mailSettings = mailSettings.Value;
         }
 
-        public async Task SendAsync(EmailRequest request)
+        Task IEmailService.SendAsync(EmailRequest request) => SendAsync(request);
+
+        public async Task SendAsync(EmailRequest request, CancellationToken cancellationToken = default)
         {
             // EmailRequest.From viene vacío (no nulo) por defecto: se usa el remitente configurado.
             var address = string.IsNullOrWhiteSpace(request.From) ? _mailSettings.EmailFrom : request.From;
@@ -39,18 +45,19 @@ namespace SIGENRD.Infrastructure.Shared.Services
                 await smtp.ConnectAsync(
                     _mailSettings.SmtpHost,
                     _mailSettings.SmtpPort,
-                    _mailSettings.UseStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.None);
+                    _mailSettings.UseStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.None,
+                    cancellationToken);
 
                 // Un servidor de desarrollo local no pide credenciales.
                 if (!string.IsNullOrWhiteSpace(_mailSettings.SmtpUser))
-                    await smtp.AuthenticateAsync(_mailSettings.SmtpUser, _mailSettings.SmtpPass);
+                    await smtp.AuthenticateAsync(_mailSettings.SmtpUser, _mailSettings.SmtpPass, cancellationToken);
 
                 // Enviar
-                await smtp.SendAsync(email);
+                await smtp.SendAsync(email, cancellationToken);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // Aquí podrías loguear el error con Serilog
+                // El despachador de la bandeja de salida registra el error y reintenta.
                 throw new InvalidOperationException("Error enviando correo: " + ex.Message, ex);
             }
             finally

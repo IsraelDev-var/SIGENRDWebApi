@@ -42,6 +42,8 @@ public class PostgisFixture : IAsyncLifetime
 
     private string _connectionString = string.Empty;
 
+    public string ConnectionString => _connectionString;
+
     public int DistributorId { get; private set; }
     public int ZoneSantoDomingoId { get; private set; }
     public int ZoneSantiagoId { get; private set; }

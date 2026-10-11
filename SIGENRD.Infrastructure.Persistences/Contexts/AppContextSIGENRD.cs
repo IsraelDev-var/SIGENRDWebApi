@@ -28,6 +28,7 @@ namespace SIGENRD.Infrastructure.Persistences.Contexts
         public DbSet<SimulationGenerator> SimulationGenerators => Set<SimulationGenerator>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+        public DbSet<OutboxEmail> OutboxEmails => Set<OutboxEmail>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -35,6 +36,9 @@ namespace SIGENRD.Infrastructure.Persistences.Contexts
 
             // Habilita la extensión para mapas/GPS en Postgres
             modelBuilder.HasPostgresExtension("postgis");
+
+            // Búsqueda parcial por texto con índices trigram
+            modelBuilder.HasPostgresExtension("pg_trgm");
 
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         }
@@ -61,31 +65,41 @@ namespace SIGENRD.Infrastructure.Persistences.Contexts
 
             var pending = CaptureAudit();
 
+            if (pending.Count == 0)
+                return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+
+            // El cambio y su auditoría se confirman juntos (RN-21): si falla el registro de auditoría, el cambio
+            // se revierte. Si el llamador ya abrió una transacción, se usa la suya. El proveedor en memoria no
+            // tiene transacciones.
+            await using var transaction = Database.IsRelational() && Database.CurrentTransaction is null
+                ? await Database.BeginTransactionAsync(cancellationToken)
+                : null;
+
             var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
 
-            if (pending.Count > 0)
+            // Las claves de las entidades nuevas solo existen después del primer guardado.
+            foreach (var item in pending)
             {
-                // Las claves de las entidades nuevas solo existen después del primer guardado.
-                foreach (var item in pending)
+                var keyValues = item.Entry.Properties
+                    .Where(p => p.Metadata.IsPrimaryKey())
+                    .Select(p => p.CurrentValue);
+
+                AuditLogs.Add(new AuditLog
                 {
-                    var keyValues = item.Entry.Properties
-                        .Where(p => p.Metadata.IsPrimaryKey())
-                        .Select(p => p.CurrentValue);
-
-                    AuditLogs.Add(new AuditLog
-                    {
-                        UserId = userId,
-                        Action = item.Action,
-                        EntityName = item.EntityName,
-                        EntityId = string.Join(",", keyValues),
-                        OldValues = item.Old is null ? null : JsonSerializer.Serialize(item.Old),
-                        NewValues = item.New is null ? null : JsonSerializer.Serialize(item.New),
-                        CreatedAt = now
-                    });
-                }
-
-                await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+                    UserId = userId,
+                    Action = item.Action,
+                    EntityName = item.EntityName,
+                    EntityId = string.Join(",", keyValues),
+                    OldValues = item.Old is null ? null : JsonSerializer.Serialize(item.Old),
+                    NewValues = item.New is null ? null : JsonSerializer.Serialize(item.New),
+                    CreatedAt = now
+                });
             }
+
+            await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+
+            if (transaction is not null)
+                await transaction.CommitAsync(cancellationToken);
 
             return result;
         }
@@ -98,8 +112,8 @@ namespace SIGENRD.Infrastructure.Persistences.Contexts
 
             foreach (var entry in ChangeTracker.Entries())
             {
-                // No se audita a sí misma ni las notificaciones.
-                if (entry.Entity is AuditLog or Notification) continue;
+                // No se audita a sí misma, ni las notificaciones, ni la bandeja de correo (lleva códigos en el cuerpo).
+                if (entry.Entity is AuditLog or Notification or OutboxEmail) continue;
                 if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted)) continue;
 
                 Dictionary<string, object?>? oldValues = null, newValues = null;

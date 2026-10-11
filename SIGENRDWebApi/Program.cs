@@ -13,16 +13,18 @@ using Serilog;
 using SIGENRDWebApi.HealthChecks;
 using SIGENRD.Infrastructure.Identity.Configurations;
 using SIGENRD.Infrastructure.Persistences.Contexts;
+using SIGENRDWebApi.Observability;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // No anunciar el servidor en la cabecera Server.
 builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
 
-// Configurar Serilog (Antes de construir la app)
-// 1. Configurar Serilog (Lo primero de todo)
-builder.Host.UseSerilog((context, configuration) =>
-    configuration.ReadFrom.Configuration(context.Configuration));
+// 1. Serilog (lo primero de todo): texto en desarrollo, JSON por stdout fuera de él.
+builder.Host.UseSerilog(ObservabilityExtensions.ConfigureSerilog);
+
+// Trazas y métricas por OpenTelemetry, si hay destino OTLP configurado.
+builder.Services.AddObservability(builder.Configuration);
 
 // ===========================================================
 // 🧱 REGISTRO DE CAPAS
@@ -106,7 +108,7 @@ app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<ErrorHandlerMiddleware>();
 
 // 3. Registrar Logging de Peticiones HTTP (Importante para ver GET/POST en logs)
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options => options.GetLevel = ObservabilityExtensions.RequestLogLevel);
 
 if (!app.Environment.IsDevelopment())
     app.UseHsts();
