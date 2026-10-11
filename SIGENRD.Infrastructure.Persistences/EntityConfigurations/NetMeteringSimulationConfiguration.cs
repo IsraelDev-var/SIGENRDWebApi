@@ -12,15 +12,29 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
             builder.HasKey(s => s.Id);
 
             builder.Property(s => s.UserId).HasMaxLength(450).IsRequired();
+            builder.Property(s => s.Name).HasMaxLength(100);
 
+            builder.Property(s => s.MonthlyConsumptionKwh).HasColumnType("numeric(12,2)");
+            builder.Property(s => s.Location).HasColumnType("geography (point, 4326)");
             builder.Property(s => s.InstalledCapacityKw).HasColumnType("numeric(10,2)");
+            builder.Property(s => s.FlatPricePerKwh).HasColumnType("numeric(10,4)");
+
             builder.Property(s => s.AnnualProductionKwh).HasColumnType("numeric(14,2)");
+            builder.Property(s => s.CoveragePct).HasColumnType("numeric(10,2)");
+            builder.Property(s => s.AnnualBillBefore).HasColumnType("numeric(14,2)");
+            builder.Property(s => s.AnnualBillAfter).HasColumnType("numeric(14,2)");
+            builder.Property(s => s.AnnualExportCreditKwh).HasColumnType("numeric(14,2)");
+            builder.Property(s => s.SurplusPayment).HasColumnType("numeric(14,2)");
             builder.Property(s => s.AnnualSavings).HasColumnType("numeric(14,2)");
             builder.Property(s => s.InvestmentCost).HasColumnType("numeric(14,2)");
             builder.Property(s => s.PaybackYears).HasColumnType("numeric(8,2)");
-            builder.Property(s => s.Roi).HasColumnType("numeric(8,2)");
+            builder.Property(s => s.Roi).HasColumnType("numeric(10,2)");
 
             builder.Property(s => s.ViabilityStatus).HasConversion<string>().HasMaxLength(50);
+
+            builder.Property(s => s.Recommendations).HasColumnType("text[]");
+            builder.Property(s => s.FormulaVersion).HasMaxLength(20).IsRequired();
+            builder.Property(s => s.Assumptions).HasColumnType("jsonb").IsRequired();
 
             builder.HasOne(s => s.Distributor)
                    .WithMany()
@@ -32,7 +46,8 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
                    .HasForeignKey(s => s.TransformerId)
                    .OnDelete(DeleteBehavior.SetNull);
 
-            builder.HasIndex(s => s.UserId);
+            // Historial del usuario, más recientes primero (RF-26).
+            builder.HasIndex(s => new { s.UserId, s.CreatedAt });
         }
     }
 }
