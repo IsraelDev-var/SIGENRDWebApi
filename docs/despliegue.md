@@ -48,20 +48,41 @@ La imagen no lleva secretos. Se definen como *Application settings* de la Web Ap
 |---|---|
 | `ConnectionStrings__Postgres` | Base de datos del negocio |
 | `ConnectionStrings__IdentityServerDB` | Base de datos de Identity |
-| `JwtSettings__Key` | Llave de firma del JWT: 64 bytes aleatorios en Base64 |
-| `JwtSettings__Issuer`, `JwtSettings__Audience` | Ya vienen en `appsettings.json`; solo se cambian si hace falta |
-| `Seed__AdminPassword` | Contraseña del administrador inicial. Sin ella no se crea |
+| `JwtSettings__PrivateKey` | Llave privada RSA de 2048 bits o más que firma los JWT (RS256), en PEM o en Base64 de PKCS#8 (ver abajo). En Azure, como referencia a Key Vault |
+| `JwtSettings__Issuer`, `JwtSettings__Audience`, `JwtSettings__DurationInMinutes` | Ya vienen en `appsettings.json` (60 minutos); solo se cambian si hace falta |
+| `Seed__AdminPassword` | Contraseña del administrador inicial (10 caracteres o más, con mayúscula, minúscula y número). Sin ella no se crea |
 | `MailSettings__SmtpHost`, `__SmtpPort`, `__SmtpUser`, `__SmtpPass`, `__EmailFrom` | Servidor de correo real |
 | `App__PublicBaseUrl` | URL pública para los enlaces de confirmación de correo |
+| `App__PasswordResetUrl` | Página del frontend que pide la nueva contraseña; recibe `?email=...&code=...`. Por defecto `{App__PublicBaseUrl}/reset-password` |
+| `Cors__AllowedOrigins__0`, `__1`, ... | Orígenes del frontend que pueden llamar a la API desde el navegador. Vacío: ninguno |
+| `RateLimiting__AuthPermitLimit`, `__PublicTrackingPermitLimit`, `__WindowSeconds` | Peticiones por IP y ventana en `/Auth/*` (10) y en el seguimiento público (30), por minuto |
+
+**Llave del JWT.** Se genera una vez y se guarda solo en el almacén de secretos:
+
+```bash
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 | openssl pkcs8 -topk8 -nocrypt -outform DER | base64 -w0
+```
+
+Cambiar la llave invalida todos los tokens emitidos: los usuarios vuelven a iniciar sesión. Cada token lleva en `kid` la huella de la llave que lo firmó.
+
+**Detrás de un proxy.** El límite de peticiones es por IP. Si la API queda detrás de un proxy o balanceador que no entrega la IP real del cliente, todos compartirían el mismo límite: hay que habilitar las cabeceras reenviadas (`ForwardedHeaders`) antes de exponerla.
+
+## Health checks
+
+| Ruta | Qué comprueba | Uso |
+|---|---|---|
+| `/health` | Que respondan las bases de negocio e Identity (un chequeo por base, 10 s máximo cada uno). `Healthy` o 503 `Unhealthy` | Listo para atender: balanceador y prueba de humo del CD |
+| `/health/live` | Solo que el proceso responde | Vivo: reinicio del contenedor |
 
 ## Base de datos
 
 - PostgreSQL con la extensión **PostGIS**. En Azure Database for PostgreSQL hay que habilitarla en `azure.extensions` antes de la primera migración.
 - Los scripts son idempotentes (`migraciones-sql`, artefacto del CD): se pueden aplicar más de una vez. Se ejecutan en orden: `1-persistence.sql` y luego `2-identity.sql`.
 - Para aplicarlos a mano: `psql "$URL" -v ON_ERROR_STOP=1 -f 1-persistence.sql`.
+- Respaldo y restauración: ver [respaldo.md](respaldo.md).
 
 ## Qué no cubre todavía
 
-- El `/health` solo indica que el proceso responde; no comprueba la base de datos.
-- No hay límite de peticiones ni escaneo de la imagen.
+- No hay escaneo de la imagen ni tokens de refresco (al vencer el JWT se vuelve a iniciar sesión).
+- Las llaves de Data Protection (códigos de confirmación de correo y de restablecimiento) viven en el contenedor: si se reinicia o hay más de una instancia, los enlaces pendientes dejan de servir. Hay que persistirlas antes de escalar.
 - La publicación de imágenes y el despliegue solo se ejecutan en `master`, así que no se pueden probar desde una rama sin activar `workflow_dispatch`.

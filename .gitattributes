@@ -61,3 +61,5 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+# Los scripts de shell siempre con LF: con CRLF fallan en Linux y en los contenedores.
+*.sh text eol=lf
