@@ -1,0 +1,59 @@
+# Entorno de pruebas de carga: la imagen real de la API, limitada como un plan pequeño de Azure (2 vCPU, 2 GB),
+# con PostGIS, Azurite (emulador de Blob Storage) y k6. Se levanta con run.sh, que genera los secretos de la corrida.
+name: energymap-carga
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_PASSWORD: ${LOAD_DB_PASSWORD:?Usar run.sh}
+      POSTGRES_DB: energymap
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      retries: 20
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.33.0
+    command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
+
+  api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: energymap-api:carga
+    cpus: 2
+    mem_limit: 2g
+    depends_on:
+      db:
+        condition: service_healthy
+      azurite:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: Host=db;Database=energymap;Username=postgres;Password=${LOAD_DB_PASSWORD}
+      ConnectionStrings__IdentityServerDB: Host=db;Database=energymap;Username=postgres;Password=${LOAD_DB_PASSWORD}
+      JwtSettings__PrivateKey: ${LOAD_JWT_KEY:?Usar run.sh}
+      Seed__AdminPassword: ${LOAD_ADMIN_PASSWORD:?Usar run.sh}
+      Storage__Provider: AzureBlob
+      # Cuenta y llave públicas del emulador Azurite (documentadas por Microsoft): no son un secreto.
+      Storage__AzureBlob__ConnectionString: DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
+      # Toda la carga sale de una sola IP (k6): sin esto el límite por IP frenaría la prueba.
+      RateLimiting__AuthPermitLimit: "100000"
+      RateLimiting__PublicTrackingPermitLimit: "100000"
+      EmailOutbox__DispatcherEnabled: "false"
+    ports:
+      - "127.0.0.1:5299:8080"
+
+  k6:
+    image: grafana/k6:1.8.1
+    profiles: ["k6"]
+    depends_on:
+      - api
+    volumes:
+      - ./scenarios:/scripts:ro
+      - ./results:/results
+    environment:
+      BASE_URL: http://api:8080
+      ADMIN_EMAIL: admin@sigenrd.com
+      ADMIN_PASSWORD: ${LOAD_ADMIN_PASSWORD}
