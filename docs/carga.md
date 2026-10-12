@@ -88,22 +88,36 @@ Tráfico de mapa a tasa fija (modelo abierto), en etapas de 1 minuto.
 
 **Una instancia de 2 vCPU sostiene unas 400 peticiones de mapa por segundo con p95 < 2 s.** A partir de ahí se satura su CPU. No hubo errores en ninguna etapa: con sobrecarga, la API responde lento pero no falla.
 
+## Con la caché del mapa
+
+Después de las mediciones de arriba se agregó una caché del mapa (ver [despliegue.md](despliegue.md), `MapCache`): todos los transformadores se guardan en memoria y los encuadres y las búsquedas por cercanía se resuelven sin consultar la base. La copia se descarta al confirmar cualquier cambio en un transformador y vence a los 30 s (cubre a las demás instancias). El mapa responde además con `Cache-Control: public, max-age=30`. Mismo entorno y mismos escenarios:
+
+| Escenario | Sin caché | Con caché |
+|---|---|---|
+| Mapa, 50 usuarios: p95 | 22.7 ms | **9.8 ms** (CPU de la base: 8 % de un núcleo) |
+| Mixto: mapa del país, p95 | 33.2 ms | **14.5 ms** |
+| Mixto: mapa por ciudad, p95 | 24.9 ms | **12.5 ms** |
+| Mixto: cercanía, p95 | 9.8 ms | **6.4 ms** |
+| Estrés 400 /s: p95 | 0.69–0.96 s | **3.5 ms** (base ~6 %, antes ~200 %) |
+| Estrés 800 /s: p95 | más de 9 s (saturada) | **7.7 ms**, 0 % errores (base 6–12 %) |
+| Estrés 1.200 /s | — | Saturada: p95 17.6 s, 3 % de errores por tiempo de espera |
+
+Con caché, **una instancia de 2 vCPU sostiene unas 800 peticiones de mapa por segundo** (el doble) y la base deja de trabajar para el mapa. En la etapa saturada de 1.200 /s se vio un pico breve de CPU de la base y una lectura de CPU de la API imposible (más de 2 vCPU), así que esas muestras no son fiables; en régimen normal la base apenas participa.
+
 ## Qué significa para RNF-01 (5.000 usuarios)
 
-Con el ritmo del escenario del mapa (una petición cada ~2 s por usuario), 400 peticiones por segundo equivalen a **unos 700 usuarios concurrentes por instancia** de 2 vCPU.
+Con el ritmo del escenario del mapa (una petición cada ~2 s por usuario), 800 peticiones por segundo equivalen a **unos 1.400 usuarios concurrentes por instancia** de 2 vCPU.
 
 - **Piloto (CA-12, 50 usuarios):** una instancia sobra.
-- **Meta de diseño (5.000 usuarios, ~2.900 peticiones/s):**
-  - **API:** unas 8 instancias de 2 vCPU (la API no guarda estado y escala horizontalmente).
-  - **Base de datos:** a 400 /s ya usa unos 2 núcleos, así que a 2.900 /s necesitaría unos 14. **Escalar solo la API no alcanza: la base sería el cuello de botella.**
+- **Meta de diseño (5.000 usuarios, ~2.900 peticiones/s):** unas **4 instancias** de 2 vCPU, con margen 5. La API no guarda estado y escala horizontalmente; con la caché, el mapa ya no carga la base, que deja de ser el cuello de botella.
 
-Por eso RNF-01 pide **caché en las consultas de solo lectura**. El mapa es casi todo el tráfico y sus datos cambian poco (cuando la distribuidora actualiza capacidades), así que es el candidato natural. Opciones, de menor a mayor esfuerzo:
+Antes de la caché hacían falta unas 8 instancias y la base necesitaba unos 14 núcleos solo para el mapa.
 
-1. **Caché de salida en los encuadres del mapa**, con el encuadre redondeado a una cuadrícula (o por mosaicos) para que usuarios distintos compartan respuestas, y una vigencia corta (30–60 s) o una invalidación al cambiar un transformador.
-2. **Agrupamiento (clustering) en el servidor** para la vista del país, que exige RNF-23: en lugar de 2.000 puntos se envían unos cientos de grupos. Baja la carga de la base y el tamaño de la respuesta.
-3. **Réplicas de lectura** de PostgreSQL para el mapa.
+Mejoras posibles, si hicieran falta:
+
+1. **Agrupamiento (clustering) en el servidor** para la vista del país (RNF-23): en lugar de 2.000 puntos se envían unos cientos de grupos. Reduce CPU de serialización y tamaño de respuesta.
+2. **CDN** delante de la API: el mapa ya sale con `Cache-Control: public`.
 
 ## Pendiente
 
 - Repetir estas pruebas en Azure, con la red, la base y el almacenamiento reales, antes de producción.
-- Implementar la caché del mapa si se apunta a la meta de 5.000 usuarios.

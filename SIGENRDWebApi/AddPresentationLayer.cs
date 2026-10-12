@@ -3,6 +3,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using SIGENRDWebApi.Constants;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models; // 👈 NECESARIO PARA OpenApiSecurityScheme
 using SIGENRDWebApi.Options;
 
@@ -12,7 +13,13 @@ namespace SIGENRD.Presentation.WebApi
     {
         public static IServiceCollection AddPresentationLayer(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddControllers();
+            // El mapa es público e igual para todos: navegadores y CDN pueden guardarlo lo mismo que la caché del servidor.
+            var mapCacheSeconds = configuration.GetValue("MapCache:TtlSeconds", 30);
+            services.AddControllers(options => options.CacheProfiles.Add(CacheProfiles.Map, new CacheProfile
+            {
+                Duration = mapCacheSeconds,
+                Location = ResponseCacheLocation.Any
+            }));
 
             // Usuario actual para la auditoría
             services.AddHttpContextAccessor();

@@ -58,6 +58,7 @@ La imagen no lleva secretos. Se definen como *Application settings* de la Web Ap
 | `RateLimiting__AuthPermitLimit`, `__PublicTrackingPermitLimit`, `__WindowSeconds` | Peticiones por IP y ventana en `/Auth/*` (10) y en el seguimiento público (30), por minuto |
 | `EmailOutbox__DispatcherEnabled`, `__PollIntervalSeconds`, `__MaxAttempts`, `__KeepSentDays` | Bandeja de salida de correo: las peticiones solo guardan el correo; un proceso en segundo plano lo envía y reintenta (1 min, 5 min, 15 min, 1 h, 4 h). Ya vienen en `appsettings.json` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` y relacionadas | Trazas y métricas por OpenTelemetry. Sin ella no se activan. Ver [observabilidad.md](observabilidad.md) |
+| `MapCache__Enabled`, `MapCache__TtlSeconds` | Caché del mapa en memoria (activa, 30 s por defecto): los encuadres y la cercanía no consultan la base. Cada instancia descarta su copia al confirmar un cambio en un transformador; las demás lo ven en como máximo `TtlSeconds`. El mapa sale con `Cache-Control: public` y esa misma vigencia |
 | `Storage__AzureBlob__ConnectionString` | Cuenta de Azure Storage de los documentos y certificados. Es un secreto (Key Vault). Obligatoria en producción |
 | `Storage__AzureBlob__ContainerName` | Contenedor de los expedientes (`expedientes` por defecto). Se crea privado si no existe |
 | `Storage__Provider` | `AzureBlob` (por defecto) o `Local`. `Local` es solo para desarrollo: el disco del contenedor se pierde al reiniciar |

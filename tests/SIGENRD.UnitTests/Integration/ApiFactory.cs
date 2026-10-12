@@ -13,6 +13,7 @@ using SIGENRD.Core.Application.Interfaces.Services;
 using SIGENRD.Infrastructure.Identity.Configurations;
 using SIGENRD.Infrastructure.Identity.Seeds;
 using SIGENRD.Infrastructure.Persistences.Contexts;
+using SIGENRD.Infrastructure.Persistences.Caching;
 using SIGENRDWebApi.Options;
 
 namespace SIGENRD.UnitTests.Integration;
@@ -86,13 +87,23 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         _ => throw new ArgumentOutOfRangeException(nameof(role))
     };
 
+    /// <summary>
+    /// Contexto para sembrar y verificar datos desde las pruebas. Lleva el interceptor de la API, igual que el contexto
+    /// de la aplicación: así, sembrar transformadores invalida la caché del mapa como lo haría un cambio real.
+    /// </summary>
     public AppContextSIGENRD NewAppContext()
     {
         var options = new DbContextOptionsBuilder<AppContextSIGENRD>()
             .UseNpgsql(_connectionString, npgsql => npgsql.UseNetTopologySuite())
+            .AddInterceptors(Services.GetRequiredService<TransformerChangeInterceptor>())
             .Options;
         return new AppContextSIGENRD(options);
     }
+
+    /// <summary>Sin la API levantada: para crear y borrar la base de la ejecución.</summary>
+    private AppContextSIGENRD RawContext() => new(new DbContextOptionsBuilder<AppContextSIGENRD>()
+        .UseNpgsql(_connectionString, npgsql => npgsql.UseNetTopologySuite())
+        .Options);
 
     public async Task InitializeAsync()
     {
@@ -104,7 +115,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             Database = "it_api_" + Guid.NewGuid().ToString("N")[..12]
         }.ConnectionString;
 
-        await using (var app = NewAppContext())
+        await using (var app = RawContext())
             await app.Database.MigrateAsync();
 
         var identityOptions = new DbContextOptionsBuilder<IdentityDbContextSIGENRD>().UseNpgsql(_connectionString).Options;
@@ -209,7 +220,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
         if (string.IsNullOrEmpty(_connectionString)) return;
 
-        await using var app = NewAppContext();
+        await using var app = RawContext();
         await app.Database.EnsureDeletedAsync();
         NpgsqlConnection.ClearAllPools();
     }
