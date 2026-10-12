@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
 using Microsoft.AspNetCore.RateLimiting;
@@ -19,7 +20,10 @@ namespace SIGENRD.Presentation.WebApi
             {
                 Duration = mapCacheSeconds,
                 Location = ResponseCacheLocation.Any
-            }));
+            }))
+                // Enums por nombre en el JSON y en Swagger ("Critical", no 3). Se siguen aceptando números
+                // al recibir para no romper a los clientes que ya los envían.
+                .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
             // Usuario actual para la auditoría
             services.AddHttpContextAccessor();

@@ -1,3 +1,4 @@
+using SIGENRD.Core.Application.Wrappers;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,16 +17,19 @@ namespace SIGENRDWebApi.Controllers.v1.Reports
     public class ReportsController(IMediator mediator) : BaseApiController
     {
         /// <summary>Totales, tasas, tiempos de revisión y desgloses por estado, tipo, zona, distribuidora y mes.</summary>
+        [ProducesResponseType<Response<RequestStatisticsDto>>(StatusCodes.Status200OK)]
         [HttpGet("requests/statistics")]
         public async Task<IActionResult> Statistics([FromQuery] GetRequestStatisticsQuery query)
             => Ok(await mediator.Send(query));
 
         /// <summary>Instaladoras más activas del período.</summary>
+        [ProducesResponseType<Response<List<InstallerRankingItem>>>(StatusCodes.Status200OK)]
         [HttpGet("installers/ranking")]
         public async Task<IActionResult> InstallerRanking([FromQuery] GetInstallerRankingQuery query)
             => Ok(await mediator.Send(query));
 
         /// <summary>Reporte descargable: format=Xlsx (con el detalle de cada solicitud) o format=Pdf.</summary>
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "application/octet-stream")]
         [HttpGet("requests/export")]
         public async Task<IActionResult> Export([FromQuery] ExportRequestReportQuery query, CancellationToken cancellationToken)
         {
