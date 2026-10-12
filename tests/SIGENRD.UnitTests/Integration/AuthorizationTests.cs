@@ -21,7 +21,7 @@ public class AuthorizationTests(ApiFactory api)
 
     private static readonly TestRole[] Anyone = AllRoles;
     private static readonly TestRole[] Staff = { TestRole.Distributor, TestRole.Admin };
-    private static readonly TestRole[] CanCreateRequests = { TestRole.Customer, TestRole.InstallerCompany, TestRole.Admin };
+    private static readonly TestRole[] CanCreateRequests = { TestRole.Customer, TestRole.InstallerCompany };
     private static readonly TestRole[] AuthenticatedAll =
         { TestRole.Customer, TestRole.InstallerCompany, TestRole.Engineer, TestRole.Distributor, TestRole.Admin };
 

@@ -21,7 +21,8 @@ export const options = {
 };
 
 export function setup() {
-  const token = login();
+  // Subir documentos es del solicitante (matriz 3.2): el cliente de carga tiene 100 solicitudes Recibidas.
+  const token = login('cliente');
   // Solicitudes Recibidas: las únicas que aceptan documentos nuevos.
   const res = http.get(`${BASE}/api/v1/ConnectionRequest/search?status=1&pageSize=100`, authHeaders(token));
   const ids = res.json('data.items').map((r) => r.id);

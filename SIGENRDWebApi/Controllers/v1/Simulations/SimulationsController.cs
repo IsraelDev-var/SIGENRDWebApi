@@ -9,9 +9,10 @@ namespace SIGENRDWebApi.Controllers.v1.Simulations
 {
     /// <summary>
     /// Simulación de medición neta (RF-18 a RF-26): informativa, sin valor regulatorio. Cada usuario ve solo las suyas.
+    /// Según la matriz de permisos (3.2), solo clientes e instaladoras.
     /// </summary>
     [ApiVersion("1.0")]
-    [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}")]
+    [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
     public class SimulationsController(IMediator mediator) : BaseApiController
     {
         /// <summary>Calcula producción, ahorro, ROI y retorno; clasifica y recomienda; queda en el historial.</summary>

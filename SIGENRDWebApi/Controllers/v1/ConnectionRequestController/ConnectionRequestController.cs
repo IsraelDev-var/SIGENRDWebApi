@@ -26,7 +26,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
 
         // 🟢 POST: Crear Solicitud
         [HttpPost]
-        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")] // matriz 3.2: solo el solicitante
         public async Task<IActionResult> Create([FromBody] CreateConnectionRequestCommand command)
         {
             // Enviamos el comando al Handler correspondiente
@@ -84,7 +84,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
 
         /// <summary>Sube un documento PDF, JPG o PNG de hasta 10 MB. Solo con la solicitud Recibida o En corrección.</summary>
         [HttpPost("{id:int}/documents")]
-        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")] // matriz 3.2: documentos propios
         [Consumes("multipart/form-data")]
         [RequestSizeLimit(UploadLimitBytes)]
         [RequestFormLimits(MultipartBodyLengthLimit = UploadLimitBytes)]
@@ -124,7 +124,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
 
         /// <summary>Retira un documento (baja lógica). No se puede tras la aprobación (RN-19) ni durante la revisión.</summary>
         [HttpDelete("{id:int}/documents/{documentId:int}")]
-        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
         public async Task<IActionResult> DeleteDocument(int id, int documentId)
             => Ok(await _mediator.Send(new DeleteDocumentCommand(id, documentId)));
 

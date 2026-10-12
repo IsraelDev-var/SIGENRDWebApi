@@ -166,13 +166,10 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
 
         /// <summary>
         /// RN-22: un cliente solo crea solicitudes a su nombre y una instaladora solo con su propia empresa.
-        /// El administrador puede crear en nombre de cualquiera.
+        /// Solo el solicitante crea solicitudes (matriz de permisos 3.2): el personal no las crea en nombre de otros.
         /// </summary>
         private async Task EnsureCallerOwnsTheRequestParties(CreateConnectionRequestCommand request)
         {
-            if (_currentUser.IsInRole(nameof(UserType.Admin)))
-                return;
-
             var userId = _currentUser.UserId ?? throw new ForbiddenException();
 
             if (_currentUser.IsInRole(nameof(UserType.Customer)))
