@@ -168,7 +168,8 @@ public class RequestFormTests(ApiFactory api)
             await context.SaveChangesAsync();
         }
 
-        var response = await (await api.ClientFor(TestRole.Distributor)).GetAsync("/api/v1/ConnectionRequest/" + id + "/required-documents");
+        // Es un borrador (D-4): solo lo ve el solicitante.
+        var response = await (await api.ClientFor(TestRole.Customer)).GetAsync("/api/v1/ConnectionRequest/" + id + "/required-documents");
         using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
         var satisfied = doc.RootElement.GetProperty("data").GetProperty("items").EnumerateArray()

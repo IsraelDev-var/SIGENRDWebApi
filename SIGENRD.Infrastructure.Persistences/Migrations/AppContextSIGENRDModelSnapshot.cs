@@ -256,7 +256,6 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ApplicationUserId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
@@ -301,7 +300,8 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationUserId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"ApplicationUserId\" IS NOT NULL");
 
                     b.HasIndex("NationalIdOrRnc")
                         .IsUnique();

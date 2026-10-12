@@ -38,5 +38,10 @@ namespace SIGENRD.Core.Application.DTOs.ConnectionRequest
         public int? InstallerCompanyId { get; set; }
         public int DistributorId { get; set; }
         public int? TransformerId { get; set; }
+        // Para el expediente y las listas
+        public string? TransformerCode { get; set; }
+        /// <summary>Titular del servicio (el cliente).</summary>
+        public string? HolderName { get; set; }
+        public string? InstallerCompanyName { get; set; }
     }
 }

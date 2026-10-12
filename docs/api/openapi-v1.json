@@ -558,6 +558,63 @@
             }
           }
         }
+      },
+      "put": {
+        "tags": [
+          "ConnectionRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDraftRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDraftRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDraftRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/ConnectionRequest/search": {
@@ -1169,6 +1226,46 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ConnectionRequest/{id}/submit": {
+      "post": {
+        "tags": [
+          "ConnectionRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -3074,6 +3171,18 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "transformerCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "holderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "installerCompanyName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3187,9 +3296,9 @@
       },
       "CreateConnectionRequestCommand": {
         "required": [
-          "customerId",
           "declarationAccepted",
           "distributorId",
+          "holder",
           "interconnectionType",
           "latitude",
           "longitude",
@@ -3204,15 +3313,6 @@
         ],
         "type": "object",
         "properties": {
-          "customerId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "installerCompanyId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
           "distributorId": {
             "type": "integer",
             "format": "int32"
@@ -3300,6 +3400,19 @@
           },
           "netMetering": {
             "$ref": "#/components/schemas/NetMeteringDetailsInput"
+          },
+          "customerId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "installerCompanyId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "holder": {
+            "$ref": "#/components/schemas/HolderInput"
           }
         },
         "additionalProperties": false
@@ -3834,6 +3947,38 @@
           "Other"
         ],
         "type": "string"
+      },
+      "HolderInput": {
+        "required": [
+          "fullName",
+          "isLegalEntity",
+          "nationalIdOrRnc"
+        ],
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "nationalIdOrRnc": {
+            "type": "string"
+          },
+          "isLegalEntity": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "ImportTransformersResultDto": {
         "required": [
@@ -4588,7 +4733,8 @@
           "InCorrection",
           "Approved",
           "Rejected",
-          "Cancelled"
+          "Cancelled",
+          "Draft"
         ],
         "type": "string"
       },
@@ -5647,6 +5793,120 @@
           "Maintenance"
         ],
         "type": "string"
+      },
+      "UpdateDraftRequestCommand": {
+        "required": [
+          "declarationAccepted",
+          "distributorId",
+          "id",
+          "interconnectionType",
+          "latitude",
+          "longitude",
+          "netMetering",
+          "projectAddress",
+          "propertyRelation",
+          "requestedCapacityKva",
+          "requestType",
+          "tariffType",
+          "transformerId",
+          "usageType"
+        ],
+        "type": "object",
+        "properties": {
+          "distributorId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "transformerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requestType": {
+            "$ref": "#/components/schemas/RequestType"
+          },
+          "requestedCapacityKva": {
+            "type": "number",
+            "format": "double"
+          },
+          "usageType": {
+            "$ref": "#/components/schemas/UsageType"
+          },
+          "tariffType": {
+            "$ref": "#/components/schemas/TariffType"
+          },
+          "interconnectionType": {
+            "$ref": "#/components/schemas/InterconnectionType"
+          },
+          "projectDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "projectAddress": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "propertyRelation": {
+            "$ref": "#/components/schemas/PropertyRelation"
+          },
+          "ownerFullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerNationalId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerFullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerCodiaNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerCompany": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "serviceContractNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "meterNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "declarationAccepted": {
+            "type": "boolean"
+          },
+          "netMetering": {
+            "$ref": "#/components/schemas/NetMeteringDetailsInput"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
       },
       "UpdateTransformerCapacityCommand": {
         "required": [

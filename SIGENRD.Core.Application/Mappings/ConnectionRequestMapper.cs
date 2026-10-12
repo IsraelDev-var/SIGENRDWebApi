@@ -32,7 +32,10 @@ namespace SIGENRD.Core.Application.Mappings
             CustomerId = r.CustomerId,
             InstallerCompanyId = r.InstallerCompanyId,
             DistributorId = r.DistributorId,
-            TransformerId = r.TransformerId
+            TransformerId = r.TransformerId,
+            TransformerCode = r.Transformer?.Code,
+            HolderName = r.Customer?.FullName,
+            InstallerCompanyName = r.InstallerCompany?.TradeName
         };
     }
 }

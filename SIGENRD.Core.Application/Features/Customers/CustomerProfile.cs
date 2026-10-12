@@ -69,8 +69,15 @@ namespace SIGENRD.Core.Application.Features.Customers
                 throw new ApiException("Ya tienes un perfil de cliente.");
 
             var nationalId = request.NationalIdOrRnc.Trim();
-            if (await customers.NationalIdExistsAsync(nationalId, cancellationToken))
-                throw new ApiException("Ya existe un cliente con esa cédula o RNC.");
+            var existing = await customers.GetByNationalIdAsync(nationalId, cancellationToken);
+            if (existing is not null)
+            {
+                // B-11: una instaladora ya lo registró al solicitar a su nombre. La cuenta no se une sola por la cédula
+                // (cualquiera podría escribir una ajena y ver sus solicitudes): la vincula la distribuidora.
+                throw new ApiException(existing.ApplicationUserId is null
+                    ? "Una empresa instaladora ya registró solicitudes a nombre de esa cédula o RNC. Pide a Edesur que las vincule a tu cuenta."
+                    : "Ya existe un cliente con esa cédula o RNC.");
+            }
 
             var customer = new Customer
             {

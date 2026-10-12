@@ -1,3 +1,4 @@
+using SIGENRD.Core.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using SIGENRD.Core.Domain.Entities;
 using SIGENRD.Core.Domain.Repositories;
@@ -38,7 +39,9 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
         }
 
         public Task<ConnectionRequest?> GetByCodeAsync(string requestCode, CancellationToken cancellationToken = default)
-            => context.ConnectionRequests.AsNoTracking().FirstOrDefaultAsync(r => r.RequestCode == requestCode, cancellationToken);
+            // Un borrador todavía no es un trámite: no se puede seguir públicamente (D-4).
+            => context.ConnectionRequests.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.RequestCode == requestCode && r.Status != RequestStatus.Draft, cancellationToken);
 
         public Task<ConnectionRequest?> GetVisibleByIdAsync(int id, RequestScope scope, CancellationToken cancellationToken = default)
         {
@@ -52,7 +55,7 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
                 .Include(r => r.InstallerCompany)
                 .Include(r => r.Transformer!).ThenInclude(t => t.Distributor)
                 .Include(r => r.TechnicalDocuments!.Where(d => d.IsActive))
-                .Include(r => r.NetMeteringRequest)
+                .Include(r => r.NetMeteringRequest!).ThenInclude(n => n.Generators)
                 .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
         }
 
@@ -85,14 +88,19 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        /// <summary>RN-22: cada solicitante solo ve lo suyo; el personal de la distribuidora ve todo.</summary>
+        /// <summary>
+        /// RN-22: cada solicitante solo ve lo suyo; el personal de la distribuidora ve todo menos los borradores,
+        /// que son del solicitante hasta que los envía (D-4).
+        /// </summary>
         private IQueryable<ConnectionRequest> Visible(RequestScope scope, bool tracking = false)
         {
             var query = tracking ? context.ConnectionRequests.AsQueryable() : context.ConnectionRequests.AsNoTracking();
+            // El código del transformador y el titular se muestran en el expediente y en las listas.
+            query = query.Include(r => r.Transformer).Include(r => r.Customer).Include(r => r.InstallerCompany);
 
             return scope.Kind switch
             {
-                RequestScopeKind.All => query,
+                RequestScopeKind.All => query.Where(r => r.Status != RequestStatus.Draft),
                 RequestScopeKind.Customer when scope.UserId is not null =>
                     query.Where(r => r.Customer!.ApplicationUserId == scope.UserId),
                 RequestScopeKind.InstallerCompany when scope.UserId is not null =>

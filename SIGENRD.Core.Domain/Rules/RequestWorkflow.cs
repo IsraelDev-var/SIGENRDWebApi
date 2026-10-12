@@ -11,6 +11,8 @@ namespace SIGENRD.Core.Domain.Rules
         private static readonly IReadOnlyDictionary<RequestStatus, RequestStatus[]> Allowed =
             new Dictionary<RequestStatus, RequestStatus[]>
             {
+                // D-4: el borrador se envía (pasa a Recibida) o se descarta.
+                [RequestStatus.Draft] = new[] { RequestStatus.Received, RequestStatus.Cancelled },
                 [RequestStatus.Received] = new[] { RequestStatus.UnderReview, RequestStatus.Cancelled },
                 [RequestStatus.UnderReview] = new[] { RequestStatus.Observed, RequestStatus.Approved, RequestStatus.Rejected },
                 [RequestStatus.Observed] = new[] { RequestStatus.InCorrection, RequestStatus.Cancelled },
@@ -29,10 +31,11 @@ namespace SIGENRD.Core.Domain.Rules
         public static bool IsFinal(RequestStatus status) => NextStates(status).Count == 0;
 
         /// <summary>
-        /// El solicitante sube o retira documentos antes de la revisión y mientras corrige observaciones (RF-16).
+        /// El solicitante sube o retira documentos en el borrador, antes de la revisión y mientras corrige
+        /// observaciones (RF-16).
         /// En revisión no cambian bajo los pies del revisor, y tras Aprobada quedan fijos (RN-19).
         /// </summary>
         public static bool AllowsDocumentChanges(RequestStatus status) =>
-            status is RequestStatus.Received or RequestStatus.InCorrection;
+            status is RequestStatus.Draft or RequestStatus.Received or RequestStatus.InCorrection;
     }
 }

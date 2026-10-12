@@ -195,6 +195,23 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
 
         // ---------- Flujo de estados: solicitante ----------
 
+        /// <summary>Edita los datos del proyecto mientras la solicitud es un borrador (D-4).</summary>
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
+        [HttpPut("{id:int}")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
+        public async Task<IActionResult> UpdateDraft(int id, [FromBody] UpdateDraftRequestCommand command)
+        {
+            command.Id = id;
+            return Ok(await _mediator.Send(command));
+        }
+
+        /// <summary>Borrador a Recibida: valida los documentos y avisa a la distribuidora (D-4, RN-16).</summary>
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
+        [HttpPost("{id:int}/submit")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
+        public async Task<IActionResult> Submit(int id)
+            => Ok(await _mediator.Send(new SubmitRequestCommand { Id = id }));
+
         /// <summary>Observaciones a En corrección.</summary>
         [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/start-correction")]

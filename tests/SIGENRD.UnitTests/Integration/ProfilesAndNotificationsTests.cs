@@ -133,7 +133,8 @@ public class ProfilesAndNotificationsTests(ApiFactory api)
 
     // ---------------- notificaciones ----------------
 
-    private async Task<(int RequestId, string Code)> CreateRequestAsCustomerAsync()
+    /// <summary>Crea el borrador y, si <paramref name="submit"/>, sube los documentos requeridos y lo envía (D-4).</summary>
+    private async Task<(int RequestId, string Code)> CreateRequestAsCustomerAsync(bool submit = true)
     {
         var customerUser = await api.LoginAsync(TestRole.Customer);
 
@@ -168,8 +169,22 @@ public class ProfilesAndNotificationsTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var id = (await Read(response)).GetProperty("data").GetInt32();
-        var code = (await context.ConnectionRequests.AsNoTracking().SingleAsync(r => r.Id == id)).RequestCode;
-        return (id, code);
+        var request = await context.ConnectionRequests.AsNoTracking().SingleAsync(r => r.Id == id);
+        if (!submit) return (id, request.RequestCode);
+
+        foreach (var requirement in RequiredDocuments.For(request, false))
+        {
+            context.TechnicalDocuments.Add(new TechnicalDocument
+            {
+                ConnectionRequestId = id, DocumentType = requirement.AnyOf[0], FileName = "d.pdf",
+                FileUrl = "https://blob.test/" + Unique(), ContentType = "application/pdf", SizeBytes = 1
+            });
+        }
+        await context.SaveChangesAsync();
+
+        var sent = await (await api.ClientFor(TestRole.Customer)).PostAsync("/api/v1/ConnectionRequest/" + id + "/submit", null);
+        Assert.Equal(HttpStatusCode.OK, sent.StatusCode);
+        return (id, request.RequestCode);
     }
 
     [FactIfDatabase]
@@ -186,6 +201,82 @@ public class ProfilesAndNotificationsTests(ApiFactory api)
         var staff = await Read(await (await api.ClientFor(TestRole.Distributor)).GetAsync("/api/v1/Notifications?unreadOnly=true"));
         Assert.Contains(staff.GetProperty("data").GetProperty("items").EnumerateArray(),
             n => n.GetProperty("title").GetString()!.Contains(code));
+    }
+
+    [FactIfDatabase]
+    public async Task Un_borrador_no_avisa_a_nadie_ni_se_ve_fuera_del_solicitante()
+    {
+        var staffBefore = await UnreadFor(TestRole.Distributor);
+        var customerBefore = await UnreadFor(TestRole.Customer);
+
+        var (id, code) = await CreateRequestAsCustomerAsync(submit: false);
+
+        Assert.Equal(staffBefore, await UnreadFor(TestRole.Distributor));
+        Assert.Equal(customerBefore, await UnreadFor(TestRole.Customer));
+
+        // El personal no lo ve ni por id ni en la lista; el seguimiento público tampoco.
+        var staff = await api.ClientFor(TestRole.Engineer);
+        Assert.Equal(HttpStatusCode.NotFound, (await staff.GetAsync("/api/v1/ConnectionRequest/" + id)).StatusCode);
+        var list = await Read(await staff.GetAsync("/api/v1/ConnectionRequest/search?text=" + code));
+        Assert.Equal(0, list.GetProperty("data").GetProperty("totalCount").GetInt32());
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await (await api.ClientFor(TestRole.Anonymous)).GetAsync("/api/v1/ConnectionRequest/track/" + code)).StatusCode);
+
+        // El solicitante sí, como borrador.
+        var own = await Read(await (await api.ClientFor(TestRole.Customer)).GetAsync("/api/v1/ConnectionRequest/" + id));
+        Assert.Equal("Draft", own.GetProperty("data").GetProperty("status").GetString());
+    }
+
+    [FactIfDatabase]
+    public async Task Enviar_un_borrador_sin_documentos_falla_y_con_documentos_pasa_a_recibida()
+    {
+        var (id, code) = await CreateRequestAsCustomerAsync(submit: false);
+        var customer = await api.ClientFor(TestRole.Customer);
+
+        var missing = await customer.PostAsync("/api/v1/ConnectionRequest/" + id + "/submit", null);
+        Assert.Equal(HttpStatusCode.BadRequest, missing.StatusCode);
+
+        await using (var context = api.NewAppContext())
+        {
+            var request = await context.ConnectionRequests.AsNoTracking().SingleAsync(r => r.Id == id);
+            foreach (var requirement in RequiredDocuments.For(request, false))
+                context.TechnicalDocuments.Add(new TechnicalDocument
+                {
+                    ConnectionRequestId = id, DocumentType = requirement.AnyOf[0], FileName = "d.pdf",
+                    FileUrl = "https://blob.test/" + Unique(), ContentType = "application/pdf", SizeBytes = 1
+                });
+            await context.SaveChangesAsync();
+        }
+
+        var sent = await customer.PostAsync("/api/v1/ConnectionRequest/" + id + "/submit", null);
+        Assert.Equal(HttpStatusCode.OK, sent.StatusCode);
+
+        var again = await customer.PostAsync("/api/v1/ConnectionRequest/" + id + "/submit", null);
+        Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
+
+        var tracked = await Read(await (await api.ClientFor(TestRole.Anonymous)).GetAsync("/api/v1/ConnectionRequest/track/" + code));
+        Assert.Equal("Received", tracked.GetProperty("data").GetProperty("status").GetString());
+
+        // Otro usuario no puede enviar borradores ajenos.
+        var (otherId, _) = await CreateRequestAsCustomerAsync(submit: false);
+        var (stranger, _, _) = await api.NewUserAsync(installer: false);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await stranger.PostAsync("/api/v1/ConnectionRequest/" + otherId + "/submit", null)).StatusCode);
+    }
+
+    [FactIfDatabase]
+    public async Task Descartar_un_borrador_lo_cancela_sin_avisar()
+    {
+        var (id, _) = await CreateRequestAsCustomerAsync(submit: false);
+        var customer = await api.ClientFor(TestRole.Customer);
+        var before = await UnreadFor(TestRole.Customer);
+
+        var cancel = await customer.PostAsync("/api/v1/ConnectionRequest/" + id + "/cancel", Json("{}"));
+        Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+        Assert.Equal(before, await UnreadFor(TestRole.Customer));
+
+        var own = await Read(await customer.GetAsync("/api/v1/ConnectionRequest/" + id));
+        Assert.Equal("Cancelled", own.GetProperty("data").GetProperty("status").GetString());
     }
 
     [FactIfDatabase]
@@ -313,20 +404,6 @@ public class ProfilesAndNotificationsTests(ApiFactory api)
     public async Task Reenviar_una_solicitud_corregida_avisa_al_personal()
     {
         var (id, code) = await CreateRequestAsCustomerAsync();
-
-        await using (var context = api.NewAppContext())
-        {
-            var request = await context.ConnectionRequests.SingleAsync(r => r.Id == id);
-            foreach (var requirement in RequiredDocuments.For(request, false))
-            {
-                context.TechnicalDocuments.Add(new TechnicalDocument
-                {
-                    ConnectionRequestId = id, DocumentType = requirement.AnyOf[0], FileName = "d.pdf",
-                    FileUrl = "https://blob.test/" + Unique(), ContentType = "application/pdf", SizeBytes = 1
-                });
-            }
-            await context.SaveChangesAsync();
-        }
 
         var staff = await api.ClientFor(TestRole.Distributor);
         var customer = await api.ClientFor(TestRole.Customer);

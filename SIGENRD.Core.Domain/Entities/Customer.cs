@@ -10,7 +10,8 @@ namespace SIGENRD.Core.Domain.Entities
     public class Customer : AuditableEntity
     {
         public int Id { get; set; }
-        public string ApplicationUserId { get; set; } = string.Empty;
+        /// <summary>Cuenta del cliente. Nula si lo registró una instaladora al solicitar a su nombre (B-11).</summary>
+        public string? ApplicationUserId { get; set; }
         public string FullName { get; set; } = string.Empty;
 
         // Cedula o RNC

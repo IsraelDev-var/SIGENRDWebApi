@@ -30,6 +30,8 @@ public class RequestWorkflowTests
 
     private static readonly HashSet<(RequestStatus, RequestStatus)> Valid = new()
     {
+        (RequestStatus.Draft, RequestStatus.Received),
+        (RequestStatus.Draft, RequestStatus.Cancelled),
         (RequestStatus.Received, RequestStatus.UnderReview),
         (RequestStatus.Received, RequestStatus.Cancelled),
         (RequestStatus.UnderReview, RequestStatus.Observed),
@@ -42,7 +44,7 @@ public class RequestWorkflowTests
     };
 
     [Fact]
-    public void Solo_las_nueve_transiciones_de_RN_12_y_RN_23_son_validas()
+    public void Solo_las_once_transiciones_de_RN_12_RN_23_y_D_4_son_validas()
     {
         foreach (var from in All)
             foreach (var to in All)
