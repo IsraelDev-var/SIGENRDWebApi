@@ -74,7 +74,7 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
             return Ok(result);
         }
 
-        [ProducesResponseType<string>(StatusCodes.Status200OK)]
+        [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
         [HttpGet("confirm-email")]
         public async Task<IActionResult> ConfirmEmail(string userId, string code)
         {
@@ -82,6 +82,9 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
                 throw new ApiException("Parámetros inválidos");
 
             var result = await _authService.ConfirmEmailAsync(userId, code);
+            if (!result.Success)
+                throw new ApiException(result.Message!); // ← 400: enlace inválido o ya usado
+
             return Ok(result);
         }
 

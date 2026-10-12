@@ -114,10 +114,9 @@ namespace SIGENRD.Infrastructure.Identity.Services
             // 2. Codificar token para URL (evita errores con caracteres especiales)
             verificationToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(verificationToken));
 
-            // 3. Construir URL de confirmación
-            // La URL pública viene de la configuración (App:PublicBaseUrl).
-            var route = "api/v1/Auth/confirm-email";
-            var verificationUri = $"{PublicBaseUrl}/{route}?userId={user.Id}&code={verificationToken}";
+            // 3. Construir URL de confirmación: la página del frontend (App:EmailConfirmationUrl) o, sin ella, la API.
+            var verificationUri = BuildEmailConfirmationLink(
+                _configuration["App:EmailConfirmationUrl"], PublicBaseUrl, user.Id, verificationToken);
 
             // 4. Enviar el correo
             await _emailService.SendAsync(new EmailRequest
@@ -258,24 +257,48 @@ namespace SIGENRD.Infrastructure.Identity.Services
         // ========================== Confirmacion de Email
 
 
-        public async Task<string> ConfirmEmailAsync(string userId, string code)
+        /// <summary>
+        /// Enlace del correo de confirmación. Con App:EmailConfirmationUrl apunta a la página del frontend,
+        /// que llama a la API; sin ella, a la API directamente (comportamiento anterior).
+        /// </summary>
+        public static string BuildEmailConfirmationLink(string? frontendUrl, string publicBaseUrl, string userId, string code)
         {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null) return "Usuario no encontrado";
+            var target = string.IsNullOrWhiteSpace(frontendUrl)
+                ? publicBaseUrl.TrimEnd('/') + "/api/v1/Auth/confirm-email"
+                : frontendUrl.TrimEnd('/');
+            return $"{target}?userId={Uri.EscapeDataString(userId)}&code={code}";
+        }
 
-            // Decodificar el token
-            var decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
+        public const string EmailConfirmationFailedMessage = "El enlace de confirmación no es válido o ya se usó.";
+
+        public async Task<AuthResponse> ConfirmEmailAsync(string userId, string code)
+        {
+            // Mismo mensaje si el usuario no existe o el código no sirve: no se revela qué cuentas existen.
+            var failed = new AuthResponse { Success = false, Message = EmailConfirmationFailedMessage };
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return failed;
+
+            string decodedCode;
+            try
+            {
+                decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
+            }
+            catch (FormatException)
+            {
+                return failed;
+            }
 
             var result = await _userManager.ConfirmEmailAsync(user, decodedCode);
 
             if (!result.Succeeded)
-                return "Error confirmando correo";
+                return failed;
 
             // Se mantiene sincronizada la bandera propia del usuario con la de Identity.
             user.IsEmailConfirmed = true;
             await _userManager.UpdateAsync(user);
 
-            return "Correo confirmado exitosamente";
+            return new AuthResponse { Success = true, Message = "Correo confirmado. Ya puedes iniciar sesión." };
         }
 
         // ========================== Recuperación de contraseña
