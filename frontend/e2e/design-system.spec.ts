@@ -29,16 +29,16 @@ for (const colorScheme of ["light", "dark"] as const) {
   });
 }
 
-test("el tema oscuro cambia de verdad los colores", async ({ browser }) => {
-  const background = async (colorScheme: "light" | "dark") => {
-    const page = await browser.newPage({ colorScheme });
-    await page.goto("/catalogo");
-    const value = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    await page.close();
-    return value;
-  };
+test("el tema oscuro cambia de verdad los colores", async ({ page }) => {
+  const bodyBackground = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
-  expect(await background("light")).not.toBe(await background("dark"));
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/catalogo");
+  const light = await bodyBackground();
+
+  // Sin recargar: el tema sigue a la preferencia del sistema en el momento.
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect.poll(bodyBackground).not.toBe(light);
 });
 
 test("el primer Tab lleva a 'Saltar al contenido'", async ({ page }) => {
