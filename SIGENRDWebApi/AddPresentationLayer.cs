@@ -118,6 +118,11 @@ namespace SIGENRD.Presentation.WebApi
             // 4. Agregar Generador de Swagger CON SEGURIDAD JWT 🔒
             services.AddSwaggerGen(options =>
             {
+                // Tipos de referencia no anulables (string, objetos) como no anulables, y requeridos todos los
+                // campos que no admiten null: así el contrato dice qué viene siempre (tipos exactos en el frontend).
+                options.SupportNonNullableReferenceTypes();
+                options.SchemaFilter<RequiredPropertiesSchemaFilter>();
+
                 // A) Definimos el esquema de seguridad (El botón "Authorize")
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
