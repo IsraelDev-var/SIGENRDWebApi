@@ -1,6 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+// Segundo servidor sin la variable del catálogo: solo existe en CI (ver playwright.config.ts).
+const catalogOffUrl = process.env.CI ? `http://localhost:${Number(process.env.PORT ?? 3000) + 1}` : null;
+
 const PAGES = [
   { path: "/catalogo", heading: "Catálogo de componentes" },
   { path: "/catalogo/publica", heading: "Zona pública: aquí va el mapa" },
@@ -66,4 +69,19 @@ test("en móvil el menú se abre en un panel", async ({ page, isMobile }) => {
   const dialog = page.getByRole("dialog", { name: "Gestión" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("link", { name: "Transformadores" })).toBeVisible();
+});
+
+test("el tooltip se muestra al enfocar con el teclado", async ({ page }) => {
+  await page.goto("/catalogo");
+  await page.getByRole("button", { name: "kVA" }).focus();
+
+  await expect(page.getByRole("tooltip")).toContainText("Kilovoltio-amperio");
+});
+
+test("sin ENERGYMAP_DESIGN_CATALOG el catálogo responde 404", async ({ request }) => {
+  test.skip(!catalogOffUrl, "Solo en CI, donde corre un segundo servidor sin la variable");
+
+  expect((await request.get(`${catalogOffUrl}/catalogo`)).status()).toBe(404);
+  expect((await request.get(`${catalogOffUrl}/catalogo/gestion`)).status()).toBe(404);
+  expect((await request.get(`${catalogOffUrl}/`)).status()).toBe(200);
 });

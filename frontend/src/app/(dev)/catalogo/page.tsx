@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { REQUEST_STATUS, TRANSFORMER_STATUS, type RequestStatus, type TransformerStatus } from "@/config/status";
 
 import { CATALOG_PAGES } from "./sample-nav";
@@ -92,7 +93,14 @@ export default function CatalogPage() {
           <p className="max-w-prose">
             Texto de párrafo para formularios y explicaciones. La plataforma la usan personas sin formación técnica (RNF-14).
           </p>
-          <p className="font-mono tabular-nums">IBM Plex Mono · TR-SD-01234 · 1,250.5 kVA · RD$60,000</p>
+          <p className="font-mono tabular-nums">
+            IBM Plex Mono · TR-SD-01234 · 1,250.5{" "}
+            <Tooltip>
+              <TooltipTrigger className="underline decoration-dotted underline-offset-4">kVA</TooltipTrigger>
+              <TooltipContent>Kilovoltio-amperio: unidad de capacidad del transformador</TooltipContent>
+            </Tooltip>{" "}
+            · RD$60,000
+          </p>
         </div>
       </Section>
 
