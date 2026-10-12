@@ -105,6 +105,38 @@ public class SecurityHardeningTests(ApiFactory api)
             (await client.PostAsJsonAsync("/api/v1/Auth/login", new { email = "nadie@test.energymap.local", password = "x" })).StatusCode);
     }
 
+    [FactIfDatabase]
+    public async Task El_limite_se_aplica_a_la_ip_que_reenvia_el_frontend_solo_con_la_clave_correcta()
+    {
+        // El frontend (BFF) llama desde su servidor: sin reenviar la IP, todos los usuarios compartirían un límite.
+        using var limited = api.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        {
+            services.PostConfigure<RateLimitSettings>(o => o.PublicTrackingPermitLimit = 2);
+            services.PostConfigure<SIGENRDWebApi.Middlewares.TrustedProxySettings>(o => o.Key = "clave-de-prueba-del-proxy");
+        }));
+        var client = limited.CreateClient();
+
+        async Task<HttpStatusCode> Track(string? key, string clientIp)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/ConnectionRequest/track/REQ-NOEXISTE");
+            if (key is not null) request.Headers.Add("X-EnergyMap-Proxy-Key", key);
+            request.Headers.Add("X-EnergyMap-Client-IP", clientIp);
+            return (await client.SendAsync(request)).StatusCode;
+        }
+
+        // Usuario A agota su límite...
+        Assert.Equal(HttpStatusCode.NotFound, await Track("clave-de-prueba-del-proxy", "203.0.113.10"));
+        Assert.Equal(HttpStatusCode.NotFound, await Track("clave-de-prueba-del-proxy", "203.0.113.10"));
+        Assert.Equal(HttpStatusCode.TooManyRequests, await Track("clave-de-prueba-del-proxy", "203.0.113.10"));
+        // ...y el usuario B, que llega por el mismo servidor del frontend, no se ve afectado.
+        Assert.Equal(HttpStatusCode.NotFound, await Track("clave-de-prueba-del-proxy", "203.0.113.20"));
+
+        // Sin clave o con una clave falsa, la IP reenviada se ignora: no sirve para esquivar el límite.
+        Assert.Equal(HttpStatusCode.NotFound, await Track(null, "198.51.100.1"));
+        Assert.Equal(HttpStatusCode.NotFound, await Track("clave-falsa", "198.51.100.2"));
+        Assert.Equal(HttpStatusCode.TooManyRequests, await Track("clave-falsa", "198.51.100.3"));
+    }
+
     // ---------------- SEC-05: cabeceras de seguridad ----------------
 
     [TheoryIfDatabase]

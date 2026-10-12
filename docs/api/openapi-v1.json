@@ -1912,6 +1912,73 @@
         }
       }
     },
+    "/api/v1/RequiredDocuments": {
+      "get": {
+        "tags": [
+          "RequiredDocuments"
+        ],
+        "parameters": [
+          {
+            "name": "RequestType",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/RequestType"
+            }
+          },
+          {
+            "name": "RequestedCapacityKva",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "IsLegalEntity",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "PropertyRelation",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PropertyRelation"
+            }
+          },
+          {
+            "name": "UsageType",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/UsageType"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentRequirementDtoListResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentRequirementDtoListResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentRequirementDtoListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/ServiceZones": {
       "get": {
         "tags": [
@@ -3571,6 +3638,59 @@
           },
           "data": {
             "$ref": "#/components/schemas/DocumentDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DocumentRequirementDto": {
+        "required": [
+          "acceptedTypes",
+          "code",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "acceptedTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "DocumentRequirementDtoListResponse": {
+        "required": [
+          "succeeded"
+        ],
+        "type": "object",
+        "properties": {
+          "succeeded": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentRequirementDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
