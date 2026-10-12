@@ -37,7 +37,8 @@ export function setup() {
   // Códigos reales para el seguimiento público.
   const res = http.get(`${BASE}/api/v1/ConnectionRequest/search?pageSize=100`, authHeaders(token));
   const codes = res.json('data.items').map((r) => r.requestCode);
-  return { token, codes };
+  // Simular es del solicitante (matriz 3.2).
+  return { token, codes, customerToken: login('cliente') };
 }
 
 export default function (data) {
@@ -61,7 +62,7 @@ export default function (data) {
       latitude: p.lat,
       longitude: p.lng,
       installedCapacityKw: 1 + Math.floor(Math.random() * 8),
-    }), Object.assign(jsonAuth(data.token), { tags: { name: 'simulacion-crear' } }));
+    }), Object.assign(jsonAuth(data.customerToken), { tags: { name: 'simulacion-crear' } }));
   } else {
     res = http.get(`${BASE}/api/v1/Reports/requests/statistics`,
       Object.assign(authHeaders(data.token), { tags: { name: 'reporte-estadisticas' } }));

@@ -253,14 +253,18 @@ public class RequestAccessTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    [FactIfDatabase]
-    public async Task El_administrador_puede_crear_en_nombre_de_cualquiera()
+    [TheoryIfDatabase]
+    [InlineData(TestRole.Admin)]
+    [InlineData(TestRole.Distributor)]
+    [InlineData(TestRole.Engineer)]
+    public async Task El_personal_no_crea_solicitudes_en_nombre_de_otros(TestRole role)
     {
+        // Matriz de permisos 3.2: crear solicitudes es solo del cliente y de la instaladora validada.
         var seeded = await SeedAsync(withInstaller: false);
 
-        var response = await (await api.ClientFor(TestRole.Admin))
+        var response = await (await api.ClientFor(role))
             .PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, seeded.CustomerId, null)));
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 }

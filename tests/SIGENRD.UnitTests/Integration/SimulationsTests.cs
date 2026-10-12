@@ -182,11 +182,17 @@ public class SimulationsTests(ApiFactory api)
     }
 
     [FactIfDatabase]
-    public async Task Solo_clientes_instaladoras_y_administradores_simulan()
+    public async Task Solo_clientes_e_instaladoras_simulan()
     {
+        // Matriz de permisos 3.2: el personal, incluido el administrador, no crea simulaciones.
         var body = new { monthlyConsumptionKwh = 400, latitude = 18.5, longitude = -69.9, installedCapacityKw = 2 };
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await api.CreateClient().PostAsJsonAsync("/api/v1/Simulations", body)).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await (await api.ClientFor(TestRole.Engineer)).PostAsJsonAsync("/api/v1/Simulations", body)).StatusCode);
+        foreach (var role in new[] { TestRole.Engineer, TestRole.Distributor, TestRole.Admin })
+        {
+            var client = await api.ClientFor(role);
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/v1/Simulations", body)).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/v1/Simulations")).StatusCode);
+        }
     }
 }

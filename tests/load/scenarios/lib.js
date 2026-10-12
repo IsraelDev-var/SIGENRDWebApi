@@ -55,9 +55,12 @@ export function browseMap() {
     { tags: { name: 'transformadores-cercanos' } });
 }
 
-export function login() {
+/** Inicia sesión como el administrador (por defecto) o como el cliente de carga ('cliente'). */
+export function login(who = 'admin') {
+  const email = who === 'cliente' ? __ENV.CUSTOMER_EMAIL : __ENV.ADMIN_EMAIL;
+  const password = who === 'cliente' ? __ENV.CUSTOMER_PASSWORD : __ENV.ADMIN_PASSWORD;
   const res = http.post(`${BASE}/api/v1/Auth/login`,
-    JSON.stringify({ email: __ENV.ADMIN_EMAIL, password: __ENV.ADMIN_PASSWORD }), { headers: JSON_HEADERS });
+    JSON.stringify({ email, password }), { headers: JSON_HEADERS });
   if (res.status !== 200) throw new Error(`login falló: ${res.status} ${res.body}`);
   return res.json('token');
 }

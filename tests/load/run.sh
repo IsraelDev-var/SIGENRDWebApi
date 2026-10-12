@@ -20,6 +20,8 @@ SCENARIOS=("${@:-mapa}")
 # Secretos solo de esta corrida: nada se guarda.
 export LOAD_DB_PASSWORD="$(openssl rand -hex 16)"
 export LOAD_ADMIN_PASSWORD="Carga-$(openssl rand -hex 6)-A1"
+export LOAD_CUSTOMER_EMAIL="cliente.carga@test.energymap.local"
+export LOAD_CUSTOMER_PASSWORD="Cliente-$(openssl rand -hex 6)-B2"
 export LOAD_JWT_KEY="$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 2>/dev/null | openssl pkcs8 -topk8 -nocrypt -outform DER | base64 | tr -d '\n')"
 
 cleanup() {
@@ -50,6 +52,18 @@ for _ in $(seq 1 60); do
   sleep 2
 done
 curl -sf http://127.0.0.1:5299/health >/dev/null || { "${COMPOSE[@]}" logs api | tail -30; exit 1; }
+
+echo "== Cliente de carga"
+# Subir documentos y simular es solo de clientes e instaladoras (matriz 3.2). Se registra un cliente por la API,
+# se confirma su correo y se le asignan 100 solicitudes Recibidas para que pueda subirles documentos.
+curl -sf -X POST http://127.0.0.1:5299/api/v1/Auth/register -H 'Content-Type: application/json' \
+  -d "{\"fullName\":\"Cliente de carga\",\"email\":\"$LOAD_CUSTOMER_EMAIL\",\"password\":\"$LOAD_CUSTOMER_PASSWORD\",\"userType\":1}" >/dev/null
+psql_db -c "UPDATE \"AspNetUsers\" SET \"EmailConfirmed\" = true, \"IsEmailConfirmed\" = true WHERE \"NormalizedEmail\" = upper('$LOAD_CUSTOMER_EMAIL');"
+psql_db -c "INSERT INTO customer (\"ApplicationUserId\", \"FullName\", \"NationalIdOrRnc\", \"Email\", \"CreatedAt\", \"IsActive\", \"IsLegalEntity\")
+            SELECT \"Id\", 'Cliente de carga', '99999999999', '$LOAD_CUSTOMER_EMAIL', now(), true, false
+            FROM \"AspNetUsers\" WHERE \"NormalizedEmail\" = upper('$LOAD_CUSTOMER_EMAIL');"
+psql_db -c "UPDATE \"ConnectionRequests\" SET \"CustomerId\" = (SELECT max(\"Id\") FROM customer)
+            WHERE \"Id\" IN (SELECT \"Id\" FROM \"ConnectionRequests\" WHERE \"Status\" = 'Received' ORDER BY \"Id\" LIMIT 100);"
 
 for scenario in "${SCENARIOS[@]}"; do
   echo "== Escenario: $scenario"

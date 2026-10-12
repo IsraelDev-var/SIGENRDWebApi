@@ -133,11 +133,16 @@ public class DocumentsTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.NotFound,
             (await Upload(TestRole.InstallerCompany, seeded.RequestId, DocumentComponentsTests.Pdf(), "b.pdf", DocumentType.Other)).StatusCode);
 
-        // Anónimo: 401. El ingeniero no sube documentos: 403.
+        // Anónimo: 401. El personal, incluido el administrador, no sube ni retira documentos (matriz 3.2): 403.
         Assert.Equal(HttpStatusCode.Unauthorized,
             (await api.CreateClient().GetAsync("/api/v1/ConnectionRequest/" + seeded.RequestId + "/documents")).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden,
-            (await Upload(TestRole.Engineer, seeded.RequestId, DocumentComponentsTests.Pdf(), "c.pdf", DocumentType.Other)).StatusCode);
+        foreach (var role in new[] { TestRole.Engineer, TestRole.Distributor, TestRole.Admin })
+        {
+            Assert.Equal(HttpStatusCode.Forbidden,
+                (await Upload(role, seeded.RequestId, DocumentComponentsTests.Pdf(), "c.pdf", DocumentType.Other)).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden,
+                (await (await api.ClientFor(role)).DeleteAsync("/api/v1/ConnectionRequest/" + seeded.RequestId + "/documents/" + documentId)).StatusCode);
+        }
     }
 
     [TheoryIfDatabase]
