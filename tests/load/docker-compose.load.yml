@@ -55,5 +55,7 @@ services:
       - ./results:/results
     environment:
       BASE_URL: http://api:8080
+      # Estrés: tasas por etapa (peticiones/s), por ejemplo RATES=200,400,800,1600. Vacío usa las del escenario.
+      RATES: ${RATES:-}
       ADMIN_EMAIL: admin@sigenrd.com
       ADMIN_PASSWORD: ${LOAD_ADMIN_PASSWORD}

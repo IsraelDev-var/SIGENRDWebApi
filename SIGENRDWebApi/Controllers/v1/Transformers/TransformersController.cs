@@ -25,18 +25,21 @@ namespace SIGENRDWebApi.Controllers.v1.Transformers
         /// <summary>Transformadores dentro del área visible del mapa, con filtros.</summary>
         [HttpGet]
         [AllowAnonymous]
+        [ResponseCache(CacheProfileName = CacheProfiles.Map)]
         public async Task<IActionResult> GetInBounds([FromQuery] GetTransformersInBoundsQuery query)
             => Ok(await mediator.Send(query));
 
         /// <summary>Busca por código o por cercanía a unas coordenadas.</summary>
         [HttpGet("search")]
         [AllowAnonymous]
+        [ResponseCache(CacheProfileName = CacheProfiles.Map)]
         public async Task<IActionResult> Search([FromQuery] SearchTransformersQuery query)
             => Ok(await mediator.Send(query));
 
         /// <summary>Detalle técnico de un transformador.</summary>
         [HttpGet("{id:int}")]
         [AllowAnonymous]
+        [ResponseCache(CacheProfileName = CacheProfiles.Map)]
         public async Task<IActionResult> GetById(int id)
             => Ok(await mediator.Send(new GetTransformerByIdQuery(id)));
 
