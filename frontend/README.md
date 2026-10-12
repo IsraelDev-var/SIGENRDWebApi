@@ -22,6 +22,29 @@ Aplicación web de EnergyMap: Next.js (App Router), React, TypeScript estricto, 
 
 Si el puerto 3000 está ocupado, `PORT=3100 pnpm e2e`.
 
+## Sesión y permisos
+
+- **BFF:** el navegador nunca ve el JWT. Las Server Actions de `features/auth` llaman a `/api/v1/Auth/*`
+  y guardan el token en la cookie `em_session` (HttpOnly, Secure, SameSite=Lax, vence con el token).
+  `src/server/session.ts` lo verifica con la llave pública (RS256, emisor y audiencia).
+- **Matriz 3.2** en `src/config/permissions.ts`: `can(rol, acción)`, zonas (`/portal` para Cliente e Instaladora,
+  `/gestion` para Ingeniero, Distribuidora y Admin) e inicio de cada rol. `permissions.test.ts` la compara fila por fila con el documento.
+- **Protección en tres capas:** `src/proxy.ts` (optimista: redirige a `/ingresar` o responde 403 con `/sin-acceso`),
+  `requireZone()` en cada página privada y, siempre, la API.
+- Cerrar sesión borra la cookie. La API no revoca JWT: el token deja de usarse pero sigue vigente hasta que vence (60 min).
+- En la API, `App:EmailConfirmationUrl` y `App:PasswordResetUrl` deben apuntar a `/confirmar-correo` y `/restablecer` de este sitio.
+
+### Pruebas contra la API real
+
+`pnpm e2e` levanta la API si existe `ENERGYMAP_E2E_DB` (servidor PostGIS, sin nombre de base): borra y migra la base
+`energymap_e2e`, genera un par de llaves para la ejecución y corre `e2e/*.api.spec.ts` con los usuarios de prueba por rol.
+Hace falta `dotnet-ef`. Ejemplo con una base temporal:
+
+```bash
+docker run -d --rm --name energymap-test-pg -e POSTGRES_PASSWORD=test-only-pass -p 127.0.0.1:5434:5432 postgis/postgis:17-3.5
+ENERGYMAP_E2E_DB="Host=127.0.0.1;Port=5434;Username=postgres;Password=test-only-pass" pnpm e2e
+```
+
 ## Contrato con la API
 
 `docs/api/openapi-v1.json` es la fuente de los tipos. Si cambia la API:

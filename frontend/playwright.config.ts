@@ -1,7 +1,82 @@
+import { generateKeyPairSync } from "node:crypto";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { defineConfig, devices } from "@playwright/test";
 
+// Contraseña de los usuarios de prueba que siembra la API (igual que en e2e/support.ts). Va repetida a propósito:
+// con cualquier import relativo en este archivo, Playwright (Windows) termina en silencio al reintentar una prueba.
+const E2E_TEST_PASSWORD = "Prueba-Roles-2026!";
+
 const port = Number(process.env.PORT ?? 3000);
+const apiPort = Number(process.env.E2E_API_PORT ?? 5199);
 const isCI = !!process.env.CI;
+
+/**
+ * Servidor PostgreSQL con PostGIS para las pruebas contra la API real, sin nombre de base
+ * ("Host=…;Port=…;Username=…;Password=…"). Sin esta variable, las pruebas *.api.spec.ts se omiten.
+ */
+const e2eDb = process.env.ENERGYMAP_E2E_DB;
+
+// Llaves propias de cada ejecución: la API firma con la privada y Next verifica con la pública.
+// La configuración se vuelve a evaluar en cada worker, pero los servidores se levantan una sola vez.
+const keys = generateKeyPairSync("rsa", { modulusLength: 2048 });
+const publicKeyPem = keys.publicKey.export({ type: "spki", format: "pem" }).toString();
+const privateKeyBase64 = keys.privateKey.export({ type: "pkcs8", format: "der" }).toString("base64");
+
+const nextServer = (serverPort: number, catalog: boolean) => ({
+  // En CI se prueba el build de producción; en local, el servidor de desarrollo.
+  command: isCI ? `pnpm start --port ${serverPort}` : `pnpm dev --port ${serverPort}`,
+  url: `http://localhost:${serverPort}`,
+  reuseExistingServer: !isCI,
+  timeout: 120_000,
+  env: {
+    ENERGYMAP_API_URL: `http://localhost:${apiPort}`,
+    ENERGYMAP_JWT_PUBLIC_KEY: publicKeyPem,
+    // El catálogo del Design System responde 404 sin esta variable.
+    ENERGYMAP_DESIGN_CATALOG: catalog ? "true" : "false",
+  },
+});
+
+const database = `${e2eDb};Database=energymap_e2e`;
+const ef = (verb: string, project: string, context: string) =>
+  `dotnet ef database ${verb} -p ../${project} -s ../${project} -c ${context}`;
+
+// API .NET en Development (siembra un usuario de prueba por rol) sobre una base nueva en cada ejecución.
+const apiServer = e2eDb
+  ? [
+      {
+        command: [
+          ef("drop --force", "SIGENRD.Infrastructure.Persistences", "AppContextSIGENRD"),
+          ef("update", "SIGENRD.Infrastructure.Persistences", "AppContextSIGENRD"),
+          ef("update", "SIGENRD.Infrastructure.Identity", "IdentityDbContextSIGENRD"),
+          "dotnet run --project ../SIGENRDWebApi --no-launch-profile",
+        ].join(" && "),
+        url: `http://localhost:${apiPort}/health/live`,
+        reuseExistingServer: false,
+        timeout: 300_000,
+        env: {
+          ASPNETCORE_ENVIRONMENT: "Development",
+          ASPNETCORE_URLS: `http://localhost:${apiPort}`,
+          ConnectionStrings__Postgres: database,
+          ConnectionStrings__IdentityServerDB: database,
+          JwtSettings__PrivateKey: privateKeyBase64,
+          Seed__AdminPassword: E2E_TEST_PASSWORD,
+          Seed__TestUsersPassword: E2E_TEST_PASSWORD,
+          UseInMemoryDatabase: "false",
+          // Los correos quedan en la bandeja de salida: no hace falta un servidor SMTP.
+          EmailOutbox__DispatcherEnabled: "false",
+          Storage__Provider: "Local",
+          Storage__LocalPath: join(tmpdir(), "energymap-e2e-documentos"),
+          // Todas las pruebas salen de la misma IP: sin esto el límite de /Auth (10 por minuto) las frenaría.
+          RateLimiting__AuthPermitLimit: "100000",
+          RateLimiting__PublicTrackingPermitLimit: "100000",
+          App__EmailConfirmationUrl: `http://localhost:${port}/confirmar-correo`,
+          App__PasswordResetUrl: `http://localhost:${port}/restablecer`,
+        },
+      },
+    ]
+  : [];
 
 export default defineConfig({
   testDir: "./e2e",
@@ -15,32 +90,17 @@ export default defineConfig({
     locale: "es-DO",
   },
   projects: [
-    { name: "escritorio", use: { ...devices["Desktop Chrome"] } },
+    { name: "escritorio", testIgnore: /\.api\.spec\.ts$/, use: { ...devices["Desktop Chrome"] } },
     // CA-13: funcional desde 360 px de ancho.
-    { name: "movil", use: { ...devices["Pixel 7"], viewport: { width: 360, height: 780 } } },
+    { name: "movil", testIgnore: /\.api\.spec\.ts$/, use: { ...devices["Pixel 7"], viewport: { width: 360, height: 780 } } },
+    // Contra la API real: sesión por rol, permisos y perfiles. Cambian datos, así que corren una sola vez y en orden.
+    { name: "con-api", testMatch: /\.api\.spec\.ts$/, fullyParallel: false, use: { ...devices["Desktop Chrome"] } },
   ],
-  // En CI se prueba el build de producción; en local, el servidor de desarrollo.
   webServer: [
-    {
-      command: isCI ? `pnpm start --port ${port}` : `pnpm dev --port ${port}`,
-      url: `http://localhost:${port}`,
-      reuseExistingServer: !isCI,
-      timeout: 120_000,
-      // Activa el catálogo del Design System, que responde 404 sin esta variable.
-      env: { ENERGYMAP_DESIGN_CATALOG: "true" },
-    },
-    // Solo en CI: el mismo build sin la variable, para comprobar que el catálogo no existe en producción.
+    nextServer(port, true),
+    // Solo en CI: el mismo build sin el catálogo, para comprobar que responde 404.
     // En local no se levanta porque dos `next dev` sobre la misma carpeta se bloquean entre sí.
-    ...(isCI
-      ? [
-          {
-            command: `pnpm start --port ${port + 1}`,
-            url: `http://localhost:${port + 1}`,
-            reuseExistingServer: false,
-            timeout: 120_000,
-            env: { ENERGYMAP_DESIGN_CATALOG: "false" },
-          },
-        ]
-      : []),
+    ...(isCI ? [nextServer(port + 1, false)] : []),
+    ...apiServer,
   ],
 });

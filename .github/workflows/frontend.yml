@@ -3,10 +3,10 @@ name: Frontend
 on:
   push:
     branches: ['**']
-    paths: ['frontend/**', 'docs/api/**', '.github/workflows/frontend.yml']
+    paths: ['frontend/**', 'docs/api/**', 'SIGENRD*/**', '.github/workflows/frontend.yml']
   pull_request:
     branches: [master, main]
-    paths: ['frontend/**', 'docs/api/**', '.github/workflows/frontend.yml']
+    paths: ['frontend/**', 'docs/api/**', 'SIGENRD*/**', '.github/workflows/frontend.yml']
 
 concurrency:
   group: frontend-${{ github.ref }}
@@ -23,7 +23,27 @@ jobs:
   verify:
     name: Verificar frontend
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
+
+    # Las pruebas E2E de sesión y permisos corren contra la API real (ver playwright.config.ts).
+    services:
+      postgis:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      ENERGYMAP_E2E_DB: Host=localhost;Port=5432;Username=postgres;Password=ci-only-password
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
     steps:
       - uses: actions/checkout@v4
 
@@ -62,10 +82,19 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Herramientas de la API para las pruebas E2E
+        run: |
+          dotnet tool install --global dotnet-ef --version 9.0.10
+          dotnet build ../SIGENRDWebApi/SIGENRDWebApi.csproj -c Debug
+
       - name: Navegador para las pruebas E2E
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Pruebas E2E y accesibilidad
+      - name: Pruebas E2E, accesibilidad y sesión contra la API
         run: pnpm e2e
 
       - name: Reporte de Playwright

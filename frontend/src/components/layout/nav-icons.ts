@@ -1,4 +1,4 @@
-import { Bell, ClipboardList, FileText, Gauge, Map, ScrollText, Sun, Users, Zap, type LucideIcon } from "lucide-react";
+import { Bell, ClipboardList, FileText, Gauge, Map, ScrollText, Sun, User, Users, Zap, type LucideIcon } from "lucide-react";
 
 import type { NavIcon } from "@/config/navigation";
 
@@ -10,6 +10,7 @@ export const NAV_ICONS: Record<NavIcon, LucideIcon> = {
   map: Map,
   "scroll-text": ScrollText,
   sun: Sun,
+  user: User,
   users: Users,
   zap: Zap,
 };
