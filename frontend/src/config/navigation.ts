@@ -24,7 +24,10 @@ export type NavItem = {
 /**
  * Menú público. Solo enlaza a páginas que existen: Seguimiento y Requisitos se añaden en F4.
  */
-export const PUBLIC_NAV: NavItem[] = [{ href: "/", label: "Mapa", icon: "map" }];
+export const PUBLIC_NAV: NavItem[] = [
+  { href: "/", label: "Mapa", icon: "map" },
+  { href: "/transformadores", label: "Lista", icon: "clipboard-list" },
+];
 
 // Los menús crecen con cada entrega (solicitudes en F5, simulaciones en F6, gestión en F7–F8).
 export const PORTAL_NAV: NavItem[] = [

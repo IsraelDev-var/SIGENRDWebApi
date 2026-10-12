@@ -10,7 +10,9 @@ test.describe("página inicial (F0)", () => {
       if (request.url().includes("unpkg.com")) thirdPartyScripts.push(request.url());
     });
     page.on("console", (message) => {
-      if (message.type() === "error") consoleErrors.push(message.text());
+      // Sin API (ENERGYMAP_E2E_DB vacía) el mapa no tiene datos y el navegador registra el 503 del recurso:
+      // eso no es un error de la página.
+      if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) consoleErrors.push(message.text());
     });
 
     await page.goto("/");

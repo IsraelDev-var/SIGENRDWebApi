@@ -31,6 +31,12 @@ export const INITIAL_FIT_PADDING_PX = 16;
 // Encuadrar el país a 360 px de ancho necesita un zoom cercano a 5.9.
 export const MAP_ZOOM_LIMITS = { min: 5, max: 18 };
 
+/**
+ * Fuente para los números de los grupos: debe existir en las fuentes (glyphs) del estilo base.
+ * CARTO ofrece Montserrat y Open Sans; si cambia el proveedor (D-2), revisar esta lista.
+ */
+export const MAP_LABEL_FONT = ["Montserrat Medium", "Open Sans Bold", "Noto Sans Regular"];
+
 const CARTO_STYLES = {
   light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
   dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",

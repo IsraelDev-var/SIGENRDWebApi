@@ -45,6 +45,9 @@ docker run -d --rm --name energymap-test-pg -e POSTGRES_PASSWORD=test-only-pass 
 ENERGYMAP_E2E_DB="Host=127.0.0.1;Port=5434;Username=postgres;Password=test-only-pass" pnpm e2e
 ```
 
+En Windows, si una prueba falla y Playwright la reintenta (modo CI), el proceso puede terminar sin el resumen.
+Para ver el reporte completo, ejecuta sin reintentos: `CI=1 pnpm exec playwright test --retries=0`.
+
 ## Contrato con la API
 
 `docs/api/openapi-v1.json` es la fuente de los tipos. Si cambia la API:
@@ -102,3 +105,14 @@ ESLint (`eslint-plugin-boundaries`) los hace cumplir:
 - `src/components/ui/map.tsx` viene de `shadcn add @mapcn/map`, con tres cambios propios marcados al inicio del archivo: el worker se sirve desde `/vendor/maplibre-gl/<versión>/` (no desde unpkg.com), los controles están en español y hay aserciones de índices para `noUncheckedIndexedAccess`. Si se reinstala el componente, hay que repetirlos.
 - `pnpm dev` y `pnpm build` copian el worker a `public/vendor/` (no se versiona).
 - El estado y el porcentaje de disponibilidad siempre vienen de la API; el frontend no los calcula.
+- **Datos:** el navegador pide a `/api/mapa/…` (proxy de solo lectura en `app/api/mapa`, con una lista cerrada de
+  endpoints públicos). Así la URL de la API se configura al ejecutar y no hace falta CORS.
+- **Vista del país (zoom < 12):** grupos calculados en el servidor (`GET /Transformers/clusters`). Desde zoom 12, los
+  transformadores del área visible. Encima, MapLibre agrupa lo que quedaría encimado (hasta zoom 15).
+- **Capas** (`features/map/components/transformer-layers.tsx`): colores leídos de los tokens del Design System y forma por
+  estado (Crítica es un anillo; Saturada lleva una ×). Una sola fuente GeoJSON en WebGL: aguanta los 10.000 de RNF-02.
+- **Estado en la URL** (nuqs): `?estado=Critical&zona=3&disp=30&t=42` se puede compartir.
+- **Accesibilidad:** el panel lista lo que hay en el área y `/transformadores` ofrece la misma información en una tabla
+  que funciona sin JavaScript. `/transformadores/[id]` es la ficha con enlace propio.
+- **Datos de demostración:** la API en Development siembra `Seed:DemoTransformers` transformadores sintéticos
+  (las pruebas E2E usan 10.000).
