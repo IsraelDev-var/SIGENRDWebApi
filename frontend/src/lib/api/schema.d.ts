@@ -1576,6 +1576,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/RequiredDocuments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    RequestType?: components["schemas"]["RequestType"];
+                    RequestedCapacityKva?: number;
+                    IsLegalEntity?: boolean;
+                    PropertyRelation?: components["schemas"]["PropertyRelation"];
+                    UsageType?: components["schemas"]["UsageType"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DocumentRequirementDtoListResponse"];
+                        "application/json": components["schemas"]["DocumentRequirementDtoListResponse"];
+                        "text/json": components["schemas"]["DocumentRequirementDtoListResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ServiceZones": {
         parameters: {
             query?: never;
@@ -2410,6 +2453,17 @@ export interface components {
             message?: string | null;
             errors?: string[] | null;
             data: components["schemas"]["DocumentDto"];
+        };
+        DocumentRequirementDto: {
+            code: string;
+            description: string;
+            acceptedTypes: string[];
+        };
+        DocumentRequirementDtoListResponse: {
+            succeeded: boolean;
+            message?: string | null;
+            errors?: string[] | null;
+            data?: components["schemas"]["DocumentRequirementDto"][] | null;
         };
         /** @enum {string} */
         DocumentType: "Blueprint" | "TechnicalSheet" | "Invoice" | "IdentityDocument" | "CODIALicense" | "CompanyRegistration" | "RequestLetter" | "Permit" | "Other" | "InterconnectionScheme" | "InverterSpecification" | "CalculationMemory" | "ApprovalCertificate" | "ProofOfOwnership" | "OwnerAuthorization" | "TaxIdCard" | "ConstitutiveDocuments" | "BoardMinutes" | "IndustrialRegistry" | "EngineerIdentityDocument" | "DescriptiveMemory" | "FeasibilityRequestForm" | "ApprovedPlans" | "NoApprovedPlansLetter" | "SitePlan" | "EquipmentCertificate";

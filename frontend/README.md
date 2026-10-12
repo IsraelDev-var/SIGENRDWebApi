@@ -33,6 +33,10 @@ Si el puerto 3000 está ocupado, `PORT=3100 pnpm e2e`.
   `requireZone()` en cada página privada y, siempre, la API.
 - Cerrar sesión borra la cookie. La API no revoca JWT: el token deja de usarse pero sigue vigente hasta que vence (60 min).
 - En la API, `App:EmailConfirmationUrl` y `App:PasswordResetUrl` deben apuntar a `/confirmar-correo` y `/restablecer` de este sitio.
+- **IP del usuario:** como las llamadas a la API salen de este servidor, la API vería una sola IP para todos y su límite
+  por IP (ingreso, seguimiento) se aplicaría al sitio entero. `server/api-client.ts` y el proxy del mapa reenvían la IP
+  del usuario (`X-EnergyMap-Client-IP`) con la clave compartida `ENERGYMAP_PROXY_KEY` (= `TrustedProxy:Key` de la API).
+  La IP sale de `X-Forwarded-For` según `ENERGYMAP_TRUSTED_PROXIES` (`server/client-ip.ts`).
 
 ### Pruebas contra la API real
 

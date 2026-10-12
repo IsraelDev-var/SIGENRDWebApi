@@ -12,6 +12,13 @@ const serverEnvSchema = z.object({
   /** Llave pública RSA (PEM, SPKI) con la que se verifica el JWT de la API. Saltos de línea como \n. */
   ENERGYMAP_JWT_PUBLIC_KEY: z.string().includes("BEGIN PUBLIC KEY"),
   ENERGYMAP_JWT_ISSUER: z.string().default("SIGENRD.API"),
+  /**
+   * Clave compartida con la API (TrustedProxy:Key) para reenviarle la IP del usuario. Sin ella, la API ve la IP
+   * de este servidor para todos y el límite por IP se aplica al sitio entero.
+   */
+  ENERGYMAP_PROXY_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(16).optional()),
+  /** Proxies de confianza delante de Next que agregan la IP del usuario a X-Forwarded-For (Azure App Service: 1). */
+  ENERGYMAP_TRUSTED_PROXIES: z.coerce.number().int().min(0).max(5).default(1),
   ENERGYMAP_JWT_AUDIENCE: z.string().default("SIGENRD.Client"),
 });
 

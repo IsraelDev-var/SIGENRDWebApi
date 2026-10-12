@@ -136,6 +136,52 @@ test("cliente: completa su perfil en el primer ingreso", async ({ page }) => {
   await expect(page.getByText("809-555-0101")).toBeVisible();
 });
 
+test("el cliente envía una solicitud y cualquiera la sigue con el número de expediente (RF-14)", async ({ page, request }) => {
+  // La solicitud se crea por la API (el asistente llega en F5); el cliente ya tiene perfil por la prueba anterior.
+  const api = `http://localhost:${process.env.E2E_API_PORT ?? 5199}/api/v1`;
+  const login = await (await request.post(`${api}/Auth/login`, { data: { email: TEST_USERS.Customer, password: E2E_TEST_PASSWORD } })).json();
+  const auth = { Authorization: `Bearer ${login.token}` };
+  const customer = (await (await request.get(`${api}/Customers/me`, { headers: auth })).json()).data;
+
+  // Un transformador de demostración que acepte solicitudes, cerca del Distrito Nacional.
+  const near = (await (await request.get(`${api}/Transformers/search?latitude=18.4861&longitude=-69.9312&radiusMeters=5000&status=Available&limit=1`)).json()).data;
+  const transformer = (await (await request.get(`${api}/Transformers/${near[0].id}`)).json()).data;
+
+  const created = await request.post(`${api}/ConnectionRequest`, {
+    headers: auth,
+    data: {
+      customerId: customer.id,
+      distributorId: transformer.distributorId,
+      transformerId: transformer.id,
+      requestType: "Connection",
+      requestedCapacityKva: 5,
+      usageType: "Residential",
+      tariffType: "BT",
+      interconnectionType: "Parallel",
+      projectAddress: "Calle de prueba 1, Santo Domingo",
+      latitude: transformer.latitude,
+      longitude: transformer.longitude,
+      propertyRelation: "Owner",
+      declarationAccepted: true,
+    },
+  });
+  expect(created.ok(), await created.text()).toBe(true);
+  const id = (await created.json()).data as number;
+  const code = (await (await request.get(`${api}/ConnectionRequest/${id}`, { headers: auth })).json()).data.requestCode as string;
+
+  // Sin sesión, solo con el número.
+  await page.context().clearCookies();
+  await page.setExtraHTTPHeaders({ "X-Forwarded-For": "198.51.100.251" });
+  await page.goto(`/seguimiento?expediente=${code.toLowerCase()}`);
+  const result = page.getByRole("region", { name: code });
+  await expect(result).toBeVisible();
+  await expect(result.getByText("Recibida")).toBeVisible();
+  await expect(result.getByText("Conexión nueva")).toBeVisible();
+  await expect(result.getByText(/Edesur la recibió y la revisará/)).toBeVisible();
+  // Nada del solicitante: ni nombre ni dirección (RN-22).
+  await expect(page.getByText("Calle de prueba 1")).toHaveCount(0);
+});
+
 test("instaladora: registra su empresa y queda pendiente de validación (RN-05)", async ({ page }) => {
   await login(page, "InstallerCompany");
   await page.getByRole("link", { name: "Registrar empresa" }).click();

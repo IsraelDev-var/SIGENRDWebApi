@@ -53,6 +53,8 @@ La imagen no lleva secretos. Se definen como *Application settings* de la Web Ap
 | `Seed__AdminPassword` | Contraseña del administrador inicial (10 caracteres o más, con mayúscula, minúscula y número). Sin ella no se crea |
 | `MailSettings__SmtpHost`, `__SmtpPort`, `__SmtpUser`, `__SmtpPass`, `__EmailFrom` | Servidor de correo real |
 | `App__PublicBaseUrl` | URL pública para los enlaces de confirmación de correo |
+| `App__EmailConfirmationUrl` | Página del frontend que confirma el correo (`https://…/confirmar-correo`); recibe `?userId=...&code=...`. Sin ella, el enlace del correo apunta a la API |
+| `TrustedProxy__Key` | Clave compartida con el servidor del frontend (`ENERGYMAP_PROXY_KEY`, 16 caracteres o más). Con ella la API acepta la IP del usuario que reenvía el frontend y el límite por IP se aplica a cada persona. Sin ella, todo lo que llega por el frontend comparte un mismo límite. Es un secreto (Key Vault) |
 | `App__PasswordResetUrl` | Página del frontend que pide la nueva contraseña; recibe `?email=...&code=...`. Por defecto `{App__PublicBaseUrl}/reset-password` |
 | `Cors__AllowedOrigins__0`, `__1`, ... | Orígenes del frontend que pueden llamar a la API desde el navegador. Vacío: ninguno |
 | `RateLimiting__AuthPermitLimit`, `__PublicTrackingPermitLimit`, `__WindowSeconds` | Peticiones por IP y ventana en `/Auth/*` (10) y en el seguimiento público (30), por minuto |
