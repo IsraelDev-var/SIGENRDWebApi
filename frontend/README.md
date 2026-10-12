@@ -58,6 +58,22 @@ ESLint (`eslint-plugin-boundaries`) los hace cumplir:
 | `server` | `server`, `lib`, `config` |
 | `lib`, `config` | `lib`, `config` |
 
+## Design System
+
+- **Tokens** en `src/app/globals.css`, en hex, con tema claro y oscuro según el sistema operativo (D-6).
+  `src/config/design-tokens.test.ts` lee ese archivo y comprueba el contraste WCAG 2.1 AA de cada par
+  (4.5:1 en texto, 3:1 en bordes, foco y marcadores) en los dos temas. Si cambias un color, corre `pnpm test`.
+- **Estados**: `src/config/status.ts` traduce los valores de la API (`"Critical"`, `"UnderReview"`) a etiqueta,
+  icono y clases. Crítica y Saturada comparten el rojo pero no el icono. El frontend no calcula estados.
+- **Componentes compartidos** en `src/components/shared/`: insignias de estado, medidor de capacidad,
+  kVA, fecha de actualización (marca el dato con más de 30 días, umbral provisional D-10), leyenda,
+  encabezado de página y estados vacío, error y sin acceso.
+- **Layouts** en `src/components/layout/shells.tsx`: `PublicShell`, `PortalShell` e `InternalShell`.
+  Los menús son datos (`NavItem`, con el icono por nombre) para poder pasarlos a componentes cliente.
+- **Catálogo** en `/catalogo` con `ENERGYMAP_DESIGN_CATALOG=true` (ver `.env.example`). Sin esa variable responde 404.
+  Las pruebas E2E lo recorren con axe en los dos temas.
+- `src/components/ui/table.tsx` tiene un cambio propio: el contenedor con scroll se puede enfocar con el teclado.
+
 ## Mapa
 
 - `src/components/ui/map.tsx` viene de `shadcn add @mapcn/map`, con tres cambios propios marcados al inicio del archivo: el worker se sirve desde `/vendor/maplibre-gl/<versión>/` (no desde unpkg.com), los controles están en español y hay aserciones de índices para `noUncheckedIndexedAccess`. Si se reinstala el componente, hay que repetirlos.

@@ -2,7 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* Tema según el sistema operativo (decisión D-6): sin JavaScript ni parpadeo al cargar. */
+@custom-variant dark (@media (prefers-color-scheme: dark));
 
 @theme inline {
   --color-background: var(--background);
@@ -39,6 +40,35 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* EnergyMap: semáforo de transformadores (RN-02) y tonos de estado de solicitud */
+  --color-status-available: var(--status-available);
+  --color-status-available-soft: var(--status-available-soft);
+  --color-status-available-text: var(--status-available-text);
+  --color-status-conditioned: var(--status-conditioned);
+  --color-status-conditioned-soft: var(--status-conditioned-soft);
+  --color-status-conditioned-text: var(--status-conditioned-text);
+  --color-status-critical: var(--status-critical);
+  --color-status-critical-soft: var(--status-critical-soft);
+  --color-status-critical-text: var(--status-critical-text);
+  --color-status-saturated: var(--status-saturated);
+  --color-status-saturated-soft: var(--status-saturated-soft);
+  --color-status-saturated-text: var(--status-saturated-text);
+  --color-status-maintenance: var(--status-maintenance);
+  --color-status-maintenance-soft: var(--status-maintenance-soft);
+  --color-status-maintenance-text: var(--status-maintenance-text);
+  --color-tone-info-soft: var(--tone-info-soft);
+  --color-tone-info-text: var(--tone-info-text);
+  --color-tone-review-soft: var(--tone-review-soft);
+  --color-tone-review-text: var(--tone-review-text);
+  --color-tone-warning-soft: var(--tone-warning-soft);
+  --color-tone-warning-text: var(--tone-warning-text);
+  --color-tone-success-soft: var(--tone-success-soft);
+  --color-tone-success-text: var(--tone-success-text);
+  --color-tone-danger-soft: var(--tone-danger-soft);
+  --color-tone-danger-text: var(--tone-danger-text);
+  --color-tone-neutral-soft: var(--tone-neutral-soft);
+  --color-tone-neutral-text: var(--tone-neutral-text);
+  --color-link: var(--link);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -48,73 +78,143 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Tokens de EnergyMap (Design System, sección 6). Todos en hex: src/config/design-tokens.test.ts
+ * lee este archivo y verifica el contraste WCAG 2.1 AA de cada par texto/fondo en los dos temas.
+ * Paleta: azul tinta y verde azulado sobre neutros fríos; el semáforo es el único color fuerte.
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #f6f8fa;
+  --foreground: #13243a;
+  --card: #ffffff;
+  --card-foreground: #13243a;
+  --popover: #ffffff;
+  --popover-foreground: #13243a;
+  --primary: #12355b;
+  --primary-foreground: #ffffff;
+  --secondary: #edf1f5;
+  --secondary-foreground: #13243a;
+  --muted: #edf1f5;
+  --muted-foreground: #4f5d6d;
+  --accent: #e2f2f3;
+  --accent-foreground: #0b4f55;
+  --destructive: #b91c1c;
+  --border: #d8dee6;
+  --input: #7a8898;
+  --ring: #0e7c86;
+  --link: #0b6b74;
+  --chart-1: #12355b;
+  --chart-2: #0e7c86;
+  --chart-3: #b7791f;
+  --chart-4: #6b7fa0;
+  --chart-5: #8a5a9e;
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #13243a;
+  --sidebar-primary: #12355b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #edf1f5;
+  --sidebar-accent-foreground: #13243a;
+  --sidebar-border: #d8dee6;
+  --sidebar-ring: #0e7c86;
+
+  /* Semáforo (RN-02): relleno del marcador, fondo suave y texto de la etiqueta. */
+  --status-available: #15803d;
+  --status-available-soft: #e7f5ec;
+  --status-available-text: #14532d;
+  --status-conditioned: #a16207;
+  --status-conditioned-soft: #fbf3e2;
+  --status-conditioned-text: #713f12;
+  --status-critical: #dc2626;
+  --status-critical-soft: #fdecec;
+  --status-critical-text: #991b1b;
+  --status-saturated: #7f1d1d;
+  --status-saturated-soft: #f6e3e3;
+  --status-saturated-text: #7f1d1d;
+  --status-maintenance: #6b7280;
+  --status-maintenance-soft: #eef0f3;
+  --status-maintenance-text: #374151;
+
+  /* Tonos de estado de solicitud (RN-12). */
+  --tone-info-soft: #e8eef6;
+  --tone-info-text: #1e3a66;
+  --tone-review-soft: #e2f2f3;
+  --tone-review-text: #0b4f55;
+  --tone-warning-soft: #fbf3e2;
+  --tone-warning-text: #713f12;
+  --tone-success-soft: #e7f5ec;
+  --tone-success-text: #14532d;
+  --tone-danger-soft: #fdecec;
+  --tone-danger-text: #991b1b;
+  --tone-neutral-soft: #eef0f3;
+  --tone-neutral-text: #374151;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --background: #0d1520;
+    --foreground: #e4eaf1;
+    --card: #131e2c;
+    --card-foreground: #e4eaf1;
+    --popover: #131e2c;
+    --popover-foreground: #e4eaf1;
+    --primary: #8db4e2;
+    --primary-foreground: #0d1520;
+    --secondary: #1a2738;
+    --secondary-foreground: #e4eaf1;
+    --muted: #1a2738;
+    --muted-foreground: #a3b1c2;
+    --accent: #12343a;
+    --accent-foreground: #cdeff2;
+    --destructive: #f87171;
+    --border: #2a3a4e;
+    --input: #6b7c91;
+    --ring: #4fc1c9;
+    --link: #6fd3da;
+    --chart-1: #8db4e2;
+    --chart-2: #4fc1c9;
+    --chart-3: #fbbf24;
+    --chart-4: #a5b4cf;
+    --chart-5: #c4a1d6;
+    --sidebar: #131e2c;
+    --sidebar-foreground: #e4eaf1;
+    --sidebar-primary: #8db4e2;
+    --sidebar-primary-foreground: #0d1520;
+    --sidebar-accent: #1a2738;
+    --sidebar-accent-foreground: #e4eaf1;
+    --sidebar-border: #2a3a4e;
+    --sidebar-ring: #4fc1c9;
+
+    --status-available: #4ade80;
+    --status-available-soft: #12301f;
+    --status-available-text: #86efac;
+    --status-conditioned: #fbbf24;
+    --status-conditioned-soft: #332812;
+    --status-conditioned-text: #fcd34d;
+    --status-critical: #f87171;
+    --status-critical-soft: #3a1717;
+    --status-critical-text: #fca5a5;
+    --status-saturated: #ef4444;
+    --status-saturated-soft: #4a1515;
+    --status-saturated-text: #fecaca;
+    --status-maintenance: #9ca3af;
+    --status-maintenance-soft: #1f2937;
+    --status-maintenance-text: #d1d5db;
+
+    --tone-info-soft: #172a42;
+    --tone-info-text: #b9d0ee;
+    --tone-review-soft: #12343a;
+    --tone-review-text: #a7e6ea;
+    --tone-warning-soft: #332812;
+    --tone-warning-text: #fcd34d;
+    --tone-success-soft: #12301f;
+    --tone-success-text: #86efac;
+    --tone-danger-soft: #3a1717;
+    --tone-danger-text: #fca5a5;
+    --tone-neutral-soft: #1f2937;
+    --tone-neutral-text: #d1d5db;
+  }
 }
 
 @layer base {

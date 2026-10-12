@@ -25,5 +25,7 @@ export default defineConfig({
     url: `http://localhost:${port}`,
     reuseExistingServer: !isCI,
     timeout: 120_000,
+    // Activa el catálogo del Design System, que responde 404 sin esta variable.
+    env: { ENERGYMAP_DESIGN_CATALOG: "true" },
   },
 });

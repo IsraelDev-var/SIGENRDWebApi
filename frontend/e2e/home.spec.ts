@@ -15,7 +15,8 @@ test.describe("página inicial (F0)", () => {
 
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { level: 1, name: "EnergyMap" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "EnergyMap" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Mapa de disponibilidad eléctrica" })).toBeAttached();
     await expect(page.getByRole("region", { name: "Mapa de República Dominicana" })).toBeVisible();
     // El lienzo solo aparece si MapLibre arrancó, y para eso necesita el worker servido desde nuestro origen.
     await expect(page.locator("canvas.maplibregl-canvas")).toBeVisible({ timeout: 20_000 });
