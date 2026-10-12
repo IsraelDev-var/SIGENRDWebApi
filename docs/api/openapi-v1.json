@@ -2988,7 +2988,6 @@
       },
       "AuditLogDtoPagedDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -3138,11 +3137,31 @@
             "type": "string",
             "nullable": true
           },
+          "ownerNationalId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerPhone": {
+            "type": "string",
+            "nullable": true
+          },
           "engineerFullName": {
             "type": "string",
             "nullable": true
           },
           "engineerCodiaNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerCompany": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerEmail": {
             "type": "string",
             "nullable": true
           },
@@ -3153,6 +3172,9 @@
           "meterNumber": {
             "type": "string",
             "nullable": true
+          },
+          "netMetering": {
+            "$ref": "#/components/schemas/NetMeteringDetailsDto"
           },
           "customerId": {
             "type": "integer",
@@ -3225,7 +3247,6 @@
       },
       "ConnectionRequestResponseDtoPagedDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -3252,7 +3273,6 @@
       },
       "ConnectionRequestResponseDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -3298,11 +3318,9 @@
         "required": [
           "declarationAccepted",
           "distributorId",
-          "holder",
           "interconnectionType",
           "latitude",
           "longitude",
-          "netMetering",
           "projectAddress",
           "propertyRelation",
           "requestedCapacityKva",
@@ -3579,7 +3597,6 @@
       },
       "CustomerProfileDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -3730,7 +3747,6 @@
       },
       "DocumentDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -3864,6 +3880,81 @@
         ],
         "type": "string"
       },
+      "GeneratorDto": {
+        "required": [
+          "connectionVoltage",
+          "generationSystemType",
+          "generatorKind",
+          "harmonicDistortionPercent",
+          "manufacturer",
+          "nominalCurrent",
+          "phases",
+          "powerFactorMax",
+          "powerFactorMin",
+          "ratedPowerKva"
+        ],
+        "type": "object",
+        "properties": {
+          "generationSystemType": {
+            "type": "string"
+          },
+          "generatorKind": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "inverterModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "serialNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "phases": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ratedPowerKva": {
+            "type": "number",
+            "format": "double"
+          },
+          "connectionVoltage": {
+            "type": "number",
+            "format": "double"
+          },
+          "nominalCurrent": {
+            "type": "number",
+            "format": "double"
+          },
+          "powerFactorMin": {
+            "type": "number",
+            "format": "double"
+          },
+          "powerFactorMax": {
+            "type": "number",
+            "format": "double"
+          },
+          "switchingType": {
+            "type": "string",
+            "nullable": true
+          },
+          "harmonicDistortionPercent": {
+            "type": "number",
+            "format": "double"
+          },
+          "certificationStandard": {
+            "type": "string",
+            "nullable": true
+          },
+          "certifyingUnit": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "GeneratorInput": {
         "required": [
           "connectionVoltage",
@@ -3995,7 +4086,6 @@
       },
       "ImportTransformersResultDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4089,7 +4179,6 @@
       },
       "InstallerCompanyDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4311,6 +4400,34 @@
         },
         "additionalProperties": false
       },
+      "NetMeteringDetailsDto": {
+        "required": [
+          "generationSystemType",
+          "generators",
+          "installedCapacityKw"
+        ],
+        "type": "object",
+        "properties": {
+          "generationSystemType": {
+            "type": "string"
+          },
+          "installedCapacityKw": {
+            "type": "number",
+            "format": "double"
+          },
+          "comments": {
+            "type": "string",
+            "nullable": true
+          },
+          "generators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeneratorDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "NetMeteringDetailsInput": {
         "required": [
           "generationSystemType",
@@ -4411,7 +4528,6 @@
       },
       "NotificationDtoPagedDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4438,7 +4554,6 @@
       },
       "NotificationDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4531,7 +4646,6 @@
       },
       "RegisterRequest": {
         "required": [
-          "distributorType",
           "email",
           "fullName",
           "password",
@@ -4700,7 +4814,6 @@
       },
       "RequestStatisticsDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4770,7 +4883,6 @@
       },
       "RequestTrackingDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4850,7 +4962,6 @@
       },
       "RequiredDocumentsDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5003,7 +5114,6 @@
       },
       "SimulationComparisonDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5047,7 +5157,6 @@
           "investmentCost",
           "monthlyConsumptionKwh",
           "recommendations",
-          "referenceTransformer",
           "roi",
           "surplusPayment",
           "viabilityStatus"
@@ -5171,7 +5280,6 @@
       },
       "SimulationDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5345,7 +5453,6 @@
       },
       "SimulationSummaryDtoPagedDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5534,7 +5641,6 @@
       },
       "TransformerClusterResultDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5643,7 +5749,6 @@
       },
       "TransformerDetailDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5759,7 +5864,6 @@
       },
       "TransformerMapResultDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5802,7 +5906,6 @@
           "interconnectionType",
           "latitude",
           "longitude",
-          "netMetering",
           "projectAddress",
           "propertyRelation",
           "requestedCapacityKva",

@@ -45,7 +45,10 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
 
         public Task<ConnectionRequest?> GetVisibleByIdAsync(int id, RequestScope scope, CancellationToken cancellationToken = default)
         {
-            return Visible(scope).FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+            // El expediente muestra también los datos del sistema de generación (medición neta).
+            return Visible(scope)
+                .Include(r => r.NetMeteringRequest!).ThenInclude(n => n.Generators)
+                .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
         }
 
         public Task<ConnectionRequest?> GetForUpdateAsync(int id, RequestScope scope, CancellationToken cancellationToken = default)
@@ -101,8 +104,10 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
             return scope.Kind switch
             {
                 RequestScopeKind.All => query.Where(r => r.Status != RequestStatus.Draft),
+                // El titular ve las solicitudes a su nombre, pero el borrador de una instaladora es solo de ella.
                 RequestScopeKind.Customer when scope.UserId is not null =>
-                    query.Where(r => r.Customer!.ApplicationUserId == scope.UserId),
+                    query.Where(r => r.Customer!.ApplicationUserId == scope.UserId
+                                     && (r.Status != RequestStatus.Draft || r.InstallerCompanyId == null)),
                 RequestScopeKind.InstallerCompany when scope.UserId is not null =>
                     query.Where(r => r.InstallerCompany!.ApplicationUserId == scope.UserId),
                 _ => query.Where(r => false)

@@ -268,6 +268,42 @@ public class RequestAccessTests(ApiFactory api)
     }
 
     [FactIfDatabase]
+    public async Task B11_el_titular_con_cuenta_ve_la_solicitud_de_la_instaladora_solo_cuando_se_envia()
+    {
+        var seeded = await SeedAsync(withInstaller: true);
+        string nationalId;
+        await using (var context = api.NewAppContext())
+            nationalId = (await context.Customers.AsNoTracking().SingleAsync(c => c.Id == seeded.CustomerId)).NationalIdOrRnc;
+
+        var installer = await api.ClientFor(TestRole.InstallerCompany);
+        var created = await installer.PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, 0, null, Holder(nationalId))));
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        var id = JsonDocument.Parse(await created.Content.ReadAsStringAsync()).RootElement.GetProperty("data").GetInt32();
+
+        await using (var context = api.NewAppContext())
+            Assert.Equal(seeded.CustomerId, (await context.ConnectionRequests.AsNoTracking().SingleAsync(r => r.Id == id)).CustomerId);
+
+        var customer = await api.ClientFor(TestRole.Customer);
+        Assert.Equal(HttpStatusCode.NotFound, (await customer.GetAsync("/api/v1/ConnectionRequest/" + id)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await customer.PostAsync("/api/v1/ConnectionRequest/" + id + "/submit", null)).StatusCode);
+
+        await using (var context = api.NewAppContext())
+        {
+            var request = await context.ConnectionRequests.AsNoTracking().SingleAsync(r => r.Id == id);
+            foreach (var requirement in SIGENRD.Core.Domain.Rules.RequiredDocuments.For(request, false))
+                context.TechnicalDocuments.Add(new TechnicalDocument
+                {
+                    ConnectionRequestId = id, DocumentType = requirement.AnyOf[0], FileName = "d.pdf",
+                    FileUrl = "https://blob.test/" + Unique(), ContentType = "application/pdf", SizeBytes = 1
+                });
+            await context.SaveChangesAsync();
+        }
+
+        Assert.Equal(HttpStatusCode.OK, (await installer.PostAsync("/api/v1/ConnectionRequest/" + id + "/submit", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await customer.GetAsync("/api/v1/ConnectionRequest/" + id)).StatusCode);
+    }
+
+    [FactIfDatabase]
     public async Task B11_el_cliente_no_indica_otro_titular()
     {
         var seeded = await SeedAsync(withInstaller: false);
