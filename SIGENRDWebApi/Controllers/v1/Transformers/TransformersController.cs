@@ -9,6 +9,7 @@ using SIGENRD.Core.Application.Features.Transformers.Commands.ImportTransformers
 using SIGENRD.Core.Application.Features.Transformers.Commands.SetTransformerMaintenance;
 using SIGENRD.Core.Application.Features.Transformers.Commands.UpdateTransformerCapacity;
 using SIGENRD.Core.Application.Features.Transformers.Queries.GetCriticalZones;
+using SIGENRD.Core.Application.Features.Transformers.Queries.GetTransformerClusters;
 using SIGENRD.Core.Application.Features.Transformers.Queries.GetTransformerById;
 using SIGENRD.Core.Application.Features.Transformers.Queries.GetTransformersInBounds;
 using SIGENRD.Core.Application.Features.Transformers.Queries.SearchTransformers;
@@ -47,6 +48,16 @@ namespace SIGENRDWebApi.Controllers.v1.Transformers
         [ResponseCache(CacheProfileName = CacheProfiles.Map)]
         public async Task<IActionResult> GetById(int id)
             => Ok(await mediator.Send(new GetTransformerByIdQuery(id)));
+
+        /// <summary>
+        /// Transformadores agrupados según el zoom dentro del área visible (B-2): la vista del país sin enviar miles de puntos.
+        /// </summary>
+        [ProducesResponseType<Response<TransformerClusterResultDto>>(StatusCodes.Status200OK)]
+        [HttpGet("clusters")]
+        [AllowAnonymous]
+        [ResponseCache(CacheProfileName = CacheProfiles.Map)]
+        public async Task<IActionResult> GetClusters([FromQuery] GetTransformerClustersQuery query)
+            => Ok(await mediator.Send(query));
 
         // ---------- Gestión (distribuidora y administrador) ----------
 

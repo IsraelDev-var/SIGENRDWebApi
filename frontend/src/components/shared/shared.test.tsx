@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { AvailabilityValue } from "./availability-value";
 import { CapacityMeter } from "./capacity-meter";
 import { KvaValue } from "./kva-value";
 import { LastUpdated } from "./last-updated";
@@ -82,5 +83,18 @@ describe("LastUpdated", () => {
   it("sin fecha lo dice", () => {
     render(<LastUpdated date={null} now={now} />);
     expect(screen.getByText("Sin fecha de actualización")).toBeInTheDocument();
+  });
+});
+
+describe("AvailabilityValue", () => {
+  it("en Mantenimiento no muestra el número guardado (RN-02)", () => {
+    render(<AvailabilityValue pct={-9.8} status="Maintenance" />);
+    expect(screen.getByText("No se calcula")).toBeInTheDocument();
+    expect(screen.queryByText(/-9.8/)).not.toBeInTheDocument();
+  });
+
+  it("en los demás estados muestra el porcentaje de la API", () => {
+    render(<AvailabilityValue pct={-4} status="Saturated" />);
+    expect(screen.getByText("-4.0 %")).toBeInTheDocument();
   });
 });

@@ -63,6 +63,8 @@ const apiServer = e2eDb
           JwtSettings__PrivateKey: privateKeyBase64,
           Seed__AdminPassword: E2E_TEST_PASSWORD,
           Seed__TestUsersPassword: E2E_TEST_PASSWORD,
+          // 10.000 transformadores de demostración: el volumen de RNF-02 (DevelopmentDemoData de la API).
+          Seed__DemoTransformers: "10000",
           UseInMemoryDatabase: "false",
           // Los correos quedan en la bandeja de salida: no hace falta un servidor SMTP.
           EmailOutbox__DispatcherEnabled: "false",
@@ -80,6 +82,9 @@ const apiServer = e2eDb
 
 export default defineConfig({
   testDir: "./e2e",
+  // Con la API, dos servidores de Next y varios navegadores en la misma máquina, la primera carga de una página
+  // más el análisis de axe puede pasar de 30 s.
+  timeout: 60_000,
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,

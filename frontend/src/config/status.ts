@@ -8,6 +8,9 @@ import type { components } from "@/lib/api/schema";
  */
 
 export type TransformerStatus = components["schemas"]["TransformerStatus"];
+
+/** En el orden del semáforo (RN-02). */
+export const TRANSFORMER_STATUSES = ["Available", "Conditioned", "Critical", "Saturated", "Maintenance"] as const satisfies readonly TransformerStatus[];
 export type RequestStatus = components["schemas"]["RequestStatus"];
 
 export type StatusAppearance = {

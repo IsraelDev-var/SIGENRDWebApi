@@ -2,18 +2,18 @@
 
 import dynamic from "next/dynamic";
 
+import type { MapCanvasProps } from "./map-canvas";
+
 /**
  * MapLibre pesa unos 220 KB comprimido: se carga aparte y solo en el navegador, después de pintar la página (CA-01).
  */
-const MapView = dynamic(() => import("./map-view"), {
+const MapCanvas = dynamic(() => import("./map-canvas"), {
   ssr: false,
   loading: () => (
-    <div className="bg-muted flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-      Cargando mapa…
-    </div>
+    <div className="flex h-full w-full items-center justify-center bg-muted text-sm text-muted-foreground">Cargando mapa…</div>
   ),
 });
 
-export function LazyMapView() {
-  return <MapView />;
+export function LazyMapCanvas(props: MapCanvasProps) {
+  return <MapCanvas {...props} />;
 }

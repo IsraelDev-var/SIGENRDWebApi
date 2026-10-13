@@ -1120,6 +1120,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/Distributors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DistributorDtoListResponse"];
+                        "application/json": components["schemas"]["DistributorDtoListResponse"];
+                        "text/json": components["schemas"]["DistributorDtoListResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/InstallerCompanies/me": {
         parameters: {
             query?: never;
@@ -1539,6 +1576,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ServiceZones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ServiceZoneDtoListResponse"];
+                        "application/json": components["schemas"]["ServiceZoneDtoListResponse"];
+                        "text/json": components["schemas"]["ServiceZoneDtoListResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Simulations": {
         parameters: {
             query?: never;
@@ -1881,6 +1955,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/Transformers/clusters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    MinLatitude?: number;
+                    MinLongitude?: number;
+                    MaxLatitude?: number;
+                    MaxLongitude?: number;
+                    Zoom?: number;
+                    DistributorId?: number;
+                    ServiceZoneId?: number;
+                    Status?: components["schemas"]["TransformerStatus"];
+                    MinAvailabilityPct?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TransformerClusterResultDtoResponse"];
+                        "application/json": components["schemas"]["TransformerClusterResultDtoResponse"];
+                        "text/json": components["schemas"]["TransformerClusterResultDtoResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Transformers/critical-zones": {
         parameters: {
             query?: never;
@@ -2060,32 +2181,32 @@ export interface components {
     schemas: {
         AuditLogDto: {
             /** Format: int32 */
-            id?: number;
+            id: number;
             userId?: string | null;
-            action?: string | null;
-            entityName?: string | null;
-            entityId?: string | null;
+            action: string;
+            entityName: string;
+            entityId: string;
             oldValues?: string | null;
             newValues?: string | null;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
         };
         AuditLogDtoPagedDto: {
-            items?: components["schemas"]["AuditLogDto"][] | null;
+            items: components["schemas"]["AuditLogDto"][];
             /** Format: int32 */
-            page?: number;
+            page: number;
             /** Format: int32 */
-            pageSize?: number;
+            pageSize: number;
             /** Format: int32 */
-            totalCount?: number;
+            totalCount: number;
             /** Format: int32 */
-            readonly totalPages?: number;
+            readonly totalPages: number;
         };
         AuditLogDtoPagedDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["AuditLogDtoPagedDto"];
+            data: components["schemas"]["AuditLogDtoPagedDto"];
         };
         AuthResponse: {
             userId?: string | null;
@@ -2093,98 +2214,98 @@ export interface components {
             email?: string | null;
             role?: string | null;
             token?: string | null;
-            success?: boolean;
+            success: boolean;
             message?: string | null;
         };
         CancelRequestCommand: {
             /** Format: int32 */
-            id?: number;
+            id: number;
             comment?: string | null;
         };
         ConnectionRequestResponseDto: {
             /** Format: int32 */
-            id?: number;
-            requestCode?: string | null;
-            status?: string | null;
+            id: number;
+            requestCode: string;
+            status: string;
             /** Format: date-time */
-            requestedAt?: string;
+            requestedAt: string;
             projectDescription?: string | null;
             projectAddress?: string | null;
             /** Format: double */
-            latitude?: number;
+            latitude: number;
             /** Format: double */
-            longitude?: number;
-            usageType?: string | null;
-            tariffType?: string | null;
-            interconnectionType?: string | null;
-            requestType?: string | null;
+            longitude: number;
+            usageType: string;
+            tariffType: string;
+            interconnectionType: string;
+            requestType: string;
             /** Format: double */
-            requestedCapacityKva?: number;
-            propertyRelation?: string | null;
+            requestedCapacityKva: number;
+            propertyRelation: string;
             ownerFullName?: string | null;
             engineerFullName?: string | null;
             engineerCodiaNumber?: string | null;
             serviceContractNumber?: string | null;
             meterNumber?: string | null;
             /** Format: int32 */
-            customerId?: number;
+            customerId: number;
             /** Format: int32 */
             installerCompanyId?: number | null;
             /** Format: int32 */
-            distributorId?: number;
+            distributorId: number;
             /** Format: int32 */
             transformerId?: number | null;
         };
         ConnectionRequestResponseDtoPagedDto: {
-            items?: components["schemas"]["ConnectionRequestResponseDto"][] | null;
+            items: components["schemas"]["ConnectionRequestResponseDto"][];
             /** Format: int32 */
-            page?: number;
+            page: number;
             /** Format: int32 */
-            pageSize?: number;
+            pageSize: number;
             /** Format: int32 */
-            totalCount?: number;
+            totalCount: number;
             /** Format: int32 */
-            readonly totalPages?: number;
+            readonly totalPages: number;
         };
         ConnectionRequestResponseDtoPagedDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["ConnectionRequestResponseDtoPagedDto"];
+            data: components["schemas"]["ConnectionRequestResponseDtoPagedDto"];
         };
         ConnectionRequestResponseDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["ConnectionRequestResponseDto"];
+            data: components["schemas"]["ConnectionRequestResponseDto"];
         };
         CountItem: {
-            key?: string | null;
+            key: string;
             /** Format: int32 */
-            count?: number;
+            count: number;
         };
         CreateConnectionRequestCommand: {
             /** Format: int32 */
-            customerId?: number;
+            customerId: number;
             /** Format: int32 */
             installerCompanyId?: number | null;
             /** Format: int32 */
-            distributorId?: number;
+            distributorId: number;
             /** Format: int32 */
-            transformerId?: number;
-            requestType?: components["schemas"]["RequestType"];
+            transformerId: number;
+            requestType: components["schemas"]["RequestType"];
             /** Format: double */
-            requestedCapacityKva?: number;
-            usageType?: components["schemas"]["UsageType"];
-            tariffType?: components["schemas"]["TariffType"];
-            interconnectionType?: components["schemas"]["InterconnectionType"];
+            requestedCapacityKva: number;
+            usageType: components["schemas"]["UsageType"];
+            tariffType: components["schemas"]["TariffType"];
+            interconnectionType: components["schemas"]["InterconnectionType"];
             projectDescription?: string | null;
-            projectAddress?: string | null;
+            projectAddress: string;
             /** Format: double */
-            latitude?: number;
+            latitude: number;
             /** Format: double */
-            longitude?: number;
-            propertyRelation?: components["schemas"]["PropertyRelation"];
+            longitude: number;
+            propertyRelation: components["schemas"]["PropertyRelation"];
             ownerFullName?: string | null;
             ownerNationalId?: string | null;
             ownerPhone?: string | null;
@@ -2195,13 +2316,13 @@ export interface components {
             engineerEmail?: string | null;
             serviceContractNumber?: string | null;
             meterNumber?: string | null;
-            declarationAccepted?: boolean;
-            netMetering?: components["schemas"]["NetMeteringDetailsInput"];
+            declarationAccepted: boolean;
+            netMetering: components["schemas"]["NetMeteringDetailsInput"];
         };
         CreateMyCustomerProfileCommand: {
-            fullName?: string | null;
-            nationalIdOrRnc?: string | null;
-            isLegalEntity?: boolean;
+            fullName: string;
+            nationalIdOrRnc: string;
+            isLegalEntity: boolean;
             email?: string | null;
             phone?: string | null;
             address?: string | null;
@@ -2209,74 +2330,86 @@ export interface components {
         CreateSimulationCommand: {
             name?: string | null;
             /** Format: double */
-            monthlyConsumptionKwh?: number;
+            monthlyConsumptionKwh: number;
             /** Format: double */
-            latitude?: number;
+            latitude: number;
             /** Format: double */
-            longitude?: number;
+            longitude: number;
             /** Format: double */
             installedCapacityKw?: number | null;
             /** Format: double */
             investmentCost?: number | null;
             /** Format: double */
             flatPricePerKwh?: number | null;
-            equipment?: components["schemas"]["SimulationEquipmentInput"][] | null;
+            equipment: components["schemas"]["SimulationEquipmentInput"][];
         };
         CreateTransformerCommand: {
-            code?: string | null;
+            code: string;
             /** Format: int32 */
-            distributorId?: number;
+            distributorId: number;
             /** Format: int32 */
-            serviceZoneId?: number;
+            serviceZoneId: number;
             /** Format: double */
-            totalCapacityKva?: number;
+            totalCapacityKva: number;
             /** Format: double */
-            availableCapacityKva?: number;
+            availableCapacityKva: number;
             /** Format: double */
-            latitude?: number;
+            latitude: number;
             /** Format: double */
-            longitude?: number;
+            longitude: number;
         };
         CustomerProfileDto: {
             /** Format: int32 */
-            id?: number;
-            fullName?: string | null;
-            nationalIdOrRnc?: string | null;
-            isLegalEntity?: boolean;
+            id: number;
+            fullName: string;
+            nationalIdOrRnc: string;
+            isLegalEntity: boolean;
             email?: string | null;
             phone?: string | null;
             address?: string | null;
         };
         CustomerProfileDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["CustomerProfileDto"];
+            data: components["schemas"]["CustomerProfileDto"];
+        };
+        DistributorDto: {
+            /** Format: int32 */
+            id: number;
+            name: string;
+            type: string;
+        };
+        DistributorDtoListResponse: {
+            succeeded: boolean;
+            message?: string | null;
+            errors?: string[] | null;
+            data?: components["schemas"]["DistributorDto"][] | null;
         };
         /** @enum {string} */
         DistributorType: "EDESUR" | "EDENORTE" | "EDEESTE";
         DocumentDto: {
             /** Format: int32 */
-            id?: number;
-            documentType?: string | null;
-            fileName?: string | null;
-            contentType?: string | null;
+            id: number;
+            documentType: string;
+            fileName: string;
+            contentType: string;
             /** Format: int64 */
-            sizeBytes?: number;
+            sizeBytes: number;
             /** Format: date-time */
-            uploadedAt?: string;
+            uploadedAt: string;
         };
         DocumentDtoListResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
             data?: components["schemas"]["DocumentDto"][] | null;
         };
         DocumentDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["DocumentDto"];
+            data: components["schemas"]["DocumentDto"];
         };
         /** @enum {string} */
         DocumentType: "Blueprint" | "TechnicalSheet" | "Invoice" | "IdentityDocument" | "CODIALicense" | "CompanyRegistration" | "RequestLetter" | "Permit" | "Other" | "InterconnectionScheme" | "InverterSpecification" | "CalculationMemory" | "ApprovalCertificate" | "ProofOfOwnership" | "OwnerAuthorization" | "TaxIdCard" | "ConstitutiveDocuments" | "BoardMinutes" | "IndustrialRegistry" | "EngineerIdentityDocument" | "DescriptiveMemory" | "FeasibilityRequestForm" | "ApprovedPlans" | "NoApprovedPlansLetter" | "SitePlan" | "EquipmentCertificate";
@@ -2287,26 +2420,26 @@ export interface components {
         /** @enum {string} */
         GenerationSystemType: "Photovoltaic" | "Wind" | "Biomass" | "Hydro" | "Hybrid" | "Other";
         GeneratorInput: {
-            generationSystemType?: components["schemas"]["GenerationSystemType"];
-            generatorKind?: components["schemas"]["GeneratorKind"];
-            manufacturer?: string | null;
+            generationSystemType: components["schemas"]["GenerationSystemType"];
+            generatorKind: components["schemas"]["GeneratorKind"];
+            manufacturer: string;
             inverterModel?: string | null;
             serialNumber?: string | null;
             /** Format: int32 */
-            phases?: number;
+            phases: number;
             /** Format: double */
-            ratedPowerKva?: number;
+            ratedPowerKva: number;
             /** Format: double */
-            connectionVoltage?: number;
+            connectionVoltage: number;
             /** Format: double */
-            nominalCurrent?: number;
+            nominalCurrent: number;
             /** Format: double */
-            powerFactorMin?: number;
+            powerFactorMin: number;
             /** Format: double */
-            powerFactorMax?: number;
+            powerFactorMax: number;
             switchingType?: string | null;
             /** Format: double */
-            harmonicDistortionPercent?: number;
+            harmonicDistortionPercent: number;
             certificationStandard?: string | null;
             certifyingUnit?: string | null;
         };
@@ -2314,55 +2447,55 @@ export interface components {
         GeneratorKind: "Synchronous" | "Induction" | "InverterBased" | "Other";
         ImportTransformersResultDto: {
             /** Format: int32 */
-            imported?: number;
+            imported: number;
         };
         ImportTransformersResultDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["ImportTransformersResultDto"];
+            data: components["schemas"]["ImportTransformersResultDto"];
         };
         InstallerCompanyDto: {
             /** Format: int32 */
-            id?: number;
-            tradeName?: string | null;
-            rnc?: string | null;
+            id: number;
+            tradeName: string;
+            rnc: string;
             contactEmail?: string | null;
             contactPhone?: string | null;
             address?: string | null;
-            validationStatus?: string | null;
+            validationStatus: string;
         };
         InstallerCompanyDtoListResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
             data?: components["schemas"]["InstallerCompanyDto"][] | null;
         };
         InstallerCompanyDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["InstallerCompanyDto"];
+            data: components["schemas"]["InstallerCompanyDto"];
         };
         InstallerRankingItem: {
             /** Format: int32 */
-            rank?: number;
+            rank: number;
             /** Format: int32 */
-            installerCompanyId?: number;
-            tradeName?: string | null;
+            installerCompanyId: number;
+            tradeName: string;
             /** Format: int32 */
-            total?: number;
+            total: number;
             /** Format: int32 */
-            approved?: number;
+            approved: number;
             /** Format: int32 */
-            rejected?: number;
+            rejected: number;
             /** Format: double */
             approvalRatePct?: number | null;
             /** Format: double */
-            requestedKva?: number;
+            requestedKva: number;
         };
         InstallerRankingItemListResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
             data?: components["schemas"]["InstallerRankingItem"][] | null;
@@ -2370,11 +2503,11 @@ export interface components {
         /** @enum {string} */
         InstallerValidationStatus: "Pending" | "Validated";
         Int32Response: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
             /** Format: int32 */
-            data?: number;
+            data: number;
         };
         /** @enum {string} */
         InterconnectionType: "Parallel" | "MomentaryParallel" | "Isolated";
@@ -2384,77 +2517,77 @@ export interface components {
             password: string;
         };
         MonthItem: {
-            month?: string | null;
+            month: string;
             /** Format: int32 */
-            total?: number;
+            total: number;
             /** Format: int32 */
-            approved?: number;
+            approved: number;
             /** Format: int32 */
-            rejected?: number;
+            rejected: number;
         };
         NearbyTransformerDto: {
             /** Format: int32 */
-            id?: number;
-            code?: string | null;
+            id: number;
+            code: string;
             /** Format: double */
-            distanceMeters?: number;
-            status?: string | null;
+            distanceMeters: number;
+            status: string;
             /** Format: double */
-            effectiveAvailableKva?: number;
+            effectiveAvailableKva: number;
         };
         NetMeteringDetailsInput: {
-            generationSystemType?: components["schemas"]["GenerationSystemType"];
+            generationSystemType: components["schemas"]["GenerationSystemType"];
             /** Format: double */
-            installedCapacityKw?: number;
+            installedCapacityKw: number;
             comments?: string | null;
-            generators?: components["schemas"]["GeneratorInput"][] | null;
+            generators: components["schemas"]["GeneratorInput"][];
         };
         NotificationDto: {
             /** Format: int32 */
-            id?: number;
-            title?: string | null;
-            message?: string | null;
-            type?: string | null;
-            isRead?: boolean;
+            id: number;
+            title: string;
+            message: string;
+            type: string;
+            isRead: boolean;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
         };
         NotificationDtoPagedDto: {
-            items?: components["schemas"]["NotificationDto"][] | null;
+            items: components["schemas"]["NotificationDto"][];
             /** Format: int32 */
-            page?: number;
+            page: number;
             /** Format: int32 */
-            pageSize?: number;
+            pageSize: number;
             /** Format: int32 */
-            totalCount?: number;
+            totalCount: number;
             /** Format: int32 */
-            readonly totalPages?: number;
+            readonly totalPages: number;
         };
         NotificationDtoPagedDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["NotificationDtoPagedDto"];
+            data: components["schemas"]["NotificationDtoPagedDto"];
         };
         NotificationDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["NotificationDto"];
+            data: components["schemas"]["NotificationDto"];
         };
         /** @enum {string} */
         ObservationType: "Technical" | "Documental" | "Administrative";
         ObserveRequestCommand: {
             /** Format: int32 */
-            id?: number;
-            comment?: string | null;
-            observationType?: components["schemas"]["ObservationType"];
+            id: number;
+            comment: string;
+            observationType: components["schemas"]["ObservationType"];
         };
         /** @enum {string} */
         PropertyRelation: "Owner" | "CoOwner" | "Tenant" | "Other";
         RegisterInstallerCompanyCommand: {
-            tradeName?: string | null;
-            rnc?: string | null;
+            tradeName: string;
+            rnc: string;
             contactEmail?: string | null;
             contactPhone?: string | null;
             address?: string | null;
@@ -2465,90 +2598,90 @@ export interface components {
             email: string;
             password: string;
             userType: components["schemas"]["UserType"];
-            distributorType?: components["schemas"]["DistributorType"];
+            distributorType: components["schemas"]["DistributorType"];
             /** Format: int32 */
             installerCompanyId?: number | null;
         };
         RejectRequestCommand: {
             /** Format: int32 */
-            id?: number;
-            comment?: string | null;
+            id: number;
+            comment: string;
         };
         /** @enum {string} */
         ReportFormat: "Xlsx" | "Pdf";
         RequestStatisticsDto: {
             /** Format: date-time */
-            from?: string;
+            from: string;
             /** Format: date-time */
-            to?: string;
+            to: string;
             /** Format: int32 */
-            total?: number;
+            total: number;
             /** Format: int32 */
-            pending?: number;
+            pending: number;
             /** Format: int32 */
-            approved?: number;
+            approved: number;
             /** Format: int32 */
-            rejected?: number;
+            rejected: number;
             /** Format: int32 */
-            cancelled?: number;
+            cancelled: number;
             /** Format: double */
             approvalRatePct?: number | null;
             /** Format: double */
-            requestedKva?: number;
+            requestedKva: number;
             /** Format: double */
-            approvedKva?: number;
+            approvedKva: number;
             /** Format: double */
             avgDaysToFirstReview?: number | null;
             /** Format: double */
             avgDaysToResolution?: number | null;
             /** Format: double */
             medianDaysToResolution?: number | null;
-            byStatus?: components["schemas"]["CountItem"][] | null;
-            byType?: components["schemas"]["CountItem"][] | null;
-            byZone?: components["schemas"]["CountItem"][] | null;
-            byDistributor?: components["schemas"]["CountItem"][] | null;
-            byMonth?: components["schemas"]["MonthItem"][] | null;
+            byStatus: components["schemas"]["CountItem"][];
+            byType: components["schemas"]["CountItem"][];
+            byZone: components["schemas"]["CountItem"][];
+            byDistributor: components["schemas"]["CountItem"][];
+            byMonth: components["schemas"]["MonthItem"][];
         };
         RequestStatisticsDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["RequestStatisticsDto"];
+            data: components["schemas"]["RequestStatisticsDto"];
         };
         /** @enum {string} */
         RequestStatus: "Received" | "UnderReview" | "Observed" | "InCorrection" | "Approved" | "Rejected" | "Cancelled";
         RequestTrackingDto: {
-            requestCode?: string | null;
-            requestType?: string | null;
-            status?: string | null;
+            requestCode: string;
+            requestType: string;
+            status: string;
             /** Format: date-time */
-            requestedAt?: string;
+            requestedAt: string;
             /** Format: date-time */
             lastUpdatedAt?: string | null;
         };
         RequestTrackingDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["RequestTrackingDto"];
+            data: components["schemas"]["RequestTrackingDto"];
         };
         /** @enum {string} */
         RequestType: "Connection" | "NetMetering";
         RequiredDocumentItemDto: {
-            code?: string | null;
-            description?: string | null;
-            acceptedTypes?: string[] | null;
-            satisfied?: boolean;
+            code: string;
+            description: string;
+            acceptedTypes: string[];
+            satisfied: boolean;
         };
         RequiredDocumentsDto: {
-            complete?: boolean;
-            items?: components["schemas"]["RequiredDocumentItemDto"][] | null;
+            complete: boolean;
+            items: components["schemas"]["RequiredDocumentItemDto"][];
         };
         RequiredDocumentsDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["RequiredDocumentsDto"];
+            data: components["schemas"]["RequiredDocumentsDto"];
         };
         ResetPasswordRequest: {
             /** Format: email */
@@ -2556,13 +2689,26 @@ export interface components {
             code: string;
             newPassword: string;
         };
+        ServiceZoneDto: {
+            /** Format: int32 */
+            id: number;
+            zoneName: string;
+            municipality?: string | null;
+            province?: string | null;
+        };
+        ServiceZoneDtoListResponse: {
+            succeeded: boolean;
+            message?: string | null;
+            errors?: string[] | null;
+            data?: components["schemas"]["ServiceZoneDto"][] | null;
+        };
         SetTransformerMaintenanceCommand: {
             /** Format: int32 */
-            id?: number;
-            inMaintenance?: boolean;
+            id: number;
+            inMaintenance: boolean;
         };
         SimulationComparisonDto: {
-            simulations?: components["schemas"]["SimulationDto"][] | null;
+            simulations: components["schemas"]["SimulationDto"][];
             /** Format: int32 */
             bestPaybackId?: number | null;
             /** Format: int32 */
@@ -2571,28 +2717,28 @@ export interface components {
             highestSavingsId?: number | null;
         };
         SimulationComparisonDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["SimulationComparisonDto"];
+            data: components["schemas"]["SimulationComparisonDto"];
         };
         SimulationDto: {
             /** Format: int32 */
-            id?: number;
+            id: number;
             name?: string | null;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
             /** Format: double */
-            monthlyConsumptionKwh?: number;
+            monthlyConsumptionKwh: number;
             /** Format: double */
-            installedCapacityKw?: number;
+            installedCapacityKw: number;
             /** Format: double */
-            annualSavings?: number;
+            annualSavings: number;
             /** Format: double */
             paybackYears?: number | null;
             /** Format: double */
-            roi?: number;
-            viabilityStatus?: string | null;
+            roi: number;
+            viabilityStatus: string;
             /** Format: double */
             latitude?: number | null;
             /** Format: double */
@@ -2600,178 +2746,214 @@ export interface components {
             /** Format: double */
             flatPricePerKwh?: number | null;
             /** Format: double */
-            investmentCost?: number;
-            equipment?: components["schemas"]["SimulationEquipmentDto"][] | null;
+            investmentCost: number;
+            equipment: components["schemas"]["SimulationEquipmentDto"][];
             /** Format: double */
-            annualProductionKwh?: number;
+            annualProductionKwh: number;
             /** Format: double */
-            annualConsumptionKwh?: number;
+            annualConsumptionKwh: number;
             /** Format: double */
-            coveragePct?: number;
+            coveragePct: number;
             /** Format: double */
-            annualBillBefore?: number;
+            annualBillBefore: number;
             /** Format: double */
-            annualBillAfter?: number;
+            annualBillAfter: number;
             /** Format: double */
-            annualExportCreditKwh?: number;
+            annualExportCreditKwh: number;
             /** Format: double */
-            surplusPayment?: number;
-            recommendations?: string[] | null;
-            referenceTransformer?: components["schemas"]["NearbyTransformerDto"];
+            surplusPayment: number;
+            recommendations: string[];
+            referenceTransformer: components["schemas"]["NearbyTransformerDto"];
             nearbyTransformers?: components["schemas"]["NearbyTransformerDto"][] | null;
-            formulaVersion?: string | null;
-            assumptions?: unknown;
-            disclaimer?: string | null;
+            formulaVersion: string;
+            assumptions: unknown;
+            disclaimer: string;
         };
         SimulationDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["SimulationDto"];
+            data: components["schemas"]["SimulationDto"];
         };
         SimulationEquipmentDto: {
-            generationSystemType?: string | null;
+            generationSystemType: string;
             panelModel?: string | null;
             inverterModel?: string | null;
             /** Format: double */
-            ratedPowerKw?: number;
+            ratedPowerKw: number;
             /** Format: int32 */
-            quantity?: number;
+            quantity: number;
         };
         SimulationEquipmentInput: {
-            generationSystemType?: components["schemas"]["GenerationSystemType"];
+            generationSystemType: components["schemas"]["GenerationSystemType"];
             panelModel?: string | null;
             inverterModel?: string | null;
             /** Format: double */
-            ratedPowerKw?: number;
+            ratedPowerKw: number;
             /** Format: int32 */
-            quantity?: number;
+            quantity: number;
         };
         SimulationSummaryDto: {
             /** Format: int32 */
-            id?: number;
+            id: number;
             name?: string | null;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
             /** Format: double */
-            monthlyConsumptionKwh?: number;
+            monthlyConsumptionKwh: number;
             /** Format: double */
-            installedCapacityKw?: number;
+            installedCapacityKw: number;
             /** Format: double */
-            annualSavings?: number;
+            annualSavings: number;
             /** Format: double */
             paybackYears?: number | null;
             /** Format: double */
-            roi?: number;
-            viabilityStatus?: string | null;
+            roi: number;
+            viabilityStatus: string;
         };
         SimulationSummaryDtoPagedDto: {
-            items?: components["schemas"]["SimulationSummaryDto"][] | null;
+            items: components["schemas"]["SimulationSummaryDto"][];
             /** Format: int32 */
-            page?: number;
+            page: number;
             /** Format: int32 */
-            pageSize?: number;
+            pageSize: number;
             /** Format: int32 */
-            totalCount?: number;
+            totalCount: number;
             /** Format: int32 */
-            readonly totalPages?: number;
+            readonly totalPages: number;
         };
         SimulationSummaryDtoPagedDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["SimulationSummaryDtoPagedDto"];
+            data: components["schemas"]["SimulationSummaryDtoPagedDto"];
         };
         StateHistoryDto: {
             /** Format: int32 */
-            id?: number;
+            id: number;
             previousState?: string | null;
             newState?: string | null;
             comment?: string | null;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
             createdBy?: string | null;
         };
         StateHistoryDtoListResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
             data?: components["schemas"]["StateHistoryDto"][] | null;
         };
         /** @enum {string} */
         TariffType: "BT" | "MT" | "AT";
-        TransformerDetailDto: {
+        TransformerClusterDto: {
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
             /** Format: int32 */
-            id?: number;
+            count: number;
+            /** Format: int32 */
+            available: number;
+            /** Format: int32 */
+            conditioned: number;
+            /** Format: int32 */
+            critical: number;
+            /** Format: int32 */
+            saturated: number;
+            /** Format: int32 */
+            maintenance: number;
+            /** Format: int32 */
+            transformerId?: number | null;
             code?: string | null;
-            /** Format: int32 */
-            distributorId?: number;
-            distributorName?: string | null;
-            /** Format: int32 */
-            serviceZoneId?: number;
-            zoneName?: string | null;
-            /** Format: double */
-            latitude?: number;
-            /** Format: double */
-            longitude?: number;
-            /** Format: double */
-            totalCapacityKva?: number;
-            /** Format: double */
-            availableCapacityKva?: number;
-            /** Format: double */
-            reservedCapacityKva?: number;
-            /** Format: double */
-            availabilityPct?: number;
             status?: string | null;
             color?: string | null;
-            acceptsNewRequests?: boolean;
-            /** Format: date-time */
-            lastUpdated?: string;
         };
-        TransformerDetailDtoResponse: {
-            succeeded?: boolean;
+        TransformerClusterResultDto: {
+            items: components["schemas"]["TransformerClusterDto"][];
+            /** Format: int32 */
+            total: number;
+            /** Format: double */
+            cellSizeDegrees: number;
+        };
+        TransformerClusterResultDtoResponse: {
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["TransformerDetailDto"];
+            data: components["schemas"]["TransformerClusterResultDto"];
+        };
+        TransformerDetailDto: {
+            /** Format: int32 */
+            id: number;
+            code: string;
+            /** Format: int32 */
+            distributorId: number;
+            distributorName?: string | null;
+            /** Format: int32 */
+            serviceZoneId: number;
+            zoneName?: string | null;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            /** Format: double */
+            totalCapacityKva: number;
+            /** Format: double */
+            availableCapacityKva: number;
+            /** Format: double */
+            reservedCapacityKva: number;
+            /** Format: double */
+            availabilityPct: number;
+            status: string;
+            color: string;
+            acceptsNewRequests: boolean;
+            /** Format: date-time */
+            lastUpdated: string;
+        };
+        TransformerDetailDtoResponse: {
+            succeeded: boolean;
+            message?: string | null;
+            errors?: string[] | null;
+            data: components["schemas"]["TransformerDetailDto"];
         };
         TransformerMapPointDto: {
             /** Format: int32 */
-            id?: number;
-            code?: string | null;
+            id: number;
+            code: string;
             /** Format: double */
-            latitude?: number;
+            latitude: number;
             /** Format: double */
-            longitude?: number;
+            longitude: number;
             /** Format: double */
-            availabilityPct?: number;
-            status?: string | null;
-            color?: string | null;
+            availabilityPct: number;
+            status: string;
+            color: string;
         };
         TransformerMapPointDtoListResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
             data?: components["schemas"]["TransformerMapPointDto"][] | null;
         };
         TransformerMapResultDto: {
-            items?: components["schemas"]["TransformerMapPointDto"][] | null;
-            truncated?: boolean;
+            items: components["schemas"]["TransformerMapPointDto"][];
+            truncated: boolean;
         };
         TransformerMapResultDtoResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data?: components["schemas"]["TransformerMapResultDto"];
+            data: components["schemas"]["TransformerMapResultDto"];
         };
         /** @enum {string} */
         TransformerStatus: "Available" | "Conditioned" | "Critical" | "Saturated" | "Maintenance";
         UpdateTransformerCapacityCommand: {
             /** Format: int32 */
-            id?: number;
+            id: number;
             /** Format: double */
-            totalCapacityKva?: number;
+            totalCapacityKva: number;
             /** Format: double */
-            availableCapacityKva?: number;
+            availableCapacityKva: number;
         };
         /** @enum {string} */
         UsageType: "Residential" | "Commercial" | "Industrial" | "Government" | "PublicService" | "Agricultural";
@@ -2779,17 +2961,17 @@ export interface components {
         UserType: "Customer" | "Engineer" | "InstallerCompany" | "Distributor" | "Company" | "Admin";
         ZoneRiskDto: {
             /** Format: int32 */
-            serviceZoneId?: number;
-            zoneName?: string | null;
+            serviceZoneId: number;
+            zoneName: string;
             /** Format: int32 */
-            totalTransformers?: number;
+            totalTransformers: number;
             /** Format: int32 */
-            critical?: number;
+            critical: number;
             /** Format: int32 */
-            saturated?: number;
+            saturated: number;
         };
         ZoneRiskDtoListResponse: {
-            succeeded?: boolean;
+            succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
             data?: components["schemas"]["ZoneRiskDto"][] | null;

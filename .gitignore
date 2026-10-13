@@ -368,3 +368,6 @@ FodyWeavers.xsd
 # Pruebas de carga: scripts generados y resultados de cada corrida
 tests/load/.generated/
 tests/load/results/
+
+# Herramientas locales (por ejemplo, el generador de llaves del JWT)
+.tools/

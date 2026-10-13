@@ -1407,6 +1407,35 @@
         }
       }
     },
+    "/api/v1/Distributors": {
+      "get": {
+        "tags": [
+          "Distributors"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributorDtoListResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributorDtoListResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributorDtoListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/InstallerCompanies/me": {
       "post": {
         "tags": [
@@ -1876,6 +1905,35 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ServiceZones": {
+      "get": {
+        "tags": [
+          "ServiceZones"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceZoneDtoListResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceZoneDtoListResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceZoneDtoListResponse"
                 }
               }
             }
@@ -2378,6 +2436,108 @@
         }
       }
     },
+    "/api/v1/Transformers/clusters": {
+      "get": {
+        "tags": [
+          "Transformers"
+        ],
+        "parameters": [
+          {
+            "name": "MinLatitude",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MinLongitude",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MaxLatitude",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MaxLongitude",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "Zoom",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "DistributorId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ServiceZoneId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/TransformerStatus"
+            }
+          },
+          {
+            "name": "MinAvailabilityPct",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransformerClusterResultDtoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransformerClusterResultDtoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransformerClusterResultDtoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/Transformers/critical-zones": {
       "get": {
         "tags": [
@@ -2585,6 +2745,13 @@
   "components": {
     "schemas": {
       "AuditLogDto": {
+        "required": [
+          "action",
+          "createdAt",
+          "entityId",
+          "entityName",
+          "id"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -2596,16 +2763,13 @@
             "nullable": true
           },
           "action": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "entityName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "entityId": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "oldValues": {
             "type": "string",
@@ -2623,14 +2787,20 @@
         "additionalProperties": false
       },
       "AuditLogDtoPagedDto": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount",
+          "totalPages"
+        ],
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AuditLogDto"
-            },
-            "nullable": true
+            }
           },
           "page": {
             "type": "integer",
@@ -2653,6 +2823,10 @@
         "additionalProperties": false
       },
       "AuditLogDtoPagedDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -2676,6 +2850,9 @@
         "additionalProperties": false
       },
       "AuthResponse": {
+        "required": [
+          "success"
+        ],
         "type": "object",
         "properties": {
           "userId": {
@@ -2709,6 +2886,9 @@
         "additionalProperties": false
       },
       "CancelRequestCommand": {
+        "required": [
+          "id"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -2723,6 +2903,22 @@
         "additionalProperties": false
       },
       "ConnectionRequestResponseDto": {
+        "required": [
+          "customerId",
+          "distributorId",
+          "id",
+          "interconnectionType",
+          "latitude",
+          "longitude",
+          "propertyRelation",
+          "requestCode",
+          "requestedAt",
+          "requestedCapacityKva",
+          "requestType",
+          "status",
+          "tariffType",
+          "usageType"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -2730,12 +2926,10 @@
             "format": "int32"
           },
           "requestCode": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "status": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "requestedAt": {
             "type": "string",
@@ -2758,28 +2952,23 @@
             "format": "double"
           },
           "usageType": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "tariffType": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "interconnectionType": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "requestType": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "requestedCapacityKva": {
             "type": "number",
             "format": "double"
           },
           "propertyRelation": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "ownerFullName": {
             "type": "string",
@@ -2823,14 +3012,20 @@
         "additionalProperties": false
       },
       "ConnectionRequestResponseDtoPagedDto": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount",
+          "totalPages"
+        ],
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ConnectionRequestResponseDto"
-            },
-            "nullable": true
+            }
           },
           "page": {
             "type": "integer",
@@ -2853,6 +3048,10 @@
         "additionalProperties": false
       },
       "ConnectionRequestResponseDtoPagedDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -2876,6 +3075,10 @@
         "additionalProperties": false
       },
       "ConnectionRequestResponseDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -2899,11 +3102,14 @@
         "additionalProperties": false
       },
       "CountItem": {
+        "required": [
+          "count",
+          "key"
+        ],
         "type": "object",
         "properties": {
           "key": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "count": {
             "type": "integer",
@@ -2913,6 +3119,22 @@
         "additionalProperties": false
       },
       "CreateConnectionRequestCommand": {
+        "required": [
+          "customerId",
+          "declarationAccepted",
+          "distributorId",
+          "interconnectionType",
+          "latitude",
+          "longitude",
+          "netMetering",
+          "projectAddress",
+          "propertyRelation",
+          "requestedCapacityKva",
+          "requestType",
+          "tariffType",
+          "transformerId",
+          "usageType"
+        ],
         "type": "object",
         "properties": {
           "customerId": {
@@ -2953,8 +3175,7 @@
             "nullable": true
           },
           "projectAddress": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "latitude": {
             "type": "number",
@@ -3017,15 +3238,18 @@
         "additionalProperties": false
       },
       "CreateMyCustomerProfileCommand": {
+        "required": [
+          "fullName",
+          "isLegalEntity",
+          "nationalIdOrRnc"
+        ],
         "type": "object",
         "properties": {
           "fullName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "nationalIdOrRnc": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "isLegalEntity": {
             "type": "boolean"
@@ -3046,6 +3270,12 @@
         "additionalProperties": false
       },
       "CreateSimulationCommand": {
+        "required": [
+          "equipment",
+          "latitude",
+          "longitude",
+          "monthlyConsumptionKwh"
+        ],
         "type": "object",
         "properties": {
           "name": {
@@ -3083,18 +3313,25 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SimulationEquipmentInput"
-            },
-            "nullable": true
+            }
           }
         },
         "additionalProperties": false
       },
       "CreateTransformerCommand": {
+        "required": [
+          "availableCapacityKva",
+          "code",
+          "distributorId",
+          "latitude",
+          "longitude",
+          "serviceZoneId",
+          "totalCapacityKva"
+        ],
         "type": "object",
         "properties": {
           "code": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "distributorId": {
             "type": "integer",
@@ -3124,6 +3361,12 @@
         "additionalProperties": false
       },
       "CustomerProfileDto": {
+        "required": [
+          "fullName",
+          "id",
+          "isLegalEntity",
+          "nationalIdOrRnc"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -3131,12 +3374,10 @@
             "format": "int32"
           },
           "fullName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "nationalIdOrRnc": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "isLegalEntity": {
             "type": "boolean"
@@ -3157,6 +3398,10 @@
         "additionalProperties": false
       },
       "CustomerProfileDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -3179,6 +3424,57 @@
         },
         "additionalProperties": false
       },
+      "DistributorDto": {
+        "required": [
+          "id",
+          "name",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DistributorDtoListResponse": {
+        "required": [
+          "succeeded"
+        ],
+        "type": "object",
+        "properties": {
+          "succeeded": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DistributorDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "DistributorType": {
         "enum": [
           "EDESUR",
@@ -3188,6 +3484,14 @@
         "type": "string"
       },
       "DocumentDto": {
+        "required": [
+          "contentType",
+          "documentType",
+          "fileName",
+          "id",
+          "sizeBytes",
+          "uploadedAt"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -3195,16 +3499,13 @@
             "format": "int32"
           },
           "documentType": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "fileName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "contentType": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "sizeBytes": {
             "type": "integer",
@@ -3218,6 +3519,9 @@
         "additionalProperties": false
       },
       "DocumentDtoListResponse": {
+        "required": [
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -3245,6 +3549,10 @@
         "additionalProperties": false
       },
       "DocumentDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -3324,6 +3632,18 @@
         "type": "string"
       },
       "GeneratorInput": {
+        "required": [
+          "connectionVoltage",
+          "generationSystemType",
+          "generatorKind",
+          "harmonicDistortionPercent",
+          "manufacturer",
+          "nominalCurrent",
+          "phases",
+          "powerFactorMax",
+          "powerFactorMin",
+          "ratedPowerKva"
+        ],
         "type": "object",
         "properties": {
           "generationSystemType": {
@@ -3333,8 +3653,7 @@
             "$ref": "#/components/schemas/GeneratorKind"
           },
           "manufacturer": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "inverterModel": {
             "type": "string",
@@ -3397,6 +3716,9 @@
         "type": "string"
       },
       "ImportTransformersResultDto": {
+        "required": [
+          "imported"
+        ],
         "type": "object",
         "properties": {
           "imported": {
@@ -3407,6 +3729,10 @@
         "additionalProperties": false
       },
       "ImportTransformersResultDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -3430,6 +3756,12 @@
         "additionalProperties": false
       },
       "InstallerCompanyDto": {
+        "required": [
+          "id",
+          "rnc",
+          "tradeName",
+          "validationStatus"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -3437,12 +3769,10 @@
             "format": "int32"
           },
           "tradeName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "rnc": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "contactEmail": {
             "type": "string",
@@ -3457,13 +3787,15 @@
             "nullable": true
           },
           "validationStatus": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false
       },
       "InstallerCompanyDtoListResponse": {
+        "required": [
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -3491,6 +3823,10 @@
         "additionalProperties": false
       },
       "InstallerCompanyDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -3514,6 +3850,15 @@
         "additionalProperties": false
       },
       "InstallerRankingItem": {
+        "required": [
+          "approved",
+          "installerCompanyId",
+          "rank",
+          "rejected",
+          "requestedKva",
+          "total",
+          "tradeName"
+        ],
         "type": "object",
         "properties": {
           "rank": {
@@ -3525,8 +3870,7 @@
             "format": "int32"
           },
           "tradeName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "total": {
             "type": "integer",
@@ -3553,6 +3897,9 @@
         "additionalProperties": false
       },
       "InstallerRankingItemListResponse": {
+        "required": [
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -3587,6 +3934,10 @@
         "type": "string"
       },
       "Int32Response": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -3638,11 +3989,16 @@
         "additionalProperties": false
       },
       "MonthItem": {
+        "required": [
+          "approved",
+          "month",
+          "rejected",
+          "total"
+        ],
         "type": "object",
         "properties": {
           "month": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "total": {
             "type": "integer",
@@ -3660,6 +4016,13 @@
         "additionalProperties": false
       },
       "NearbyTransformerDto": {
+        "required": [
+          "code",
+          "distanceMeters",
+          "effectiveAvailableKva",
+          "id",
+          "status"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -3667,16 +4030,14 @@
             "format": "int32"
           },
           "code": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "distanceMeters": {
             "type": "number",
             "format": "double"
           },
           "status": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "effectiveAvailableKva": {
             "type": "number",
@@ -3686,6 +4047,11 @@
         "additionalProperties": false
       },
       "NetMeteringDetailsInput": {
+        "required": [
+          "generationSystemType",
+          "generators",
+          "installedCapacityKw"
+        ],
         "type": "object",
         "properties": {
           "generationSystemType": {
@@ -3703,13 +4069,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/GeneratorInput"
-            },
-            "nullable": true
+            }
           }
         },
         "additionalProperties": false
       },
       "NotificationDto": {
+        "required": [
+          "createdAt",
+          "id",
+          "isRead",
+          "message",
+          "title",
+          "type"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -3717,16 +4090,13 @@
             "format": "int32"
           },
           "title": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "message": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "type": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "isRead": {
             "type": "boolean"
@@ -3739,14 +4109,20 @@
         "additionalProperties": false
       },
       "NotificationDtoPagedDto": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount",
+          "totalPages"
+        ],
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/NotificationDto"
-            },
-            "nullable": true
+            }
           },
           "page": {
             "type": "integer",
@@ -3769,6 +4145,10 @@
         "additionalProperties": false
       },
       "NotificationDtoPagedDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -3792,6 +4172,10 @@
         "additionalProperties": false
       },
       "NotificationDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -3823,6 +4207,11 @@
         "type": "string"
       },
       "ObserveRequestCommand": {
+        "required": [
+          "comment",
+          "id",
+          "observationType"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -3830,8 +4219,7 @@
             "format": "int32"
           },
           "comment": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "observationType": {
             "$ref": "#/components/schemas/ObservationType"
@@ -3849,15 +4237,17 @@
         "type": "string"
       },
       "RegisterInstallerCompanyCommand": {
+        "required": [
+          "rnc",
+          "tradeName"
+        ],
         "type": "object",
         "properties": {
           "tradeName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "rnc": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "contactEmail": {
             "type": "string",
@@ -3876,6 +4266,7 @@
       },
       "RegisterRequest": {
         "required": [
+          "distributorType",
           "email",
           "fullName",
           "password",
@@ -3911,6 +4302,10 @@
         "additionalProperties": false
       },
       "RejectRequestCommand": {
+        "required": [
+          "comment",
+          "id"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -3918,8 +4313,7 @@
             "format": "int32"
           },
           "comment": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -3932,6 +4326,22 @@
         "type": "string"
       },
       "RequestStatisticsDto": {
+        "required": [
+          "approved",
+          "approvedKva",
+          "byDistributor",
+          "byMonth",
+          "byStatus",
+          "byType",
+          "byZone",
+          "cancelled",
+          "from",
+          "pending",
+          "rejected",
+          "requestedKva",
+          "to",
+          "total"
+        ],
         "type": "object",
         "properties": {
           "from": {
@@ -3994,41 +4404,40 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CountItem"
-            },
-            "nullable": true
+            }
           },
           "byType": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CountItem"
-            },
-            "nullable": true
+            }
           },
           "byZone": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CountItem"
-            },
-            "nullable": true
+            }
           },
           "byDistributor": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CountItem"
-            },
-            "nullable": true
+            }
           },
           "byMonth": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MonthItem"
-            },
-            "nullable": true
+            }
           }
         },
         "additionalProperties": false
       },
       "RequestStatisticsDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -4064,19 +4473,22 @@
         "type": "string"
       },
       "RequestTrackingDto": {
+        "required": [
+          "requestCode",
+          "requestedAt",
+          "requestType",
+          "status"
+        ],
         "type": "object",
         "properties": {
           "requestCode": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "requestType": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "status": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "requestedAt": {
             "type": "string",
@@ -4091,6 +4503,10 @@
         "additionalProperties": false
       },
       "RequestTrackingDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -4121,22 +4537,25 @@
         "type": "string"
       },
       "RequiredDocumentItemDto": {
+        "required": [
+          "acceptedTypes",
+          "code",
+          "description",
+          "satisfied"
+        ],
         "type": "object",
         "properties": {
           "code": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "description": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "acceptedTypes": {
             "type": "array",
             "items": {
               "type": "string"
-            },
-            "nullable": true
+            }
           },
           "satisfied": {
             "type": "boolean"
@@ -4145,6 +4564,10 @@
         "additionalProperties": false
       },
       "RequiredDocumentsDto": {
+        "required": [
+          "complete",
+          "items"
+        ],
         "type": "object",
         "properties": {
           "complete": {
@@ -4154,13 +4577,16 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RequiredDocumentItemDto"
-            },
-            "nullable": true
+            }
           }
         },
         "additionalProperties": false
       },
       "RequiredDocumentsDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -4207,7 +4633,66 @@
         },
         "additionalProperties": false
       },
+      "ServiceZoneDto": {
+        "required": [
+          "id",
+          "zoneName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "zoneName": {
+            "type": "string"
+          },
+          "municipality": {
+            "type": "string",
+            "nullable": true
+          },
+          "province": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceZoneDtoListResponse": {
+        "required": [
+          "succeeded"
+        ],
+        "type": "object",
+        "properties": {
+          "succeeded": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceZoneDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "SetTransformerMaintenanceCommand": {
+        "required": [
+          "id",
+          "inMaintenance"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -4221,14 +4706,16 @@
         "additionalProperties": false
       },
       "SimulationComparisonDto": {
+        "required": [
+          "simulations"
+        ],
         "type": "object",
         "properties": {
           "simulations": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SimulationDto"
-            },
-            "nullable": true
+            }
           },
           "bestPaybackId": {
             "type": "integer",
@@ -4249,6 +4736,10 @@
         "additionalProperties": false
       },
       "SimulationComparisonDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -4272,6 +4763,29 @@
         "additionalProperties": false
       },
       "SimulationDto": {
+        "required": [
+          "annualBillAfter",
+          "annualBillBefore",
+          "annualConsumptionKwh",
+          "annualExportCreditKwh",
+          "annualProductionKwh",
+          "annualSavings",
+          "assumptions",
+          "coveragePct",
+          "createdAt",
+          "disclaimer",
+          "equipment",
+          "formulaVersion",
+          "id",
+          "installedCapacityKw",
+          "investmentCost",
+          "monthlyConsumptionKwh",
+          "recommendations",
+          "referenceTransformer",
+          "roi",
+          "surplusPayment",
+          "viabilityStatus"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -4308,8 +4822,7 @@
             "format": "double"
           },
           "viabilityStatus": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "latitude": {
             "type": "number",
@@ -4334,8 +4847,7 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SimulationEquipmentDto"
-            },
-            "nullable": true
+            }
           },
           "annualProductionKwh": {
             "type": "number",
@@ -4369,8 +4881,7 @@
             "type": "array",
             "items": {
               "type": "string"
-            },
-            "nullable": true
+            }
           },
           "referenceTransformer": {
             "$ref": "#/components/schemas/NearbyTransformerDto"
@@ -4383,18 +4894,20 @@
             "nullable": true
           },
           "formulaVersion": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "assumptions": {},
           "disclaimer": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false
       },
       "SimulationDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -4418,11 +4931,15 @@
         "additionalProperties": false
       },
       "SimulationEquipmentDto": {
+        "required": [
+          "generationSystemType",
+          "quantity",
+          "ratedPowerKw"
+        ],
         "type": "object",
         "properties": {
           "generationSystemType": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "panelModel": {
             "type": "string",
@@ -4444,6 +4961,11 @@
         "additionalProperties": false
       },
       "SimulationEquipmentInput": {
+        "required": [
+          "generationSystemType",
+          "quantity",
+          "ratedPowerKw"
+        ],
         "type": "object",
         "properties": {
           "generationSystemType": {
@@ -4469,6 +4991,15 @@
         "additionalProperties": false
       },
       "SimulationSummaryDto": {
+        "required": [
+          "annualSavings",
+          "createdAt",
+          "id",
+          "installedCapacityKw",
+          "monthlyConsumptionKwh",
+          "roi",
+          "viabilityStatus"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -4505,21 +5036,26 @@
             "format": "double"
           },
           "viabilityStatus": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false
       },
       "SimulationSummaryDtoPagedDto": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount",
+          "totalPages"
+        ],
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SimulationSummaryDto"
-            },
-            "nullable": true
+            }
           },
           "page": {
             "type": "integer",
@@ -4542,6 +5078,10 @@
         "additionalProperties": false
       },
       "SimulationSummaryDtoPagedDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -4565,6 +5105,10 @@
         "additionalProperties": false
       },
       "StateHistoryDto": {
+        "required": [
+          "createdAt",
+          "id"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -4595,6 +5139,9 @@
         "additionalProperties": false
       },
       "StateHistoryDtoListResponse": {
+        "required": [
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -4629,7 +5176,140 @@
         ],
         "type": "string"
       },
+      "TransformerClusterDto": {
+        "required": [
+          "available",
+          "conditioned",
+          "count",
+          "critical",
+          "latitude",
+          "longitude",
+          "maintenance",
+          "saturated"
+        ],
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "available": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "conditioned": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "critical": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "saturated": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maintenance": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "transformerId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransformerClusterResultDto": {
+        "required": [
+          "cellSizeDegrees",
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransformerClusterDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cellSizeDegrees": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransformerClusterResultDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
+        "type": "object",
+        "properties": {
+          "succeeded": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/TransformerClusterResultDto"
+          }
+        },
+        "additionalProperties": false
+      },
       "TransformerDetailDto": {
+        "required": [
+          "acceptsNewRequests",
+          "availabilityPct",
+          "availableCapacityKva",
+          "code",
+          "color",
+          "distributorId",
+          "id",
+          "lastUpdated",
+          "latitude",
+          "longitude",
+          "reservedCapacityKva",
+          "serviceZoneId",
+          "status",
+          "totalCapacityKva"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -4637,8 +5317,7 @@
             "format": "int32"
           },
           "code": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "distributorId": {
             "type": "integer",
@@ -4681,12 +5360,10 @@
             "format": "double"
           },
           "status": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "color": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "acceptsNewRequests": {
             "type": "boolean"
@@ -4699,6 +5376,10 @@
         "additionalProperties": false
       },
       "TransformerDetailDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -4722,6 +5403,15 @@
         "additionalProperties": false
       },
       "TransformerMapPointDto": {
+        "required": [
+          "availabilityPct",
+          "code",
+          "color",
+          "id",
+          "latitude",
+          "longitude",
+          "status"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -4729,8 +5419,7 @@
             "format": "int32"
           },
           "code": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "latitude": {
             "type": "number",
@@ -4745,17 +5434,18 @@
             "format": "double"
           },
           "status": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "color": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false
       },
       "TransformerMapPointDtoListResponse": {
+        "required": [
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -4783,14 +5473,17 @@
         "additionalProperties": false
       },
       "TransformerMapResultDto": {
+        "required": [
+          "items",
+          "truncated"
+        ],
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TransformerMapPointDto"
-            },
-            "nullable": true
+            }
           },
           "truncated": {
             "type": "boolean"
@@ -4799,6 +5492,10 @@
         "additionalProperties": false
       },
       "TransformerMapResultDtoResponse": {
+        "required": [
+          "data",
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {
@@ -4832,6 +5529,11 @@
         "type": "string"
       },
       "UpdateTransformerCapacityCommand": {
+        "required": [
+          "availableCapacityKva",
+          "id",
+          "totalCapacityKva"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -4872,6 +5574,13 @@
         "type": "string"
       },
       "ZoneRiskDto": {
+        "required": [
+          "critical",
+          "saturated",
+          "serviceZoneId",
+          "totalTransformers",
+          "zoneName"
+        ],
         "type": "object",
         "properties": {
           "serviceZoneId": {
@@ -4879,8 +5588,7 @@
             "format": "int32"
           },
           "zoneName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "totalTransformers": {
             "type": "integer",
@@ -4898,6 +5606,9 @@
         "additionalProperties": false
       },
       "ZoneRiskDtoListResponse": {
+        "required": [
+          "succeeded"
+        ],
         "type": "object",
         "properties": {
           "succeeded": {

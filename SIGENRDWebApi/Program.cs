@@ -15,6 +15,7 @@ using SIGENRD.Infrastructure.Identity.Configurations;
 using SIGENRD.Infrastructure.Persistences.Contexts;
 using SIGENRDWebApi.Observability;
 using SIGENRDWebApi.Configuration;
+using SIGENRD.Infrastructure.Persistences.Seeds;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +72,11 @@ using (var scope = app.Services.CreateScope())
         // Usuarios de prueba por rol: solo en desarrollo
         if (app.Environment.IsDevelopment())
             await DevelopmentTestUsers.SeedAsync(userManager, configuration["Seed:TestUsersPassword"]);
+
+        // Transformadores de demostración para ver el mapa en desarrollo y en las pruebas E2E (Seed:DemoTransformers).
+        if (app.Environment.IsDevelopment())
+            await DevelopmentDemoData.SeedAsync(
+                services.GetRequiredService<AppContextSIGENRD>(), configuration.GetValue("Seed:DemoTransformers", 0));
     }
     catch (Exception ex)
     {
