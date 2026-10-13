@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using SIGENRD.Infrastructure.Identity.Services;
 
 namespace SIGENRD.UnitTests.Integration;
 
@@ -66,7 +67,23 @@ public class EmailConfirmationTests(ApiFactory api)
         var confirm = await client.GetAsync(tampered);
         var login = await client.PostAsJsonAsync("/api/v1/Auth/login", new { email, password = ApiFactory.TestPassword });
 
-        Assert.DoesNotContain("exitosamente", await confirm.Content.ReadAsStringAsync());
+        // Un enlace que no sirve responde 400 (antes era 200 con un texto de error).
+        Assert.Equal(HttpStatusCode.BadRequest, confirm.StatusCode);
+        using (var error = JsonDocument.Parse(await confirm.Content.ReadAsStringAsync()))
+            Assert.Equal(AuthService.EmailConfirmationFailedMessage, error.RootElement.GetProperty("message").GetString());
         Assert.Equal(HttpStatusCode.BadRequest, login.StatusCode);
+    }
+
+    [FactIfDatabase]
+    public async Task Un_usuario_inexistente_responde_igual_que_un_codigo_invalido()
+    {
+        var client = await api.ClientFor(TestRole.Anonymous);
+
+        var unknown = await client.GetAsync("/api/v1/Auth/confirm-email?userId=" + Guid.NewGuid() + "&code=QUJD");
+        var garbage = await client.GetAsync("/api/v1/Auth/confirm-email?userId=" + Guid.NewGuid() + "&code=%%%");
+
+        Assert.Equal(HttpStatusCode.BadRequest, unknown.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, garbage.StatusCode);
+        Assert.Equal(await unknown.Content.ReadAsStringAsync(), await garbage.Content.ReadAsStringAsync());
     }
 }

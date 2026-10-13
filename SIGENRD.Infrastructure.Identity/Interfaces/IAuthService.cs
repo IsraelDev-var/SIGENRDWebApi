@@ -9,7 +9,7 @@ namespace SIGENRD.Infrastructure.Identity.Interfaces
         /// </param>
         Task<AuthResponse> RegisterAsync(RegisterRequest request, bool revealExistingAccount);
         Task<AuthResponse> LoginAsync(LoginRequest request);
-        Task<string> ConfirmEmailAsync(string userId, string code);
+        Task<AuthResponse> ConfirmEmailAsync(string userId, string code);
         Task ForgotPasswordAsync(ForgotPasswordRequest request);
         Task<AuthResponse> ResetPasswordAsync(ResetPasswordRequest request);
     }

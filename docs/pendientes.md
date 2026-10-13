@@ -8,7 +8,8 @@ Lo que falta para terminar EnergyMap, actualizado el 2026-10-11. Al cerrar un pu
 |---|---|---|
 | Agrupamiento (clustering) del mapa en el servidor | RNF-23 | La vista del país envía hasta 2.000 puntos; agruparlos reduce carga y tamaño |
 | Repetir las pruebas de carga en Azure | Fase 7 | Las de [carga.md](carga.md) son locales; falta medir con la red, la base y el almacenamiento reales |
-| Frontend (Next.js) | Todas las pantallas | F0 (fundaciones) hecho en `frontend/`; siguen F1 a F9 según la propuesta aprobada. La API ya tiene CORS por configuración para el origen del frontend |
+| Frontend (Next.js) | Todas las pantallas | F0 a F2 (fundaciones, Design System, sesión y permisos) hechos en `frontend/`; siguen F3 a F9 según la propuesta aprobada. La API ya tiene CORS por configuración para el origen del frontend |
+| Configurar `App:EmailConfirmationUrl` y `App:PasswordResetUrl` de la API hacia `/confirmar-correo` y `/restablecer` del frontend | F2 | Sin ellas, el correo de confirmación sigue apuntando a la API |
 | Proveedor del mapa base en producción | D-2 | En desarrollo se usa CARTO; definir teselas propias (PMTiles) o un proveedor con contrato |
 | Editar el perfil | RF-09 | Datos del usuario, cliente e instaladora |
 | Tokens de refresco | Seguridad | Hoy el JWT dura 60 minutos y luego hay que iniciar sesión otra vez |
