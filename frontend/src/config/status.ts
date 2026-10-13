@@ -74,6 +74,11 @@ export const TONE_BADGE_CLASS: Record<Tone, string> = {
 };
 
 export const REQUEST_STATUS: Record<RequestStatus, { label: string; tone: Tone; meaning: string }> = {
+  Draft: {
+    label: "Borrador",
+    tone: "neutral",
+    meaning: "Todavía no se envió: solo la ve quien la creó. Sube los documentos y envíala para que Edesur la reciba.",
+  },
   Received: { label: "Recibida", tone: "info", meaning: "Edesur la recibió y la revisará. Si falta algo, te avisará por correo." },
   UnderReview: {
     label: "En revisión",

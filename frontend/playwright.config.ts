@@ -93,6 +93,9 @@ export default defineConfig({
   // Con la API, dos servidores de Next y varios navegadores en la misma máquina, la primera carga de una página
   // más el análisis de axe puede pasar de 30 s.
   timeout: 60_000,
+  // En local corre `next dev`, que compila cada ruta la primera vez que se visita: con la API y varios navegadores a la
+  // vez puede pasar de 5 s. En CI se prueba el build de producción y basta el valor por defecto.
+  expect: { timeout: isCI ? 5_000 : 15_000 },
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
@@ -107,7 +110,21 @@ export default defineConfig({
     // CA-13: funcional desde 360 px de ancho.
     { name: "movil", testIgnore: /\.api\.spec\.ts$/, use: { ...devices["Pixel 7"], viewport: { width: 360, height: 780 } } },
     // Contra la API real: sesión por rol, permisos y perfiles. Cambian datos, así que corren una sola vez y en orden.
-    { name: "con-api", testMatch: /\.api\.spec\.ts$/, fullyParallel: false, use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "con-api",
+      testMatch: /\.api\.spec\.ts$/,
+      testIgnore: /requests\.api\.spec\.ts$/,
+      fullyParallel: false,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // Solicitudes (F5): después de "con-api", que prueba el primer ingreso de los mismos usuarios (perfil sin completar).
+    {
+      name: "con-api-solicitudes",
+      testMatch: /requests\.api\.spec\.ts$/,
+      dependencies: ["con-api"],
+      fullyParallel: false,
+      use: { ...devices["Desktop Chrome"] },
+    },
   ],
   webServer: [
     nextServer(port, true),
