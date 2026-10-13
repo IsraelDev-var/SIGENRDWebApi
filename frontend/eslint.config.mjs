@@ -73,7 +73,18 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "off",
     },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "public/vendor/**", "src/lib/api/schema.d.ts"]),
+  // Reportes de Playwright (JS minificado) y archivos generados.
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    "public/vendor/**",
+    "src/lib/api/schema.d.ts",
+    "playwright-report/**",
+    "test-results/**",
+    "blob-report/**",
+  ]),
 ]);
 
 export default eslintConfig;

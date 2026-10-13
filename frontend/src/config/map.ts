@@ -9,21 +9,27 @@ export const DOMINICAN_REPUBLIC_BOUNDS: [southWest: LngLat, northEast: LngLat] =
   [-68.32, 19.93],
 ];
 
-/** Margen para que el usuario pueda mover el mapa un poco más allá de la costa. */
-const BOUNDS_MARGIN_DEGREES = 1.5;
+/**
+ * Margen alrededor del país hasta donde se puede mover el mapa. MapLibre no deja que la vista salga de estos
+ * límites, así que deben caber en la vista inicial de un móvil vertical: si son más bajos que la franja visible,
+ * MapLibre acerca el mapa y corta el este y el oeste del país. Por eso el margen vertical es mayor.
+ */
+const MARGIN_LNG_DEGREES = 2;
+const MARGIN_LAT_DEGREES = 3.5;
 
 export const MAP_MAX_BOUNDS: [LngLat, LngLat] = [
-  [DOMINICAN_REPUBLIC_BOUNDS[0][0] - BOUNDS_MARGIN_DEGREES, DOMINICAN_REPUBLIC_BOUNDS[0][1] - BOUNDS_MARGIN_DEGREES],
-  [DOMINICAN_REPUBLIC_BOUNDS[1][0] + BOUNDS_MARGIN_DEGREES, DOMINICAN_REPUBLIC_BOUNDS[1][1] + BOUNDS_MARGIN_DEGREES],
+  [DOMINICAN_REPUBLIC_BOUNDS[0][0] - MARGIN_LNG_DEGREES, DOMINICAN_REPUBLIC_BOUNDS[0][1] - MARGIN_LAT_DEGREES],
+  [DOMINICAN_REPUBLIC_BOUNDS[1][0] + MARGIN_LNG_DEGREES, DOMINICAN_REPUBLIC_BOUNDS[1][1] + MARGIN_LAT_DEGREES],
 ];
 
-/** Vista inicial: el país completo. */
-export const INITIAL_VIEW = {
-  center: [-70.16, 18.74] as LngLat,
-  zoom: 7,
-};
+/**
+ * Vista inicial: el país completo en cualquier ancho. Se encuadran los límites en lugar de fijar un zoom,
+ * que en un móvil de 360 px dejaba fuera el este y el oeste.
+ */
+export const INITIAL_FIT_PADDING_PX = 16;
 
-export const MAP_ZOOM_LIMITS = { min: 6, max: 18 };
+// Encuadrar el país a 360 px de ancho necesita un zoom cercano a 5.9.
+export const MAP_ZOOM_LIMITS = { min: 5, max: 18 };
 
 const CARTO_STYLES = {
   light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",

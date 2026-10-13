@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import { publicEnvSchema } from "@/config/env";
-import { DOMINICAN_REPUBLIC_BOUNDS, INITIAL_VIEW, MAP_MAX_BOUNDS, resolveMapStyles } from "@/config/map";
+import { DOMINICAN_REPUBLIC_BOUNDS, INITIAL_FIT_PADDING_PX, MAP_MAX_BOUNDS, MAP_ZOOM_LIMITS, resolveMapStyles } from "@/config/map";
 
 describe("vista del mapa", () => {
-  it("empieza dentro de República Dominicana", () => {
+  it("encuadra un área válida de República Dominicana (suroeste antes que noreste)", () => {
     const [[west, south], [east, north]] = DOMINICAN_REPUBLIC_BOUNDS;
-    const [lng, lat] = INITIAL_VIEW.center;
 
-    expect(lng).toBeGreaterThan(west);
-    expect(lng).toBeLessThan(east);
-    expect(lat).toBeGreaterThan(south);
-    expect(lat).toBeLessThan(north);
+    expect(west).toBeLessThan(east);
+    expect(south).toBeLessThan(north);
+    // Cabo Engaño (este) y Pedernales (oeste) quedan dentro.
+    expect(west).toBeLessThan(-71.7);
+    expect(east).toBeGreaterThan(-68.33);
   });
 
   it("deja mover el mapa más allá del país sin perderlo", () => {
@@ -22,6 +22,29 @@ describe("vista del mapa", () => {
     expect(maxSouth).toBeLessThan(south);
     expect(maxEast).toBeGreaterThan(east);
     expect(maxNorth).toBeGreaterThan(north);
+  });
+});
+
+describe("vista inicial en un móvil vertical (CA-13)", () => {
+  // Pantalla de 360 × 800 px; el mapa ocupa casi todo el alto.
+  const width = 360;
+  const mapHeight = 720;
+  const [[west, south], [east, north]] = DOMINICAN_REPUBLIC_BOUNDS;
+  const centerLatRad = (((south + north) / 2) * Math.PI) / 180;
+
+  // Grados de longitud por píxel al encuadrar el país de este a oeste (Web Mercator, teselas de 512 px).
+  const lngPerPx = (east - west) / (width - 2 * INITIAL_FIT_PADDING_PX);
+  const fitZoom = Math.log2(360 / (512 * lngPerPx));
+
+  it("el zoom necesario está permitido", () => {
+    expect(fitZoom).toBeGreaterThanOrEqual(MAP_ZOOM_LIMITS.min);
+  });
+
+  it("los límites de movimiento son más altos que la franja visible, así MapLibre no acerca el mapa", () => {
+    const visibleLatSpan = mapHeight * lngPerPx * Math.cos(centerLatRad);
+    const maxBoundsLatSpan = MAP_MAX_BOUNDS[1][1] - MAP_MAX_BOUNDS[0][1];
+
+    expect(maxBoundsLatSpan).toBeGreaterThan(visibleLatSpan);
   });
 });
 
