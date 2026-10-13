@@ -7,7 +7,7 @@ import { FormMessage } from "@/components/shared/form-field";
 import { Button } from "@/components/ui/button";
 
 import { requestTransitionAction, type RequestActionState } from "../actions";
-import { TextareaField } from "./fields";
+import { TextareaField } from "@/components/shared/form-controls";
 
 const IDLE: RequestActionState = { status: "idle" };
 

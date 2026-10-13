@@ -32,10 +32,11 @@ export const PUBLIC_NAV: NavItem[] = [
   { href: "/requisitos", label: "Requisitos", icon: "file-text" },
 ];
 
-// Los menús crecen con cada entrega (simulaciones en F6, gestión en F7–F8).
+// Los menús crecen con cada entrega (gestión en F7–F8).
 export const PORTAL_NAV: NavItem[] = [
   { href: "/portal", label: "Inicio", icon: "gauge" },
   { href: "/portal/solicitudes", label: "Mis solicitudes", icon: "clipboard-list", requires: "viewOwnRequests" },
+  { href: "/portal/simulaciones", label: "Simulaciones", icon: "sun", requires: "manageOwnSimulations" },
   { href: "/portal/perfil", label: "Mi perfil", icon: "user" },
 ];
 

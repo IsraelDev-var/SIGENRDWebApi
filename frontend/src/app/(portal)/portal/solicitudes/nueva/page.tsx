@@ -7,6 +7,7 @@ import { EmptyState, ErrorState, ForbiddenState } from "@/components/shared/page
 import { Button } from "@/components/ui/button";
 import { getApplicantProfile, isInstallerValidated } from "@/features/auth";
 import { emptyRequestForm, getTransformer, RequestWizard } from "@/features/requests";
+import { getSimulation } from "@/features/simulations";
 import { requireZone } from "@/server/session";
 
 export const metadata: Metadata = { title: "Nueva solicitud" };
@@ -18,7 +19,9 @@ const one = (value: string | string[] | undefined) => (Array.isArray(value) ? va
  * ?transformador=ID. Antes se comprueba que el solicitante pueda crearla (perfil, RN-05).
  */
 export default async function NewRequestPage({ searchParams }: PageProps<"/portal/solicitudes/nueva">) {
-  const transformerId = one((await searchParams).transformador);
+  const params = await searchParams;
+  const transformerId = one(params.transformador);
+  const simulationId = one(params.simulacion);
   const session = await requireZone(
     "portal",
     transformerId ? `/portal/solicitudes/nueva?transformador=${encodeURIComponent(transformerId)}` : "/portal/solicitudes/nueva",
@@ -128,9 +131,24 @@ export default async function NewRequestPage({ searchParams }: PageProps<"/porta
     );
   }
 
+  // Desde el resultado de una simulación: medición neta con su potencia y su ubicación.
+  const simulation = simulationId ? await getSimulation(session, simulationId) : null;
+  const initialValues = emptyRequestForm(simulation?.latitude != null && simulation.longitude != null ? { latitude: simulation.latitude, longitude: simulation.longitude } : transformer);
+  if (simulation) {
+    initialValues.requestType = "NetMetering";
+    initialValues.installedCapacityKw = String(simulation.installedCapacityKw);
+    initialValues.generationSystemType = "Photovoltaic";
+  }
+
   return (
     <div className="grid max-w-3xl gap-6">
       {header}
+      {simulation && (
+        <p role="status" className="rounded-md bg-tone-info-soft px-3 py-2 text-sm text-tone-info-text">
+          Tomamos de la simulación «{simulation.name || `Simulación ${simulation.id}`}» el tipo de trámite, la potencia instalada y la
+          ubicación. Revisa el resto de los datos.
+        </p>
+      )}
       <RequestWizard
         transformer={{
           id: transformer.id,
@@ -139,7 +157,7 @@ export default async function NewRequestPage({ searchParams }: PageProps<"/porta
           status: transformer.status,
           availableCapacityKva: transformer.availableCapacityKva,
         }}
-        initialValues={emptyRequestForm(transformer)}
+        initialValues={initialValues}
         needsHolder={applicant.kind === "installer"}
         holderName={applicant.kind === "customer" ? applicant.profile?.fullName : null}
       />

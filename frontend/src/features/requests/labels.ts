@@ -1,10 +1,9 @@
+import type { Option } from "@/components/shared/form-controls";
 import type { components } from "@/lib/api/schema";
 
 /** Textos de los valores que la API devuelve como enum. El orden de cada lista es el de los selectores. */
 
 type Schemas = components["schemas"];
-
-export type Option<T extends string> = { value: T; label: string; hint?: string };
 
 export const REQUEST_TYPE_OPTIONS: Option<Schemas["RequestType"]>[] = [
   { value: "Connection", label: "Conexión nueva", hint: "Suministro eléctrico para un inmueble o proyecto." },

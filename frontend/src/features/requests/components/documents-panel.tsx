@@ -12,7 +12,7 @@ import { formatDate, formatFileSize } from "@/lib/format";
 import { deleteDocumentAction, uploadDocumentAction, type RequestActionState } from "../actions";
 import { DOCUMENT_TYPE_LABEL, documentTypeLabel } from "../labels";
 import { DOCUMENT_ACCEPT, documentFileError } from "../schemas";
-import { controlClass } from "./fields";
+import { controlClass } from "@/components/shared/form-controls";
 
 type Schemas = components["schemas"];
 

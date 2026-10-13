@@ -3,9 +3,9 @@ import type { ComponentProps, ReactNode } from "react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-import type { Option } from "../labels";
+/** Selectores, textos largos y opciones excluyentes, con etiqueta, ayuda y error asociados (WCAG 1.3.1, 3.3.1). */
 
-/** Selectores, textos largos y opciones del asistente, con etiqueta, ayuda y error asociados (WCAG 1.3.1, 3.3.1). */
+export type Option<T extends string> = { value: T; label: string; hint?: string };
 
 export const controlClass =
   "w-full rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30";
