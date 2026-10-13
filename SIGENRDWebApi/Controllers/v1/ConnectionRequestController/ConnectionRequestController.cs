@@ -1,3 +1,5 @@
+using SIGENRD.Core.Application.DTOs.ConnectionRequest;
+using SIGENRD.Core.Application.Wrappers;
 using Asp.Versioning;
 using SIGENRD.Core.Application.Mediator;
 using Microsoft.AspNetCore.Authorization;
@@ -25,6 +27,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         private readonly IMediator _mediator = mediator;
 
         // 🟢 POST: Crear Solicitud
+        [ProducesResponseType<Response<int>>(StatusCodes.Status200OK)]
         [HttpPost]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")] // matriz 3.2: solo el solicitante
         public async Task<IActionResult> Create([FromBody] CreateConnectionRequestCommand command)
@@ -34,6 +37,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         }
 
         // 🟢 GET: Obtener por ID
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
         [HttpGet("{id}")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
         public async Task<IActionResult> Get(int id)
@@ -43,6 +47,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         }
 
         /// <summary>Listado paginado (tamaño máximo de página acotado), con los mismos filtros que /search.</summary>
+        [ProducesResponseType<Response<PagedDto<ConnectionRequestResponseDto>>>(StatusCodes.Status200OK)]
         [HttpGet]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
         public async Task<IActionResult> GetAll([FromQuery] SearchConnectionRequestsQuery query)
@@ -51,12 +56,14 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         // ---------- Búsqueda y seguimiento ----------
 
         /// <summary>Lista paginada con filtros, dentro de lo que el rol puede ver (RN-22).</summary>
+        [ProducesResponseType<Response<PagedDto<ConnectionRequestResponseDto>>>(StatusCodes.Status200OK)]
         [HttpGet("search")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
         public async Task<IActionResult> Search([FromQuery] SearchConnectionRequestsQuery query)
             => Ok(await _mediator.Send(query));
 
         /// <summary>Seguimiento público por número de expediente: solo estado y fechas (RF-14).</summary>
+        [ProducesResponseType<Response<RequestTrackingDto>>(StatusCodes.Status200OK)]
         [HttpGet("track/{code}")]
         [AllowAnonymous]
         [EnableRateLimiting(RateLimitPolicies.PublicTracking)]
@@ -66,6 +73,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         // ---------- Historial ----------
 
         /// <summary>Cambios de estado de la solicitud, del más antiguo al más reciente (RN-10).</summary>
+        [ProducesResponseType<Response<List<StateHistoryDto>>>(StatusCodes.Status200OK)]
         [HttpGet("{id:int}/history")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
         public async Task<IActionResult> History(int id)
@@ -83,6 +91,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         private const long UploadLimitBytes = DocumentFileInspector.MaxSizeBytes + 512 * 1024;
 
         /// <summary>Sube un documento PDF, JPG o PNG de hasta 10 MB. Solo con la solicitud Recibida o En corrección.</summary>
+        [ProducesResponseType<Response<DocumentDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/documents")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")] // matriz 3.2: documentos propios
         [Consumes("multipart/form-data")]
@@ -108,12 +117,14 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         }
 
         /// <summary>Documentos vigentes del expediente, incluido el certificado si está aprobada.</summary>
+        [ProducesResponseType<Response<List<DocumentDto>>>(StatusCodes.Status200OK)]
         [HttpGet("{id:int}/documents")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
         public async Task<IActionResult> ListDocuments(int id)
             => Ok(await _mediator.Send(new ListDocumentsQuery(id)));
 
         /// <summary>Descarga un documento. Una solicitud ajena responde 404 (RN-22).</summary>
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "application/octet-stream")]
         [HttpGet("{id:int}/documents/{documentId:int}/content")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
         public async Task<IActionResult> DownloadDocument(int id, int documentId, CancellationToken cancellationToken)
@@ -123,12 +134,14 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         }
 
         /// <summary>Retira un documento (baja lógica). No se puede tras la aprobación (RN-19) ni durante la revisión.</summary>
+        [ProducesResponseType<Response<int>>(StatusCodes.Status200OK)]
         [HttpDelete("{id:int}/documents/{documentId:int}")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
         public async Task<IActionResult> DeleteDocument(int id, int documentId)
             => Ok(await _mediator.Send(new DeleteDocumentCommand(id, documentId)));
 
         /// <summary>Certificado de aprobación en PDF (RN-14, RF-17).</summary>
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "application/octet-stream")]
         [HttpGet("{id:int}/certificate")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
         public async Task<IActionResult> DownloadCertificate(int id, CancellationToken cancellationToken)
@@ -138,6 +151,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         }
 
         /// <summary>Documentos que exige la solicitud y cuáles ya están presentes (RN-09, RN-11).</summary>
+        [ProducesResponseType<Response<RequiredDocumentsDto>>(StatusCodes.Status200OK)]
         [HttpGet("{id:int}/required-documents")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}, {Roles.Admin}, {Roles.Distributor}, {Roles.Engineer}")]
         public async Task<IActionResult> RequiredDocuments(int id)
@@ -146,12 +160,14 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         // ---------- Flujo de estados: personal de la distribuidora ----------
 
         /// <summary>Recibida a En revisión: valida documentos y reserva la capacidad.</summary>
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/start-review")]
         [Authorize(Roles = $"{Roles.Engineer}, {Roles.Distributor}, {Roles.Admin}")]
         public async Task<IActionResult> StartReview(int id)
             => Ok(await _mediator.Send(new StartReviewCommand { Id = id }));
 
         /// <summary>En revisión a Observaciones. Requiere comentario.</summary>
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/observe")]
         [Authorize(Roles = $"{Roles.Engineer}, {Roles.Distributor}, {Roles.Admin}")]
         public async Task<IActionResult> Observe(int id, [FromBody] ObserveRequestCommand command)
@@ -161,12 +177,14 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         }
 
         /// <summary>En revisión a Aprobada. Verifica documentos y capacidad (RN-09, RN-15).</summary>
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/approve")]
         [Authorize(Roles = $"{Roles.Distributor}, {Roles.Admin}")]
         public async Task<IActionResult> Approve(int id)
             => Ok(await _mediator.Send(new ApproveRequestCommand { Id = id }));
 
         /// <summary>En revisión a Rechazada. Requiere comentario.</summary>
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/reject")]
         [Authorize(Roles = $"{Roles.Distributor}, {Roles.Admin}")]
         public async Task<IActionResult> Reject(int id, [FromBody] RejectRequestCommand command)
@@ -178,18 +196,21 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         // ---------- Flujo de estados: solicitante ----------
 
         /// <summary>Observaciones a En corrección.</summary>
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/start-correction")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
         public async Task<IActionResult> StartCorrection(int id)
             => Ok(await _mediator.Send(new StartCorrectionCommand { Id = id }));
 
         /// <summary>En corrección a En revisión.</summary>
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/resubmit")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
         public async Task<IActionResult> Resubmit(int id)
             => Ok(await _mediator.Send(new ResubmitRequestCommand { Id = id }));
 
         /// <summary>Cancela la solicitud mientras sea Recibida, Observaciones o En corrección (RN-23).</summary>
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/cancel")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
         public async Task<IActionResult> Cancel(int id, [FromBody] CancelRequestCommand? command)

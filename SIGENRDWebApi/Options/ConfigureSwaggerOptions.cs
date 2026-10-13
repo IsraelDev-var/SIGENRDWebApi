@@ -28,10 +28,9 @@ namespace SIGENRDWebApi.Options
         {
             var info = new OpenApiInfo()
             {
-                Title = "SIGENRD API",
+                Title = "EnergyMap API",
                 Version = description.ApiVersion.ToString(),
-                Description = "API del Sistema de Gestión SIGENRD",
-                Contact = new OpenApiContact { Name = "Tu Nombre", Email = "tu@email.com" }
+                Description = "API de EnergyMap: mapa de disponibilidad, solicitudes de conexión y medición neta, simulación."
             };
 
             if (description.IsDeprecated)

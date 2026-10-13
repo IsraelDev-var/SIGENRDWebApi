@@ -28,6 +28,7 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
         /// Registro público. Solo permite crear clientes e instaladoras (RF-06):
         /// los roles internos los asigna un administrador con register-internal.
         /// </summary>
+        [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
@@ -43,6 +44,7 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
         }
 
         /// <summary>Alta de usuarios internos (Engineer, Distributor, Admin). Solo un administrador.</summary>
+        [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
         [HttpPost("register-internal")]
         [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> RegisterInternal([FromBody] RegisterRequest request)
@@ -57,6 +59,7 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
             return Ok(result);
         }
 
+        [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -71,6 +74,7 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
             return Ok(result);
         }
 
+        [ProducesResponseType<string>(StatusCodes.Status200OK)]
         [HttpGet("confirm-email")]
         public async Task<IActionResult> ConfirmEmail(string userId, string code)
         {
@@ -82,6 +86,7 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
         }
 
         /// <summary>Pide el enlace para restablecer la contraseña. Responde lo mismo exista o no la cuenta.</summary>
+        [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
@@ -90,6 +95,7 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
         }
 
         /// <summary>Fija la nueva contraseña con el código recibido por correo y levanta un bloqueo activo.</summary>
+        [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {

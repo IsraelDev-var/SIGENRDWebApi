@@ -1,3 +1,4 @@
+using SIGENRD.Core.Application.Wrappers;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,25 +17,30 @@ namespace SIGENRDWebApi.Controllers.v1.Simulations
     public class SimulationsController(IMediator mediator) : BaseApiController
     {
         /// <summary>Calcula producción, ahorro, ROI y retorno; clasifica y recomienda; queda en el historial.</summary>
+        [ProducesResponseType<Response<SimulationDto>>(StatusCodes.Status200OK)]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateSimulationCommand command)
             => Ok(await mediator.Send(command));
 
         /// <summary>Historial propio, más recientes primero (RF-26).</summary>
+        [ProducesResponseType<Response<PagedDto<SimulationSummaryDto>>>(StatusCodes.Status200OK)]
         [HttpGet]
         public async Task<IActionResult> List([FromQuery] ListMySimulationsQuery query)
             => Ok(await mediator.Send(query));
 
+        [ProducesResponseType<Response<SimulationDto>>(StatusCodes.Status200OK)]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id)
             => Ok(await mediator.Send(new GetSimulationQuery(id)));
 
         /// <summary>Compara de 2 a 5 simulaciones propias (RF-22): ?ids=1&amp;ids=2.</summary>
+        [ProducesResponseType<Response<SimulationComparisonDto>>(StatusCodes.Status200OK)]
         [HttpGet("compare")]
         public async Task<IActionResult> Compare([FromQuery] CompareSimulationsQuery query)
             => Ok(await mediator.Send(query));
 
         /// <summary>Resumen en PDF (CA-10).</summary>
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "application/octet-stream")]
         [HttpGet("{id:int}/report")]
         public async Task<IActionResult> Report(int id, CancellationToken cancellationToken)
         {

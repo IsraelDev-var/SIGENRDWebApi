@@ -1,3 +1,5 @@
+using SIGENRD.Core.Application.DTOs.Transformer;
+using SIGENRD.Core.Application.Wrappers;
 using Asp.Versioning;
 using SIGENRD.Core.Application.Mediator;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +25,7 @@ namespace SIGENRDWebApi.Controllers.v1.Transformers
         // ---------- Consulta pública (RF-01 a RF-05): el mapa es público ----------
 
         /// <summary>Transformadores dentro del área visible del mapa, con filtros.</summary>
+        [ProducesResponseType<Response<TransformerMapResultDto>>(StatusCodes.Status200OK)]
         [HttpGet]
         [AllowAnonymous]
         [ResponseCache(CacheProfileName = CacheProfiles.Map)]
@@ -30,6 +33,7 @@ namespace SIGENRDWebApi.Controllers.v1.Transformers
             => Ok(await mediator.Send(query));
 
         /// <summary>Busca por código o por cercanía a unas coordenadas.</summary>
+        [ProducesResponseType<Response<List<TransformerMapPointDto>>>(StatusCodes.Status200OK)]
         [HttpGet("search")]
         [AllowAnonymous]
         [ResponseCache(CacheProfileName = CacheProfiles.Map)]
@@ -37,6 +41,7 @@ namespace SIGENRDWebApi.Controllers.v1.Transformers
             => Ok(await mediator.Send(query));
 
         /// <summary>Detalle técnico de un transformador.</summary>
+        [ProducesResponseType<Response<TransformerDetailDto>>(StatusCodes.Status200OK)]
         [HttpGet("{id:int}")]
         [AllowAnonymous]
         [ResponseCache(CacheProfileName = CacheProfiles.Map)]
@@ -46,17 +51,20 @@ namespace SIGENRDWebApi.Controllers.v1.Transformers
         // ---------- Gestión (distribuidora y administrador) ----------
 
         /// <summary>Zonas con transformadores críticos o saturados (RF-29).</summary>
+        [ProducesResponseType<Response<List<ZoneRiskDto>>>(StatusCodes.Status200OK)]
         [HttpGet("critical-zones")]
         [Authorize(Roles = $"{Roles.Distributor}, {Roles.Admin}")]
         public async Task<IActionResult> GetCriticalZones()
             => Ok(await mediator.Send(new GetCriticalZonesQuery()));
 
+        [ProducesResponseType<Response<int>>(StatusCodes.Status200OK)]
         [HttpPost]
         [Authorize(Roles = $"{Roles.Distributor}, {Roles.Admin}")]
         public async Task<IActionResult> Create([FromBody] CreateTransformerCommand command)
             => Ok(await mediator.Send(command));
 
         /// <summary>Informa la capacidad vigente; el estado se recalcula.</summary>
+        [ProducesResponseType<Response<TransformerDetailDto>>(StatusCodes.Status200OK)]
         [HttpPut("{id:int}/capacity")]
         [Authorize(Roles = $"{Roles.Distributor}, {Roles.Admin}")]
         public async Task<IActionResult> UpdateCapacity(int id, [FromBody] UpdateTransformerCapacityCommand command)
@@ -65,6 +73,7 @@ namespace SIGENRDWebApi.Controllers.v1.Transformers
             return Ok(await mediator.Send(command));
         }
 
+        [ProducesResponseType<Response<TransformerDetailDto>>(StatusCodes.Status200OK)]
         [HttpPut("{id:int}/maintenance")]
         [Authorize(Roles = $"{Roles.Distributor}, {Roles.Admin}")]
         public async Task<IActionResult> SetMaintenance(int id, [FromBody] SetTransformerMaintenanceCommand command)
@@ -74,6 +83,7 @@ namespace SIGENRDWebApi.Controllers.v1.Transformers
         }
 
         /// <summary>Carga masiva desde la plantilla CSV. Todo o nada.</summary>
+        [ProducesResponseType<Response<ImportTransformersResultDto>>(StatusCodes.Status200OK)]
         [HttpPost("import")]
         [Authorize(Roles = $"{Roles.Distributor}, {Roles.Admin}")]
         [RequestSizeLimit(MaxCsvBytes)]

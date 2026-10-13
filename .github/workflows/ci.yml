@@ -109,6 +109,14 @@ jobs:
           path: TestResults/*.trx
           if-no-files-found: ignore
 
+      # Contrato de la API (B-8). Las pruebas ya comprobaron que coincide con lo que genera esta compilación.
+      - name: Publicar el contrato OpenAPI
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-v1
+          path: docs/api/openapi-v1.json
+          if-no-files-found: error
+
   docker:
     name: Imagen Docker
     runs-on: ubuntu-latest

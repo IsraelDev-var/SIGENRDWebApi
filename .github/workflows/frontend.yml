@@ -1,0 +1,77 @@
+name: Frontend
+
+on:
+  push:
+    branches: ['**']
+    paths: ['frontend/**', 'docs/api/**', '.github/workflows/frontend.yml']
+  pull_request:
+    branches: [master, main]
+    paths: ['frontend/**', 'docs/api/**', '.github/workflows/frontend.yml']
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: frontend
+
+jobs:
+  verify:
+    name: Verificar frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      # Versión de pnpm tomada de "packageManager" en frontend/package.json.
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      # El contrato lo valida OpenApiContractTests en el CI del backend; aquí se comprueba que los tipos coinciden con él.
+      - name: Tipos de la API al día con docs/api/openapi-v1.json
+        run: |
+          pnpm api:types
+          git diff --exit-code -- src/lib/api/schema.d.ts || {
+            echo "::error::src/lib/api/schema.d.ts no coincide con el contrato. Ejecuta 'pnpm api:types' y súbelo."
+            exit 1
+          }
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Tipos
+        run: pnpm typecheck
+
+      - name: Pruebas unitarias
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Navegador para las pruebas E2E
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Pruebas E2E y accesibilidad
+        run: pnpm e2e
+
+      - name: Reporte de Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          if-no-files-found: ignore
