@@ -117,4 +117,41 @@ public class MapClustersAndCatalogsTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.BadRequest,
             (await anonymous.GetAsync("/api/v1/Transformers/clusters?minLatitude=20&minLongitude=-68&maxLatitude=18&maxLongitude=-70&zoom=7")).StatusCode);
     }
+
+    private async Task<List<string>> Requirements(string query)
+    {
+        var anonymous = await api.ClientFor(TestRole.Anonymous);
+        var data = await Data(await anonymous.GetAsync("/api/v1/RequiredDocuments?" + query));
+        return data.EnumerateArray().Select(r => r.GetProperty("code").GetString()!).ToList();
+    }
+
+    [FactIfDatabase]
+    public async Task Los_requisitos_publicos_cambian_segun_el_tramite()
+    {
+        // Conexión hasta 10 kVA, persona física: identidad e inmueble.
+        Assert.Equal(["IDENTIDAD", "INMUEBLE"], await Requirements("requestType=Connection&requestedCapacityKva=5"));
+
+        // Empresa: además carta, RNC y documentos societarios.
+        var company = await Requirements("requestType=Connection&requestedCapacityKva=5&isLegalEntity=true");
+        Assert.Contains("RNC", company);
+        Assert.Contains("ACTA", company);
+
+        // Más de 10 kVA: proyecto de ingeniería.
+        Assert.Contains("CODIA", await Requirements("requestType=Connection&requestedCapacityKva=12"));
+
+        // Medición neta: CNE 2012; si no es el dueño, la autorización del dueño.
+        var owner = await Requirements("requestType=NetMetering");
+        var tenant = await Requirements("requestType=NetMetering&propertyRelation=Tenant");
+        Assert.Contains("UNIFILAR", owner);
+        Assert.DoesNotContain("DUENO", owner);
+        Assert.Contains("DUENO", tenant);
+    }
+
+    [FactIfDatabase]
+    public async Task Los_requisitos_rechazan_valores_invalidos()
+    {
+        var anonymous = await api.ClientFor(TestRole.Anonymous);
+        Assert.Equal(HttpStatusCode.BadRequest, (await anonymous.GetAsync("/api/v1/RequiredDocuments?requestType=Otro")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await anonymous.GetAsync("/api/v1/RequiredDocuments?requestedCapacityKva=-1")).StatusCode);
+    }
 }

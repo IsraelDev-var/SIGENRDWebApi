@@ -111,6 +111,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// 0. IP del usuario reenviada por el servidor del frontend (con clave compartida): antes que los registros y el límite
+app.UseMiddleware<TrustedProxyClientIpMiddleware>();
+
 // 1. Cabeceras de seguridad en todas las respuestas, incluidas las de error
 app.UseMiddleware<SecurityHeadersMiddleware>();
 

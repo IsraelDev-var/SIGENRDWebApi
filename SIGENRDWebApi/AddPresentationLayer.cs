@@ -38,6 +38,8 @@ namespace SIGENRD.Presentation.WebApi
                 configuration.GetSection(SIGENRD.Core.Application.Features.Simulations.SimulationSettings.SectionName));
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<SIGENRD.Core.Application.Features.Simulations.SimulationSettings>>().Value);
             services.AddRateLimiting(configuration);
+            services.Configure<SIGENRDWebApi.Middlewares.TrustedProxySettings>(
+                configuration.GetSection(SIGENRDWebApi.Middlewares.TrustedProxySettings.SectionName));
 
             services.AddHsts(options =>
             {

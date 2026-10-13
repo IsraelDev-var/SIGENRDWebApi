@@ -73,14 +73,23 @@ export const TONE_BADGE_CLASS: Record<Tone, string> = {
   neutral: "bg-tone-neutral-soft text-tone-neutral-text",
 };
 
-export const REQUEST_STATUS: Record<RequestStatus, { label: string; tone: Tone }> = {
-  Received: { label: "Recibida", tone: "info" },
-  UnderReview: { label: "En revisión", tone: "review" },
-  Observed: { label: "Observaciones", tone: "warning" },
-  InCorrection: { label: "En corrección", tone: "warning" },
-  Approved: { label: "Aprobada", tone: "success" },
-  Rejected: { label: "Rechazada", tone: "danger" },
-  Cancelled: { label: "Cancelada", tone: "neutral" },
+export const REQUEST_STATUS: Record<RequestStatus, { label: string; tone: Tone; meaning: string }> = {
+  Received: { label: "Recibida", tone: "info", meaning: "Edesur la recibió y la revisará. Si falta algo, te avisará por correo." },
+  UnderReview: {
+    label: "En revisión",
+    tone: "review",
+    meaning: "El personal de Edesur la está revisando. La capacidad pedida quedó reservada en el transformador.",
+  },
+  Observed: { label: "Observaciones", tone: "warning", meaning: "Edesur pidió correcciones. Entra a tu portal para ver qué falta." },
+  InCorrection: { label: "En corrección", tone: "warning", meaning: "El solicitante está corrigiendo la solicitud para reenviarla." },
+  Approved: { label: "Aprobada", tone: "success", meaning: "Edesur la aprobó. El certificado está disponible en el portal del solicitante." },
+  Rejected: { label: "Rechazada", tone: "danger", meaning: "Edesur la rechazó. El motivo está en el portal del solicitante." },
+  Cancelled: { label: "Cancelada", tone: "neutral", meaning: "El solicitante la canceló." },
+};
+
+export const REQUEST_TYPE_LABEL: Record<components["schemas"]["RequestType"], string> = {
+  Connection: "Conexión nueva",
+  NetMetering: "Medición neta",
 };
 
 // Algunos DTO devuelven el estado como texto libre (string), no como enum: se valida antes de usarlo.

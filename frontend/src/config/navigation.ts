@@ -8,6 +8,7 @@ export type NavIcon =
   | "gauge"
   | "map"
   | "scroll-text"
+  | "search"
   | "sun"
   | "user"
   | "users"
@@ -22,11 +23,13 @@ export type NavItem = {
 };
 
 /**
- * Menú público. Solo enlaza a páginas que existen: Seguimiento y Requisitos se añaden en F4.
+ * Menú público.
  */
 export const PUBLIC_NAV: NavItem[] = [
   { href: "/", label: "Mapa", icon: "map" },
   { href: "/transformadores", label: "Lista", icon: "clipboard-list" },
+  { href: "/seguimiento", label: "Seguimiento", icon: "search" },
+  { href: "/requisitos", label: "Requisitos", icon: "file-text" },
 ];
 
 // Los menús crecen con cada entrega (solicitudes en F5, simulaciones en F6, gestión en F7–F8).

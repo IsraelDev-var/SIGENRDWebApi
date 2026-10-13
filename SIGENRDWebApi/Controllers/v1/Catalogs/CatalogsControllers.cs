@@ -29,4 +29,18 @@ namespace SIGENRDWebApi.Controllers.v1.Catalogs
         [ResponseCache(CacheProfileName = CacheProfiles.Map)]
         public async Task<IActionResult> List() => Ok(await mediator.Send(new ListDistributorsQuery()));
     }
+
+    /// <summary>
+    /// Documentos que pide cada trámite antes de crear la solicitud (B-4): ?requestType=NetMetering&amp;propertyRelation=Tenant.
+    /// Público: lo usa la página de requisitos del portal.
+    /// </summary>
+    [ApiVersion("1.0")]
+    [AllowAnonymous]
+    public class RequiredDocumentsController(IMediator mediator) : BaseApiController
+    {
+        [ProducesResponseType<Response<List<DocumentRequirementDto>>>(StatusCodes.Status200OK)]
+        [HttpGet]
+        [ResponseCache(CacheProfileName = CacheProfiles.Map)]
+        public async Task<IActionResult> List([FromQuery] GetDocumentRequirementsQuery query) => Ok(await mediator.Send(query));
+    }
 }

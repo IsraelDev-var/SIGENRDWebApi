@@ -18,6 +18,9 @@ const isCI = !!process.env.CI;
  */
 const e2eDb = process.env.ENERGYMAP_E2E_DB;
 
+// Clave compartida entre Next y la API para reenviar la IP del usuario (TrustedProxyClientIpMiddleware). Solo pruebas.
+const E2E_PROXY_KEY = "clave-de-proxy-solo-para-pruebas-e2e";
+
 // Llaves propias de cada ejecución: la API firma con la privada y Next verifica con la pública.
 // La configuración se vuelve a evaluar en cada worker, pero los servidores se levantan una sola vez.
 const keys = generateKeyPairSync("rsa", { modulusLength: 2048 });
@@ -33,6 +36,9 @@ const nextServer = (serverPort: number, catalog: boolean) => ({
   env: {
     ENERGYMAP_API_URL: `http://localhost:${apiPort}`,
     ENERGYMAP_JWT_PUBLIC_KEY: publicKeyPem,
+    ENERGYMAP_PROXY_KEY: E2E_PROXY_KEY,
+    // Sin proxy delante en las pruebas: la IP es la que manda el navegador en X-Forwarded-For (cada prueba usa una).
+    ENERGYMAP_TRUSTED_PROXIES: "1",
     // El catálogo del Design System responde 404 sin esta variable.
     ENERGYMAP_DESIGN_CATALOG: catalog ? "true" : "false",
   },
@@ -70,9 +76,11 @@ const apiServer = e2eDb
           EmailOutbox__DispatcherEnabled: "false",
           Storage__Provider: "Local",
           Storage__LocalPath: join(tmpdir(), "energymap-e2e-documentos"),
-          // Todas las pruebas salen de la misma IP: sin esto el límite de /Auth (10 por minuto) las frenaría.
+          TrustedProxy__Key: E2E_PROXY_KEY,
+          // Los ingresos de todas las pruebas salen de la misma IP: sin esto el límite de /Auth (10 por minuto) las frenaría.
           RateLimiting__AuthPermitLimit: "100000",
-          RateLimiting__PublicTrackingPermitLimit: "100000",
+          // El seguimiento sí se prueba con un límite bajo: cada prueba manda su propia IP.
+          RateLimiting__PublicTrackingPermitLimit: "4",
           App__EmailConfirmationUrl: `http://localhost:${port}/confirmar-correo`,
           App__PasswordResetUrl: `http://localhost:${port}/restablecer`,
         },

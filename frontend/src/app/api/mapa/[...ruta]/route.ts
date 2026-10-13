@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { clientIpHeaders } from "@/server/api-client";
 import { serverEnv } from "@/server/env";
 
 /**
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/api/m
   let response: Response;
   try {
     response = await fetch(`${serverEnv().ENERGYMAP_API_URL.replace(/\/$/, "")}/api/v1/${path}${query}`, {
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...(await clientIpHeaders(request.headers.get("x-forwarded-for"))) },
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
     });
