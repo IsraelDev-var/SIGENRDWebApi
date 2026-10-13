@@ -24,6 +24,7 @@ export class ApiError extends Error {
 
 type Options = {
   method?: "GET" | "POST" | "PUT" | "DELETE";
+  /** JSON, o FormData para subir archivos (multipart). */
   body?: unknown;
   /** JWT de la sesión; sin él la llamada es anónima. */
   token?: string;
@@ -65,37 +66,43 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-/** Respuesta cruda de la API (sin desenvolver), para endpoints que no usan Response<T>, como /Auth. */
-export async function apiRequest<T>(path: string, { method = "GET", body, token, signal, forwardedFor }: Options = {}): Promise<T> {
+/** Respuesta HTTP sin leer, para descargas que se reenvían tal cual al navegador. Lanza ApiError si no es 2xx. */
+export async function apiResponse(path: string, { method = "GET", body, token, signal, forwardedFor }: Options = {}): Promise<Response> {
   const forwarded = await clientIpHeaders(forwardedFor);
+  const isForm = body instanceof FormData;
   let response: Response;
   try {
     response = await fetch(`${serverEnv().ENERGYMAP_API_URL.replace(/\/$/, "")}/api/v1${path}`, {
       method,
       headers: {
         Accept: "application/json",
-        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        // Con FormData, fetch pone el Content-Type multipart con su separador.
+        ...(body !== undefined && !isForm ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...forwarded,
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
       cache: "no-store",
-      signal: signal ?? AbortSignal.timeout(15_000),
+      // Subir 10 MB puede tardar más que una consulta.
+      signal: signal ?? AbortSignal.timeout(isForm ? 120_000 : 15_000),
     });
   } catch {
     throw new ApiError(503, GENERIC_ERROR);
   }
 
-  const json = (await readJson(response)) as { message?: unknown; errors?: unknown } | null;
-
   if (!response.ok) {
+    const json = (await readJson(response)) as { message?: unknown; errors?: unknown } | null;
     const fallback = response.status === 429 ? TOO_MANY_REQUESTS : GENERIC_ERROR;
     const message = typeof json?.message === "string" && json.message ? json.message : fallback;
     const errors = Array.isArray(json?.errors) ? json.errors.filter((e): e is string => typeof e === "string") : [];
     throw new ApiError(response.status, response.status >= 500 ? GENERIC_ERROR : message, errors);
   }
+  return response;
+}
 
-  return json as T;
+/** Respuesta cruda de la API (sin desenvolver), para endpoints que no usan Response<T>, como /Auth. */
+export async function apiRequest<T>(path: string, options: Options = {}): Promise<T> {
+  return (await readJson(await apiResponse(path, options))) as T;
 }
 
 /** Endpoints que responden Response<T>: devuelve `data`. */

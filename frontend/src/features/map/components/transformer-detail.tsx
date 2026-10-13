@@ -1,10 +1,12 @@
 import { CircleCheck, CircleX } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { CapacityMeter } from "@/components/shared/capacity-meter";
 import { KvaValue } from "@/components/shared/kva-value";
 import { LastUpdated } from "@/components/shared/last-updated";
 import { TransformerStatusBadge } from "@/components/shared/transformer-status-badge";
+import { Button } from "@/components/ui/button";
 
 import type { TransformerDetail as Detail } from "../lib/map-api";
 
@@ -55,6 +57,15 @@ export function TransformerDetail({ transformer, headingLevel = 2 }: { transform
           </>
         )}
       </p>
+
+      {/* Sin sesión, el portal lleva a ingresar y vuelve aquí (proxy.ts). */}
+      {transformer.acceptsNewRequests && (
+        <Button asChild className="justify-self-start">
+          <Link href={`/portal/solicitudes/nueva?transformador=${transformer.id}`}>
+            Solicitar conexión<span className="sr-only"> en {transformer.code}</span>
+          </Link>
+        </Button>
+      )}
 
       <dl className="grid divide-y text-sm">
         <Row label="Capacidad total">

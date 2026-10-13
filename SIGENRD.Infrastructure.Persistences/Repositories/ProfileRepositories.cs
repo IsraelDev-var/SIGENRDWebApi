@@ -16,6 +16,16 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
 
         public async Task AddAsync(Customer customer, CancellationToken cancellationToken = default)
             => await context.Customers.AddAsync(customer, cancellationToken);
+
+        public Task<Customer?> GetByNationalIdAsync(string nationalIdOrRnc, CancellationToken cancellationToken = default)
+        {
+            var key = Normalize(nationalIdOrRnc);
+            return context.Customers.FirstOrDefaultAsync(
+                c => c.NationalIdOrRnc.Replace("-", "").Replace(" ", "").ToUpper() == key, cancellationToken);
+        }
+
+        /// <summary>"001-1234567-8" y "00112345678" son la misma cédula.</summary>
+        public static string Normalize(string value) => value.Replace("-", "").Replace(" ", "").Trim().ToUpperInvariant();
     }
 
     public class InstallerCompanyRepository(AppContextSIGENRD context) : IInstallerCompanyRepository

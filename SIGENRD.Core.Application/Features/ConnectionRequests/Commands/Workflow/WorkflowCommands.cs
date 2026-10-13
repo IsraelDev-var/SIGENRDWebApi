@@ -122,6 +122,17 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.Workflow
             => new(await workflow.RejectAsync(request.Id, request.Comment.Trim(), ct), "La solicitud fue rechazada.");
     }
 
+    public class SubmitRequestCommand : IRequest<Response<ConnectionRequestResponseDto>>
+    {
+        public int Id { get; set; }
+    }
+
+    public class SubmitRequestHandler(RequestWorkflowService workflow) : IRequestHandler<SubmitRequestCommand, Response<ConnectionRequestResponseDto>>
+    {
+        public async Task<Response<ConnectionRequestResponseDto>> Handle(SubmitRequestCommand request, CancellationToken ct)
+            => new(await workflow.SubmitAsync(request.Id, ct), "Solicitud enviada.");
+    }
+
     public class StartCorrectionHandler(RequestWorkflowService workflow) : IRequestHandler<StartCorrectionCommand, Response<ConnectionRequestResponseDto>>
     {
         public async Task<Response<ConnectionRequestResponseDto>> Handle(StartCorrectionCommand request, CancellationToken ct)

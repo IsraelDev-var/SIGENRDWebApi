@@ -14,8 +14,9 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
         public async Task<IReadOnlyList<RequestReportRow>> GetRequestRowsAsync(
             DateTime from, DateTime to, int? distributorId, CancellationToken cancellationToken = default)
         {
+            // Los borradores no son trámites todavía (D-4): no cuentan en los reportes.
             var requests = context.ConnectionRequests.AsNoTracking()
-                .Where(r => r.RequestedAt >= from && r.RequestedAt < to);
+                .Where(r => r.Status != RequestStatus.Draft && r.RequestedAt >= from && r.RequestedAt < to);
 
             if (distributorId.HasValue)
                 requests = requests.Where(r => r.DistributorId == distributorId.Value);

@@ -32,8 +32,9 @@ describe("estados del transformador", () => {
 });
 
 describe("estados de solicitud", () => {
-  it("cubre los siete estados de RN-12", () => {
+  it("cubre los siete estados de RN-12 y el borrador de D-4", () => {
     expect(Object.values(REQUEST_STATUS).map((s) => s.label)).toEqual([
+      "Borrador",
       "Recibida",
       "En revisión",
       "Observaciones",
@@ -46,6 +47,8 @@ describe("estados de solicitud", () => {
 
   it("acepta solo valores conocidos de la API", () => {
     expect(asRequestStatus("UnderReview")).toBe("UnderReview");
-    expect(asRequestStatus("Draft")).toBeNull();
+    expect(asRequestStatus("Draft")).toBe("Draft");
+    expect(asRequestStatus("draft")).toBeNull();
+    expect(asRequestStatus("toString")).toBeNull();
   });
 });

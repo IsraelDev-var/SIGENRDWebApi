@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-import { E2E_TEST_PASSWORD, formAlert, hasApi, login, logout, TEST_USERS, type TestRole } from "./support";
+import { createSubmittedAsCustomer, E2E_TEST_PASSWORD, findOpenTransformer, formAlert, hasApi, login, logout, TEST_USERS, type TestRole } from "./support";
 
 // Contra la API .NET real (ver playwright.config.ts). Criterio de F2: ingreso de los 5 roles, acceso directo
 // por URL bloqueado y matriz 3.2 aplicada.
@@ -137,37 +137,9 @@ test("cliente: completa su perfil en el primer ingreso", async ({ page }) => {
 });
 
 test("el cliente envía una solicitud y cualquiera la sigue con el número de expediente (RF-14)", async ({ page, request }) => {
-  // La solicitud se crea por la API (el asistente llega en F5); el cliente ya tiene perfil por la prueba anterior.
-  const api = `http://localhost:${process.env.E2E_API_PORT ?? 5199}/api/v1`;
-  const login = await (await request.post(`${api}/Auth/login`, { data: { email: TEST_USERS.Customer, password: E2E_TEST_PASSWORD } })).json();
-  const auth = { Authorization: `Bearer ${login.token}` };
-  const customer = (await (await request.get(`${api}/Customers/me`, { headers: auth })).json()).data;
-
-  // Un transformador de demostración que acepte solicitudes, cerca del Distrito Nacional.
-  const near = (await (await request.get(`${api}/Transformers/search?latitude=18.4861&longitude=-69.9312&radiusMeters=5000&status=Available&limit=1`)).json()).data;
-  const transformer = (await (await request.get(`${api}/Transformers/${near[0].id}`)).json()).data;
-
-  const created = await request.post(`${api}/ConnectionRequest`, {
-    headers: auth,
-    data: {
-      customerId: customer.id,
-      distributorId: transformer.distributorId,
-      transformerId: transformer.id,
-      requestType: "Connection",
-      requestedCapacityKva: 5,
-      usageType: "Residential",
-      tariffType: "BT",
-      interconnectionType: "Parallel",
-      projectAddress: "Calle de prueba 1, Santo Domingo",
-      latitude: transformer.latitude,
-      longitude: transformer.longitude,
-      propertyRelation: "Owner",
-      declarationAccepted: true,
-    },
-  });
-  expect(created.ok(), await created.text()).toBe(true);
-  const id = (await created.json()).data as number;
-  const code = (await (await request.get(`${api}/ConnectionRequest/${id}`, { headers: auth })).json()).data.requestCode as string;
+  // Se prepara por la API: borrador, documentos y envío (D-4). El asistente se prueba en requests.api.spec.ts.
+  const transformer = await findOpenTransformer(request);
+  const { code } = await createSubmittedAsCustomer(request, transformer);
 
   // Sin sesión, solo con el número.
   await page.context().clearCookies();

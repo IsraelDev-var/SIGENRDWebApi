@@ -126,6 +126,17 @@ namespace SIGENRD.Core.Domain.Entities
         /// <summary>En revisión a Observaciones. La reserva se mantiene mientras el solicitante corrige.</summary>
         public void Observe() => MoveTo(RequestStatus.Observed);
 
+        /// <summary>Borrador a Recibida (D-4): el solicitante la envía y empieza el trámite.</summary>
+        public void Submit()
+        {
+            if (Status != RequestStatus.Draft)
+                throw new InvalidStateTransitionException(Status, RequestStatus.Received);
+
+            Status = RequestStatus.Received;
+            // La fecha de la solicitud es la del envío, no la del borrador.
+            RequestedAt = DateTime.UtcNow;
+        }
+
         /// <summary>Observaciones a En corrección (lo hace el solicitante).</summary>
         public void StartCorrection() => MoveTo(RequestStatus.InCorrection);
 

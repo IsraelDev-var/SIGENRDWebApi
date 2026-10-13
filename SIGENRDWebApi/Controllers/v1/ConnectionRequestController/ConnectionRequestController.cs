@@ -90,7 +90,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         // Un poco más que el máximo de 10 MB (RN-18) para el resto del formulario multipart.
         private const long UploadLimitBytes = DocumentFileInspector.MaxSizeBytes + 512 * 1024;
 
-        /// <summary>Sube un documento PDF, JPG o PNG de hasta 10 MB. Solo con la solicitud Recibida o En corrección.</summary>
+        /// <summary>Sube un documento PDF, JPG o PNG de hasta 10 MB. Solo con la solicitud en Borrador, Recibida o En corrección.</summary>
         [ProducesResponseType<Response<DocumentDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/documents")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")] // matriz 3.2: documentos propios
@@ -195,6 +195,23 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
 
         // ---------- Flujo de estados: solicitante ----------
 
+        /// <summary>Edita los datos del proyecto mientras la solicitud es un borrador (D-4).</summary>
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
+        [HttpPut("{id:int}")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
+        public async Task<IActionResult> UpdateDraft(int id, [FromBody] UpdateDraftRequestCommand command)
+        {
+            command.Id = id;
+            return Ok(await _mediator.Send(command));
+        }
+
+        /// <summary>Borrador a Recibida: valida los documentos y avisa a la distribuidora (D-4, RN-16).</summary>
+        [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
+        [HttpPost("{id:int}/submit")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
+        public async Task<IActionResult> Submit(int id)
+            => Ok(await _mediator.Send(new SubmitRequestCommand { Id = id }));
+
         /// <summary>Observaciones a En corrección.</summary>
         [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/start-correction")]
@@ -209,7 +226,7 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         public async Task<IActionResult> Resubmit(int id)
             => Ok(await _mediator.Send(new ResubmitRequestCommand { Id = id }));
 
-        /// <summary>Cancela la solicitud mientras sea Recibida, Observaciones o En corrección (RN-23).</summary>
+        /// <summary>Cancela la solicitud mientras sea Borrador (la descarta), Recibida, Observaciones o En corrección (RN-23).</summary>
         [ProducesResponseType<Response<ConnectionRequestResponseDto>>(StatusCodes.Status200OK)]
         [HttpPost("{id:int}/cancel")]
         [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]

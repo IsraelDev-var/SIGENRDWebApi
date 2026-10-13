@@ -105,6 +105,31 @@ namespace SIGENRD.Core.Application.Services
 
         // ---------------- solicitante ----------------
 
+        /// <summary>
+        /// Borrador a Recibida (D-4): con los documentos completos (RN-09, RN-11) y el transformador todavía
+        /// admitiendo solicitudes (RN-03). Recién aquí se avisa a la distribuidora y al solicitante (RN-16).
+        /// </summary>
+        public async Task<ConnectionRequestResponseDto> SubmitAsync(int id, CancellationToken ct)
+        {
+            var request = await LoadAsync(id, RequestScopeResolver.For(currentUser), ct);
+            var from = request.Status;
+
+            if (request.Status == RequestStatus.Draft && !request.Transformer!.AcceptsNewRequests)
+                throw new ApiException("El transformador " + request.Transformer.Code + " ya no admite solicitudes nuevas (" +
+                                       request.Transformer.Status + "). Elige otro transformador en el borrador.");
+
+            EnsureDocuments(request);
+            request.Submit();
+
+            await staffNotifier.NotifyAsync(
+                "Nueva solicitud " + request.RequestCode,
+                "Llegó una solicitud de " + (request.RequestType == RequestType.NetMetering ? "medición neta" : "conexión") +
+                " por " + request.RequestedCapacityKva.ToString("0.##") + " kVA en el transformador " + request.Transformer!.Code + ".",
+                NotificationType.NewRequestForReview, ct);
+
+            return await SaveAsync(request, from, "Solicitud enviada", null, ct);
+        }
+
         public async Task<ConnectionRequestResponseDto> StartCorrectionAsync(int id, CancellationToken ct)
         {
             var request = await LoadAsync(id, RequestScopeResolver.For(currentUser), ct);
@@ -141,7 +166,9 @@ namespace SIGENRD.Core.Application.Services
 
             request.Cancel(request.Transformer!, available, conditioned);
 
-            return await SaveAsync(request, from, comment, null, ct);
+            // Descartar un borrador no es noticia para nadie: queda en el historial, sin avisos.
+            return await SaveAsync(request, from, comment ?? (from == RequestStatus.Draft ? "Borrador descartado" : null), null, ct,
+                notify: from != RequestStatus.Draft);
         }
 
         // ---------------- apoyo ----------------
@@ -205,7 +232,8 @@ namespace SIGENRD.Core.Application.Services
         /// sola transacción. El correo sale después y su fallo no deshace la transición.
         /// </summary>
         private async Task<ConnectionRequestResponseDto> SaveAsync(
-            ConnectionRequest request, RequestStatus from, string? comment, ObservationType? observation, CancellationToken ct)
+            ConnectionRequest request, RequestStatus from, string? comment, ObservationType? observation, CancellationToken ct,
+            bool notify = true)
         {
             await unitOfWork.Repository<StateHistory>().AddAsync(new StateHistory
             {
@@ -226,7 +254,7 @@ namespace SIGENRD.Core.Application.Services
             }
 
             var (title, message, type) = Describe(request, comment);
-            var recipients = Recipients(request);
+            var recipients = notify ? Recipients(request) : new List<(string? UserId, string? Email)>();
 
             foreach (var recipient in recipients.Where(r => !string.IsNullOrWhiteSpace(r.UserId)).DistinctBy(r => r.UserId))
             {
@@ -281,6 +309,8 @@ namespace SIGENRD.Core.Application.Services
 
             return request.Status switch
             {
+                RequestStatus.Received => ("Solicitud " + code + " recibida",
+                    "Recibimos la solicitud " + code + ". Puedes darle seguimiento con ese número.", NotificationType.RequestReceived),
                 RequestStatus.UnderReview => ("Solicitud " + code + ": en revisión",
                     "Tu solicitud " + code + " está en revisión.", NotificationType.StatusChanged),
                 RequestStatus.Observed => ("Solicitud " + code + ": observaciones",

@@ -4,17 +4,49 @@ using SIGENRD.Core.Domain.Rules;
 
 namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateConnectionRequest
 {
-    public class CreateConnectionRequestValidator : AbstractValidator<CreateConnectionRequestCommand>
+    public class CreateConnectionRequestValidator : ConnectionRequestDataValidator<CreateConnectionRequestCommand>
     {
         public CreateConnectionRequestValidator()
         {
             RuleFor(p => p.CustomerId)
-                .GreaterThan(0).WithMessage("El ID del cliente es obligatorio.");
+                .GreaterThan(0).When(p => p.CustomerId.HasValue)
+                .WithMessage("El cliente no es válido.");
 
             RuleFor(p => p.InstallerCompanyId)
                 .GreaterThan(0).When(p => p.InstallerCompanyId.HasValue)
                 .WithMessage("La compañía instaladora no es válida.");
 
+            RuleFor(p => p.Holder!).SetValidator(new HolderInputValidator()).When(p => p.Holder is not null);
+        }
+    }
+
+    public class UpdateDraftRequestValidator : ConnectionRequestDataValidator<UpdateDraftRequestCommand>
+    {
+        public UpdateDraftRequestValidator()
+        {
+            RuleFor(p => p.Id).GreaterThan(0).WithMessage("La solicitud no es válida.");
+        }
+    }
+
+    /// <summary>Titular indicado por la instaladora: las mismas reglas que el perfil del cliente.</summary>
+    public class HolderInputValidator : AbstractValidator<HolderInput>
+    {
+        public HolderInputValidator()
+        {
+            RuleFor(h => h.FullName).NotEmpty().MaximumLength(150).WithMessage("El nombre del titular es obligatorio (máximo 150 caracteres).");
+            RuleFor(h => h.NationalIdOrRnc).NotEmpty().MaximumLength(20).WithMessage("La cédula o el RNC del titular es obligatorio (máximo 20 caracteres).");
+            RuleFor(h => h.Email).EmailAddress().MaximumLength(150).When(h => !string.IsNullOrWhiteSpace(h.Email))
+                .WithMessage("El correo del titular no es válido.");
+            RuleFor(h => h.Phone).MaximumLength(30);
+            RuleFor(h => h.Address).MaximumLength(250);
+        }
+    }
+
+    /// <summary>Reglas de los datos del proyecto, comunes a crear y a editar el borrador.</summary>
+    public abstract class ConnectionRequestDataValidator<T> : AbstractValidator<T> where T : ConnectionRequestData
+    {
+        protected ConnectionRequestDataValidator()
+        {
             RuleFor(p => p.TransformerId)
                 .GreaterThan(0).WithMessage("El transformador es obligatorio (RN-08).");
 

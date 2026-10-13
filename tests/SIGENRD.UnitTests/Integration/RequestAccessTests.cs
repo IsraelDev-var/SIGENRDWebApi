@@ -82,11 +82,12 @@ public class RequestAccessTests(ApiFactory api)
             .Any(r => r.GetProperty("id").GetInt32() == seeded.RequestId);
     }
 
-    private static string CreateBody(Seeded s, int customerId, int? installerCompanyId) =>
-        "{\"customerId\":" + customerId +
+    private static string CreateBody(Seeded s, int customerId, int? installerCompanyId, string? holderJson = null) =>
+        "{\"requestType\":1" + (customerId > 0 ? ",\"customerId\":" + customerId : "") +
+        (holderJson is null ? "" : ",\"holder\":" + holderJson) +
         (installerCompanyId.HasValue ? ",\"installerCompanyId\":" + installerCompanyId : "") +
         ",\"distributorId\":" + s.DistributorId + ",\"transformerId\":" + s.TransformerId +
-        ",\"requestType\":1,\"requestedCapacityKva\":10,\"usageType\":1,\"tariffType\":1,\"interconnectionType\":1," +
+        ",\"requestedCapacityKva\":10,\"usageType\":1,\"tariffType\":1,\"interconnectionType\":1," +
         "\"projectAddress\":\"Calle 1\",\"latitude\":18.4,\"longitude\":-69.9,\"declarationAccepted\":true}";
 
     // ---------------- lectura ----------------
@@ -205,15 +206,152 @@ public class RequestAccessTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    private static string Holder(string nationalId, string name = "Titular de prueba") =>
+        "{\"fullName\":\"" + name + "\",\"nationalIdOrRnc\":\"" + nationalId + "\",\"isLegalEntity\":false,\"phone\":\"809-555-0101\"}";
+
     [FactIfDatabase]
     public async Task La_instaladora_validada_crea_con_su_propia_empresa()
     {
         var seeded = await SeedAsync(withInstaller: true);
 
         var response = await (await api.ClientFor(TestRole.InstallerCompany))
-            .PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, seeded.CustomerId, seeded.InstallerCompanyId)));
+            .PostAsync("/api/v1/ConnectionRequest",
+                Json(CreateBody(seeded, seeded.CustomerId, seeded.InstallerCompanyId, Holder("402" + Random.Shared.Next(10000000, 99999999)))));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [FactIfDatabase]
+    public async Task La_instaladora_debe_indicar_el_titular()
+    {
+        var seeded = await SeedAsync(withInstaller: true);
+
+        var response = await (await api.ClientFor(TestRole.InstallerCompany))
+            .PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, seeded.CustomerId, seeded.InstallerCompanyId)));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [FactIfDatabase]
+    public async Task B11_la_instaladora_registra_al_titular_sin_cuenta_y_lo_reutiliza_por_cedula()
+    {
+        var seeded = await SeedAsync(withInstaller: true);
+        var installer = await api.ClientFor(TestRole.InstallerCompany);
+        var digits = "402" + Random.Shared.Next(10000000, 99999999);
+        var formatted = digits[..3] + "-" + digits[3..10] + "-" + digits[10..];
+
+        var first = await installer.PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, 0, null, Holder(digits))));
+        var second = await installer.PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, 0, null, Holder(formatted))));
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+
+        var firstId = JsonDocument.Parse(await first.Content.ReadAsStringAsync()).RootElement.GetProperty("data").GetInt32();
+        var secondId = JsonDocument.Parse(await second.Content.ReadAsStringAsync()).RootElement.GetProperty("data").GetInt32();
+
+        await using var context = api.NewAppContext();
+        var requests = await context.ConnectionRequests.AsNoTracking().Include(r => r.Customer)
+            .Where(r => r.Id == firstId || r.Id == secondId).ToListAsync();
+
+        // Un único cliente, sin cuenta, y la solicitud queda a nombre de la instaladora que la creó.
+        Assert.Single(requests.Select(r => r.CustomerId).Distinct());
+        Assert.All(requests, r =>
+        {
+            Assert.Null(r.Customer!.ApplicationUserId);
+            Assert.Equal(seeded.InstallerCompanyId, r.InstallerCompanyId);
+            Assert.Equal(RequestStatus.Draft, r.Status);
+        });
+
+        // La instaladora la ve como suya; el cliente de prueba (otra cédula) no.
+        Assert.Equal(HttpStatusCode.OK, (await installer.GetAsync("/api/v1/ConnectionRequest/" + firstId)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await (await api.ClientFor(TestRole.Customer)).GetAsync("/api/v1/ConnectionRequest/" + firstId)).StatusCode);
+    }
+
+    [FactIfDatabase]
+    public async Task B11_el_titular_con_cuenta_ve_la_solicitud_de_la_instaladora_solo_cuando_se_envia()
+    {
+        var seeded = await SeedAsync(withInstaller: true);
+        string nationalId;
+        await using (var context = api.NewAppContext())
+            nationalId = (await context.Customers.AsNoTracking().SingleAsync(c => c.Id == seeded.CustomerId)).NationalIdOrRnc;
+
+        var installer = await api.ClientFor(TestRole.InstallerCompany);
+        var created = await installer.PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, 0, null, Holder(nationalId))));
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        var id = JsonDocument.Parse(await created.Content.ReadAsStringAsync()).RootElement.GetProperty("data").GetInt32();
+
+        await using (var context = api.NewAppContext())
+            Assert.Equal(seeded.CustomerId, (await context.ConnectionRequests.AsNoTracking().SingleAsync(r => r.Id == id)).CustomerId);
+
+        var customer = await api.ClientFor(TestRole.Customer);
+        Assert.Equal(HttpStatusCode.NotFound, (await customer.GetAsync("/api/v1/ConnectionRequest/" + id)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await customer.PostAsync("/api/v1/ConnectionRequest/" + id + "/submit", null)).StatusCode);
+
+        await using (var context = api.NewAppContext())
+        {
+            var request = await context.ConnectionRequests.AsNoTracking().SingleAsync(r => r.Id == id);
+            foreach (var requirement in SIGENRD.Core.Domain.Rules.RequiredDocuments.For(request, false))
+                context.TechnicalDocuments.Add(new TechnicalDocument
+                {
+                    ConnectionRequestId = id, DocumentType = requirement.AnyOf[0], FileName = "d.pdf",
+                    FileUrl = "https://blob.test/" + Unique(), ContentType = "application/pdf", SizeBytes = 1
+                });
+            await context.SaveChangesAsync();
+        }
+
+        Assert.Equal(HttpStatusCode.OK, (await installer.PostAsync("/api/v1/ConnectionRequest/" + id + "/submit", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await customer.GetAsync("/api/v1/ConnectionRequest/" + id)).StatusCode);
+    }
+
+    [FactIfDatabase]
+    public async Task B11_el_cliente_no_indica_otro_titular()
+    {
+        var seeded = await SeedAsync(withInstaller: false);
+
+        var response = await (await api.ClientFor(TestRole.Customer))
+            .PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, seeded.CustomerId, null, Holder("40299999999"))));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [FactIfDatabase]
+    public async Task B11_un_cliente_registrado_despues_no_toma_el_perfil_creado_por_la_instaladora()
+    {
+        var seeded = await SeedAsync(withInstaller: true);
+        var digits = "402" + Random.Shared.Next(10000000, 99999999);
+        var created = await (await api.ClientFor(TestRole.InstallerCompany))
+            .PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, 0, null, Holder(digits))));
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+
+        var (newcomer, _, _) = await api.NewUserAsync();
+        var profile = await newcomer.PostAsync("/api/v1/Customers/me",
+            Json("{\"fullName\":\"Recién llegado\",\"nationalIdOrRnc\":\"" + digits + "\",\"isLegalEntity\":false}"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, profile.StatusCode);
+        Assert.Contains("vincule", await profile.Content.ReadAsStringAsync());
+    }
+
+    [FactIfDatabase]
+    public async Task Solo_se_edita_un_borrador_propio()
+    {
+        var seeded = await SeedAsync(withInstaller: false);
+        var customer = await api.ClientFor(TestRole.Customer);
+        var created = await customer.PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, seeded.CustomerId, null)));
+        var id = JsonDocument.Parse(await created.Content.ReadAsStringAsync()).RootElement.GetProperty("data").GetInt32();
+
+        var update = CreateBody(seeded, seeded.CustomerId, null).Replace("\"Calle 1\"", "\"Calle editada\"").Replace("\"requestedCapacityKva\":10", "\"requestedCapacityKva\":7");
+        var edited = await customer.PutAsync("/api/v1/ConnectionRequest/" + id, Json(update));
+        Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
+        var body = await edited.Content.ReadAsStringAsync();
+        Assert.Contains("Calle editada", body);
+
+        // La solicitud sembrada ya está Recibida: sus datos no cambian.
+        var notDraft = await customer.PutAsync("/api/v1/ConnectionRequest/" + seeded.RequestId, Json(update));
+        Assert.Equal(HttpStatusCode.Conflict, notDraft.StatusCode);
+
+        // El borrador de otro no existe para la instaladora.
+        var foreign = await (await api.ClientFor(TestRole.InstallerCompany)).PutAsync("/api/v1/ConnectionRequest/" + id, Json(update));
+        Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
     }
 
     [FactIfDatabase]

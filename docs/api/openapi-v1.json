@@ -558,6 +558,63 @@
             }
           }
         }
+      },
+      "put": {
+        "tags": [
+          "ConnectionRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDraftRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDraftRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDraftRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/ConnectionRequest/search": {
@@ -1169,6 +1226,46 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionRequestResponseDtoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ConnectionRequest/{id}/submit": {
+      "post": {
+        "tags": [
+          "ConnectionRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -2891,7 +2988,6 @@
       },
       "AuditLogDtoPagedDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -3041,11 +3137,31 @@
             "type": "string",
             "nullable": true
           },
+          "ownerNationalId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerPhone": {
+            "type": "string",
+            "nullable": true
+          },
           "engineerFullName": {
             "type": "string",
             "nullable": true
           },
           "engineerCodiaNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerCompany": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerEmail": {
             "type": "string",
             "nullable": true
           },
@@ -3056,6 +3172,9 @@
           "meterNumber": {
             "type": "string",
             "nullable": true
+          },
+          "netMetering": {
+            "$ref": "#/components/schemas/NetMeteringDetailsDto"
           },
           "customerId": {
             "type": "integer",
@@ -3073,6 +3192,18 @@
           "transformerId": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "transformerCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "holderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "installerCompanyName": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -3116,7 +3247,6 @@
       },
       "ConnectionRequestResponseDtoPagedDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -3143,7 +3273,6 @@
       },
       "ConnectionRequestResponseDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -3187,13 +3316,11 @@
       },
       "CreateConnectionRequestCommand": {
         "required": [
-          "customerId",
           "declarationAccepted",
           "distributorId",
           "interconnectionType",
           "latitude",
           "longitude",
-          "netMetering",
           "projectAddress",
           "propertyRelation",
           "requestedCapacityKva",
@@ -3204,15 +3331,6 @@
         ],
         "type": "object",
         "properties": {
-          "customerId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "installerCompanyId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
           "distributorId": {
             "type": "integer",
             "format": "int32"
@@ -3300,6 +3418,19 @@
           },
           "netMetering": {
             "$ref": "#/components/schemas/NetMeteringDetailsInput"
+          },
+          "customerId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "installerCompanyId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "holder": {
+            "$ref": "#/components/schemas/HolderInput"
           }
         },
         "additionalProperties": false
@@ -3466,7 +3597,6 @@
       },
       "CustomerProfileDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -3617,7 +3747,6 @@
       },
       "DocumentDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -3751,6 +3880,81 @@
         ],
         "type": "string"
       },
+      "GeneratorDto": {
+        "required": [
+          "connectionVoltage",
+          "generationSystemType",
+          "generatorKind",
+          "harmonicDistortionPercent",
+          "manufacturer",
+          "nominalCurrent",
+          "phases",
+          "powerFactorMax",
+          "powerFactorMin",
+          "ratedPowerKva"
+        ],
+        "type": "object",
+        "properties": {
+          "generationSystemType": {
+            "type": "string"
+          },
+          "generatorKind": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "inverterModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "serialNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "phases": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ratedPowerKva": {
+            "type": "number",
+            "format": "double"
+          },
+          "connectionVoltage": {
+            "type": "number",
+            "format": "double"
+          },
+          "nominalCurrent": {
+            "type": "number",
+            "format": "double"
+          },
+          "powerFactorMin": {
+            "type": "number",
+            "format": "double"
+          },
+          "powerFactorMax": {
+            "type": "number",
+            "format": "double"
+          },
+          "switchingType": {
+            "type": "string",
+            "nullable": true
+          },
+          "harmonicDistortionPercent": {
+            "type": "number",
+            "format": "double"
+          },
+          "certificationStandard": {
+            "type": "string",
+            "nullable": true
+          },
+          "certifyingUnit": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "GeneratorInput": {
         "required": [
           "connectionVoltage",
@@ -3835,6 +4039,38 @@
         ],
         "type": "string"
       },
+      "HolderInput": {
+        "required": [
+          "fullName",
+          "isLegalEntity",
+          "nationalIdOrRnc"
+        ],
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "nationalIdOrRnc": {
+            "type": "string"
+          },
+          "isLegalEntity": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ImportTransformersResultDto": {
         "required": [
           "imported"
@@ -3850,7 +4086,6 @@
       },
       "ImportTransformersResultDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -3944,7 +4179,6 @@
       },
       "InstallerCompanyDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4166,6 +4400,34 @@
         },
         "additionalProperties": false
       },
+      "NetMeteringDetailsDto": {
+        "required": [
+          "generationSystemType",
+          "generators",
+          "installedCapacityKw"
+        ],
+        "type": "object",
+        "properties": {
+          "generationSystemType": {
+            "type": "string"
+          },
+          "installedCapacityKw": {
+            "type": "number",
+            "format": "double"
+          },
+          "comments": {
+            "type": "string",
+            "nullable": true
+          },
+          "generators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeneratorDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "NetMeteringDetailsInput": {
         "required": [
           "generationSystemType",
@@ -4266,7 +4528,6 @@
       },
       "NotificationDtoPagedDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4293,7 +4554,6 @@
       },
       "NotificationDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4386,7 +4646,6 @@
       },
       "RegisterRequest": {
         "required": [
-          "distributorType",
           "email",
           "fullName",
           "password",
@@ -4555,7 +4814,6 @@
       },
       "RequestStatisticsDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4588,7 +4846,8 @@
           "InCorrection",
           "Approved",
           "Rejected",
-          "Cancelled"
+          "Cancelled",
+          "Draft"
         ],
         "type": "string"
       },
@@ -4624,7 +4883,6 @@
       },
       "RequestTrackingDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4704,7 +4962,6 @@
       },
       "RequiredDocumentsDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4857,7 +5114,6 @@
       },
       "SimulationComparisonDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -4901,7 +5157,6 @@
           "investmentCost",
           "monthlyConsumptionKwh",
           "recommendations",
-          "referenceTransformer",
           "roi",
           "surplusPayment",
           "viabilityStatus"
@@ -5025,7 +5280,6 @@
       },
       "SimulationDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5199,7 +5453,6 @@
       },
       "SimulationSummaryDtoPagedDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5388,7 +5641,6 @@
       },
       "TransformerClusterResultDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5497,7 +5749,6 @@
       },
       "TransformerDetailDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5613,7 +5864,6 @@
       },
       "TransformerMapResultDtoResponse": {
         "required": [
-          "data",
           "succeeded"
         ],
         "type": "object",
@@ -5647,6 +5897,119 @@
           "Maintenance"
         ],
         "type": "string"
+      },
+      "UpdateDraftRequestCommand": {
+        "required": [
+          "declarationAccepted",
+          "distributorId",
+          "id",
+          "interconnectionType",
+          "latitude",
+          "longitude",
+          "projectAddress",
+          "propertyRelation",
+          "requestedCapacityKva",
+          "requestType",
+          "tariffType",
+          "transformerId",
+          "usageType"
+        ],
+        "type": "object",
+        "properties": {
+          "distributorId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "transformerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requestType": {
+            "$ref": "#/components/schemas/RequestType"
+          },
+          "requestedCapacityKva": {
+            "type": "number",
+            "format": "double"
+          },
+          "usageType": {
+            "$ref": "#/components/schemas/UsageType"
+          },
+          "tariffType": {
+            "$ref": "#/components/schemas/TariffType"
+          },
+          "interconnectionType": {
+            "$ref": "#/components/schemas/InterconnectionType"
+          },
+          "projectDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "projectAddress": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "propertyRelation": {
+            "$ref": "#/components/schemas/PropertyRelation"
+          },
+          "ownerFullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerNationalId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerFullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerCodiaNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerCompany": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "engineerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "serviceContractNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "meterNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "declarationAccepted": {
+            "type": "boolean"
+          },
+          "netMetering": {
+            "$ref": "#/components/schemas/NetMeteringDetailsInput"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
       },
       "UpdateTransformerCapacityCommand": {
         "required": [

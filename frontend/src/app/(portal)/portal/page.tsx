@@ -18,7 +18,7 @@ export default async function PortalHomePage() {
 
   return (
     <div className="grid gap-6">
-      <PageHeader title={`Hola, ${session.fullName || "bienvenido"}`} description="Desde aquí darás seguimiento a tus solicitudes y simulaciones." />
+      <PageHeader title={`Hola, ${session.fullName || "bienvenido"}`} description="Desde aquí das seguimiento a tus solicitudes." />
 
       {missingProfile && (
         <section aria-labelledby="perfil-pendiente" className="flex flex-wrap items-start gap-3 rounded-lg bg-tone-warning-soft p-4 text-tone-warning-text">
@@ -53,16 +53,22 @@ export default async function PortalHomePage() {
         </section>
       )}
 
-      <section aria-labelledby="proximamente" className="grid gap-2 rounded-lg border bg-card p-4">
-        <h2 id="proximamente" className="font-medium">
-          Solicitudes y simulaciones
+      <section aria-labelledby="solicitudes" className="grid gap-2 rounded-lg border bg-card p-4">
+        <h2 id="solicitudes" className="font-medium">
+          Solicitudes
         </h2>
         <p className="text-sm text-muted-foreground">
-          Estas secciones se habilitan en las próximas entregas. Por ahora puedes revisar la disponibilidad en el mapa.
+          Elige un transformador en el mapa para empezar una solicitud. Se guarda como borrador hasta que subas los documentos y la
+          envíes.
         </p>
-        <Button asChild variant="outline" size="sm" className="justify-self-start">
-          <Link href="/">Ver el mapa</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm">
+            <Link href="/portal/solicitudes">Mis solicitudes</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/">Elegir en el mapa</Link>
+          </Button>
+        </div>
       </section>
     </div>
   );

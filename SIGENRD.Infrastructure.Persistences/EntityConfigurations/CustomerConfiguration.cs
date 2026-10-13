@@ -23,8 +23,9 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
                    .HasMaxLength(20)
                    .IsRequired();
 
-            // Un perfil de cliente por usuario y una cédula o RNC por perfil
-            builder.HasIndex(c => c.ApplicationUserId).IsUnique();
+            // Un perfil de cliente por usuario (los registrados por una instaladora no tienen usuario, B-11)
+            // y una cédula o RNC por cliente.
+            builder.HasIndex(c => c.ApplicationUserId).IsUnique().HasFilter("\"ApplicationUserId\" IS NOT NULL");
             builder.HasIndex(c => c.NationalIdOrRnc).IsUnique();
 
             builder.Property(c => c.IsLegalEntity)

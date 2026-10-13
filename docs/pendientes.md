@@ -7,7 +7,7 @@ Lo que falta para terminar EnergyMap, actualizado el 2026-10-12. Al cerrar un pu
 | Pendiente | Requisito | Notas |
 |---|---|---|
 | Repetir las pruebas de carga en Azure | Fase 7 | Las de [carga.md](carga.md) son locales; falta medir con la red, la base y el almacenamiento reales |
-| Frontend (Next.js) | Todas las pantallas | F0 a F4 (fundaciones, Design System, sesión y permisos, mapa público, seguimiento y requisitos) hechos en `frontend/`; siguen F5 a F9 según la propuesta aprobada. La API ya tiene CORS por configuración para el origen del frontend |
+| Frontend (Next.js) | Todas las pantallas | F0 a F5 (fundaciones, Design System, sesión y permisos, mapa público, seguimiento y requisitos, solicitudes) hechos en `frontend/`; siguen F6 a F9 según la propuesta aprobada. La API ya tiene CORS por configuración para el origen del frontend |
 | Configurar `App:EmailConfirmationUrl` y `App:PasswordResetUrl` de la API hacia `/confirmar-correo` y `/restablecer` del frontend | F2 | Sin ellas, el correo de confirmación sigue apuntando a la API |
 | Búsqueda por dirección en el mapa | RF-04, D-3 | Funciona por código y por coordenadas; falta elegir el geocodificador |
 | Proveedor del mapa base en producción | D-2 | En desarrollo se usa CARTO; definir teselas propias (PMTiles) o un proveedor con contrato |
@@ -15,7 +15,10 @@ Lo que falta para terminar EnergyMap, actualizado el 2026-10-12. Al cerrar un pu
 | Tokens de refresco | Seguridad | Hoy el JWT dura 60 minutos y luego hay que iniciar sesión otra vez |
 | Persistir las llaves de Data Protection | Operación | Sin esto, al reiniciar el contenedor o con varias instancias dejan de servir los enlaces de confirmación y de restablecimiento pendientes |
 | Confirmar en Azure qué IP agrega App Service a `X-Forwarded-For` delante del frontend | F4, seguridad | El frontend toma la última entrada (`ENERGYMAP_TRUSTED_PROXIES=1`) y la reenvía a la API con `TrustedProxy:Key`. Si hay otro proxy delante (Front Door), subir a 2 |
-| Cómo crea una instaladora una solicitud a nombre de su cliente | F5 (B-11) | La API pide un `CustomerId`, pero la instaladora no tiene cómo crear ni buscar al cliente final |
+| Limpiar borradores abandonados | D-4 | Un borrador no reserva capacidad ni avisa a nadie, pero se acumula. Definir a los N días se descartan (tarea programada) |
+| Vincular a una cuenta el cliente que registró una instaladora | B-11 | Hoy, si el titular crea su cuenta después, el perfil le pide pedir la vinculación a Edesur; falta la pantalla o endpoint de Edesur/Admin para hacerlo |
+| Cédulas con formatos distintos para el mismo titular | B-11 | La búsqueda normaliza guiones y espacios, pero el índice único guarda el texto como se escribió: dos formatos podrían crear dos clientes si se esquiva la búsqueda |
+| Actualizar RN-12 en el documento de análisis con el estado Borrador | D-4 | Borrador → Recibida (enviar) y Borrador → Cancelada (descartar) |
 
 ## Pospuesto por decisión (esperan a Edesur)
 

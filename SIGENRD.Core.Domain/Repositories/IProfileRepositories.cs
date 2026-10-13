@@ -9,6 +9,8 @@ namespace SIGENRD.Core.Domain.Repositories
         Task<Customer?> GetByUserIdAsync(string userId, CancellationToken cancellationToken = default);
 
         Task<bool> NationalIdExistsAsync(string nationalIdOrRnc, CancellationToken cancellationToken = default);
+        /// <summary>Cliente con esa cédula o RNC, sin importar guiones ni espacios. Rastreado.</summary>
+        Task<Customer?> GetByNationalIdAsync(string nationalIdOrRnc, CancellationToken cancellationToken = default);
 
         Task AddAsync(Customer customer, CancellationToken cancellationToken = default);
     }

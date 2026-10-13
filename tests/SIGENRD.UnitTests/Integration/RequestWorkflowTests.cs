@@ -424,7 +424,58 @@ public class RequestWorkflowTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.OK, created.Status);
 
         var id = created.Body.GetProperty("data").GetInt32();
-        Assert.Equal(new[] { "Received" }.Select(s => ">" + s).ToArray(), (await HistoryOf(id)).ToArray());
+        Assert.Equal(new[] { ">Draft" }, (await HistoryOf(id)).ToArray());
+
+        // D-4: al enviarlo con sus documentos pasa a Recibida, y eso también queda en el historial.
+        await AddRequiredDocumentsAsync(id);
+        var sent = await Send(TestRole.Customer, id + "/submit");
+        Assert.Equal(HttpStatusCode.OK, sent.Status);
+        Assert.Equal(new[] { ">Draft", "Draft>Received" }, (await HistoryOf(id)).ToArray());
+    }
+
+    [FactIfDatabase]
+    public async Task No_se_envia_un_borrador_si_el_transformador_dejo_de_admitir_solicitudes()
+    {
+        var seeded = await SeedAsync(withDocuments: false);
+        int transformerId;
+        string body;
+        await using (var context = api.NewAppContext())
+        {
+            var template = await context.ConnectionRequests.AsNoTracking().SingleAsync(r => r.Id == seeded.RequestId);
+            transformerId = template.TransformerId;
+            body = "{\"distributorId\":" + template.DistributorId +
+                   ",\"transformerId\":" + template.TransformerId + ",\"requestType\":1,\"requestedCapacityKva\":5," +
+                   "\"usageType\":1,\"tariffType\":1,\"interconnectionType\":1,\"projectAddress\":\"Calle 1\"," +
+                   "\"latitude\":18.4,\"longitude\":-69.9,\"declarationAccepted\":true}";
+        }
+
+        var created = await Send(TestRole.Customer, "", body);
+        var id = created.Body.GetProperty("data").GetInt32();
+        await AddRequiredDocumentsAsync(id);
+
+        await using (var context = api.NewAppContext())
+        {
+            var transformer = await context.Transformers.SingleAsync(t => t.Id == transformerId);
+            transformer.UpdateCapacity(transformer.TotalCapacityKva, 0, 70, 30);
+            await context.SaveChangesAsync();
+        }
+
+        var sent = await Send(TestRole.Customer, id + "/submit");
+        Assert.Equal(HttpStatusCode.BadRequest, sent.Status);
+        Assert.Equal(new[] { ">Draft" }, (await HistoryOf(id)).ToArray());
+    }
+
+    private async Task AddRequiredDocumentsAsync(int id)
+    {
+        await using var context = api.NewAppContext();
+        var request = await context.ConnectionRequests.AsNoTracking().SingleAsync(r => r.Id == id);
+        foreach (var requirement in RequiredDocuments.For(request, false))
+            context.TechnicalDocuments.Add(new TechnicalDocument
+            {
+                ConnectionRequestId = id, DocumentType = requirement.AnyOf[0], FileName = "d.pdf",
+                FileUrl = "https://blob.test/" + Unique(), ContentType = "application/pdf", SizeBytes = 1
+            });
+        await context.SaveChangesAsync();
     }
 
     [FactIfDatabase]

@@ -409,7 +409,36 @@ export interface paths {
                 };
             };
         };
-        put?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateDraftRequestCommand"];
+                    "text/json": components["schemas"]["UpdateDraftRequestCommand"];
+                    "application/*+json": components["schemas"]["UpdateDraftRequestCommand"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ConnectionRequestResponseDtoResponse"];
+                        "application/json": components["schemas"]["ConnectionRequestResponseDtoResponse"];
+                        "text/json": components["schemas"]["ConnectionRequestResponseDtoResponse"];
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -913,6 +942,45 @@ export interface paths {
                     "application/*+json": components["schemas"]["RejectRequestCommand"];
                 };
             };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ConnectionRequestResponseDtoResponse"];
+                        "application/json": components["schemas"]["ConnectionRequestResponseDtoResponse"];
+                        "text/json": components["schemas"]["ConnectionRequestResponseDtoResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ConnectionRequest/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
             responses: {
                 /** @description OK */
                 200: {
@@ -2249,7 +2317,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["AuditLogDtoPagedDto"];
+            data?: components["schemas"]["AuditLogDtoPagedDto"];
         };
         AuthResponse: {
             userId?: string | null;
@@ -2286,10 +2354,16 @@ export interface components {
             requestedCapacityKva: number;
             propertyRelation: string;
             ownerFullName?: string | null;
+            ownerNationalId?: string | null;
+            ownerPhone?: string | null;
             engineerFullName?: string | null;
             engineerCodiaNumber?: string | null;
+            engineerCompany?: string | null;
+            engineerPhone?: string | null;
+            engineerEmail?: string | null;
             serviceContractNumber?: string | null;
             meterNumber?: string | null;
+            netMetering?: components["schemas"]["NetMeteringDetailsDto"];
             /** Format: int32 */
             customerId: number;
             /** Format: int32 */
@@ -2298,6 +2372,9 @@ export interface components {
             distributorId: number;
             /** Format: int32 */
             transformerId?: number | null;
+            transformerCode?: string | null;
+            holderName?: string | null;
+            installerCompanyName?: string | null;
         };
         ConnectionRequestResponseDtoPagedDto: {
             items: components["schemas"]["ConnectionRequestResponseDto"][];
@@ -2314,13 +2391,13 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["ConnectionRequestResponseDtoPagedDto"];
+            data?: components["schemas"]["ConnectionRequestResponseDtoPagedDto"];
         };
         ConnectionRequestResponseDtoResponse: {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["ConnectionRequestResponseDto"];
+            data?: components["schemas"]["ConnectionRequestResponseDto"];
         };
         CountItem: {
             key: string;
@@ -2328,10 +2405,6 @@ export interface components {
             count: number;
         };
         CreateConnectionRequestCommand: {
-            /** Format: int32 */
-            customerId: number;
-            /** Format: int32 */
-            installerCompanyId?: number | null;
             /** Format: int32 */
             distributorId: number;
             /** Format: int32 */
@@ -2360,7 +2433,12 @@ export interface components {
             serviceContractNumber?: string | null;
             meterNumber?: string | null;
             declarationAccepted: boolean;
-            netMetering: components["schemas"]["NetMeteringDetailsInput"];
+            netMetering?: components["schemas"]["NetMeteringDetailsInput"];
+            /** Format: int32 */
+            customerId?: number | null;
+            /** Format: int32 */
+            installerCompanyId?: number | null;
+            holder?: components["schemas"]["HolderInput"];
         };
         CreateMyCustomerProfileCommand: {
             fullName: string;
@@ -2415,7 +2493,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["CustomerProfileDto"];
+            data?: components["schemas"]["CustomerProfileDto"];
         };
         DistributorDto: {
             /** Format: int32 */
@@ -2452,7 +2530,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["DocumentDto"];
+            data?: components["schemas"]["DocumentDto"];
         };
         DocumentRequirementDto: {
             code: string;
@@ -2473,6 +2551,30 @@ export interface components {
         };
         /** @enum {string} */
         GenerationSystemType: "Photovoltaic" | "Wind" | "Biomass" | "Hydro" | "Hybrid" | "Other";
+        GeneratorDto: {
+            generationSystemType: string;
+            generatorKind: string;
+            manufacturer: string;
+            inverterModel?: string | null;
+            serialNumber?: string | null;
+            /** Format: int32 */
+            phases: number;
+            /** Format: double */
+            ratedPowerKva: number;
+            /** Format: double */
+            connectionVoltage: number;
+            /** Format: double */
+            nominalCurrent: number;
+            /** Format: double */
+            powerFactorMin: number;
+            /** Format: double */
+            powerFactorMax: number;
+            switchingType?: string | null;
+            /** Format: double */
+            harmonicDistortionPercent: number;
+            certificationStandard?: string | null;
+            certifyingUnit?: string | null;
+        };
         GeneratorInput: {
             generationSystemType: components["schemas"]["GenerationSystemType"];
             generatorKind: components["schemas"]["GeneratorKind"];
@@ -2499,6 +2601,14 @@ export interface components {
         };
         /** @enum {string} */
         GeneratorKind: "Synchronous" | "Induction" | "InverterBased" | "Other";
+        HolderInput: {
+            fullName: string;
+            nationalIdOrRnc: string;
+            isLegalEntity: boolean;
+            email?: string | null;
+            phone?: string | null;
+            address?: string | null;
+        };
         ImportTransformersResultDto: {
             /** Format: int32 */
             imported: number;
@@ -2507,7 +2617,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["ImportTransformersResultDto"];
+            data?: components["schemas"]["ImportTransformersResultDto"];
         };
         InstallerCompanyDto: {
             /** Format: int32 */
@@ -2529,7 +2639,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["InstallerCompanyDto"];
+            data?: components["schemas"]["InstallerCompanyDto"];
         };
         InstallerRankingItem: {
             /** Format: int32 */
@@ -2589,6 +2699,13 @@ export interface components {
             /** Format: double */
             effectiveAvailableKva: number;
         };
+        NetMeteringDetailsDto: {
+            generationSystemType: string;
+            /** Format: double */
+            installedCapacityKw: number;
+            comments?: string | null;
+            generators: components["schemas"]["GeneratorDto"][];
+        };
         NetMeteringDetailsInput: {
             generationSystemType: components["schemas"]["GenerationSystemType"];
             /** Format: double */
@@ -2621,13 +2738,13 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["NotificationDtoPagedDto"];
+            data?: components["schemas"]["NotificationDtoPagedDto"];
         };
         NotificationDtoResponse: {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["NotificationDto"];
+            data?: components["schemas"]["NotificationDto"];
         };
         /** @enum {string} */
         ObservationType: "Technical" | "Documental" | "Administrative";
@@ -2652,7 +2769,7 @@ export interface components {
             email: string;
             password: string;
             userType: components["schemas"]["UserType"];
-            distributorType: components["schemas"]["DistributorType"];
+            distributorType?: components["schemas"]["DistributorType"];
             /** Format: int32 */
             installerCompanyId?: number | null;
         };
@@ -2700,10 +2817,10 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["RequestStatisticsDto"];
+            data?: components["schemas"]["RequestStatisticsDto"];
         };
         /** @enum {string} */
-        RequestStatus: "Received" | "UnderReview" | "Observed" | "InCorrection" | "Approved" | "Rejected" | "Cancelled";
+        RequestStatus: "Received" | "UnderReview" | "Observed" | "InCorrection" | "Approved" | "Rejected" | "Cancelled" | "Draft";
         RequestTrackingDto: {
             requestCode: string;
             requestType: string;
@@ -2717,7 +2834,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["RequestTrackingDto"];
+            data?: components["schemas"]["RequestTrackingDto"];
         };
         /** @enum {string} */
         RequestType: "Connection" | "NetMetering";
@@ -2735,7 +2852,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["RequiredDocumentsDto"];
+            data?: components["schemas"]["RequiredDocumentsDto"];
         };
         ResetPasswordRequest: {
             /** Format: email */
@@ -2774,7 +2891,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["SimulationComparisonDto"];
+            data?: components["schemas"]["SimulationComparisonDto"];
         };
         SimulationDto: {
             /** Format: int32 */
@@ -2817,7 +2934,7 @@ export interface components {
             /** Format: double */
             surplusPayment: number;
             recommendations: string[];
-            referenceTransformer: components["schemas"]["NearbyTransformerDto"];
+            referenceTransformer?: components["schemas"]["NearbyTransformerDto"];
             nearbyTransformers?: components["schemas"]["NearbyTransformerDto"][] | null;
             formulaVersion: string;
             assumptions: unknown;
@@ -2827,7 +2944,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["SimulationDto"];
+            data?: components["schemas"]["SimulationDto"];
         };
         SimulationEquipmentDto: {
             generationSystemType: string;
@@ -2880,7 +2997,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["SimulationSummaryDtoPagedDto"];
+            data?: components["schemas"]["SimulationSummaryDtoPagedDto"];
         };
         StateHistoryDto: {
             /** Format: int32 */
@@ -2934,7 +3051,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["TransformerClusterResultDto"];
+            data?: components["schemas"]["TransformerClusterResultDto"];
         };
         TransformerDetailDto: {
             /** Format: int32 */
@@ -2968,7 +3085,7 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["TransformerDetailDto"];
+            data?: components["schemas"]["TransformerDetailDto"];
         };
         TransformerMapPointDto: {
             /** Format: int32 */
@@ -2997,10 +3114,43 @@ export interface components {
             succeeded: boolean;
             message?: string | null;
             errors?: string[] | null;
-            data: components["schemas"]["TransformerMapResultDto"];
+            data?: components["schemas"]["TransformerMapResultDto"];
         };
         /** @enum {string} */
         TransformerStatus: "Available" | "Conditioned" | "Critical" | "Saturated" | "Maintenance";
+        UpdateDraftRequestCommand: {
+            /** Format: int32 */
+            distributorId: number;
+            /** Format: int32 */
+            transformerId: number;
+            requestType: components["schemas"]["RequestType"];
+            /** Format: double */
+            requestedCapacityKva: number;
+            usageType: components["schemas"]["UsageType"];
+            tariffType: components["schemas"]["TariffType"];
+            interconnectionType: components["schemas"]["InterconnectionType"];
+            projectDescription?: string | null;
+            projectAddress: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            propertyRelation: components["schemas"]["PropertyRelation"];
+            ownerFullName?: string | null;
+            ownerNationalId?: string | null;
+            ownerPhone?: string | null;
+            engineerFullName?: string | null;
+            engineerCodiaNumber?: string | null;
+            engineerCompany?: string | null;
+            engineerPhone?: string | null;
+            engineerEmail?: string | null;
+            serviceContractNumber?: string | null;
+            meterNumber?: string | null;
+            declarationAccepted: boolean;
+            netMetering?: components["schemas"]["NetMeteringDetailsInput"];
+            /** Format: int32 */
+            id: number;
+        };
         UpdateTransformerCapacityCommand: {
             /** Format: int32 */
             id: number;
