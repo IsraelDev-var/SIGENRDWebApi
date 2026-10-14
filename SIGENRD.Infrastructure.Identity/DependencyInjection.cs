@@ -10,6 +10,8 @@ using SIGENRD.Infrastructure.Identity.Interfaces;
 using SIGENRD.Infrastructure.Identity.JWT;
 using SIGENRD.Infrastructure.Identity.Services;
 
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 
 namespace SIGENRD.Infrastructure.Identity
@@ -91,12 +93,28 @@ namespace SIGENRD.Infrastructure.Identity
                         // Solo RS256: evita que se acepte un token con otro algoritmo (alg=none, HS256 con la llave pública).
                         ValidAlgorithms = [SecurityAlgorithms.RsaSha256]
                     };
+                    // B-5: un token vigente de una cuenta desactivada deja de servir de inmediato.
+                    opt.Events = new JwtBearerEvents
+                    {
+                        OnTokenValidated = async context =>
+                        {
+                            var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
+                                         ?? context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                            var accounts = context.HttpContext.RequestServices.GetRequiredService<DeactivatedAccounts>();
+                            if (userId is not null && await accounts.IsDeactivatedAsync(userId, context.HttpContext.RequestAborted))
+                                context.Fail("La cuenta está desactivada.");
+                        }
+                    };
                 });
+
+                services.AddMemoryCache();
+                services.AddSingleton<DeactivatedAccounts>();
 
                 // 🔹 JWT generator
                 services.AddScoped<JwtTokenGenerator>();
 
                 services.AddScoped<IAuthService, AuthService>();
+                services.AddScoped<IUserAdministration, UserAdministration>();
                 services.AddScoped<SIGENRD.Core.Application.Interfaces.Services.IStaffDirectory, StaffDirectory>();
             
 

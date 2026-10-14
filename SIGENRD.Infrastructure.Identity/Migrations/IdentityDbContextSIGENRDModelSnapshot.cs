@@ -169,6 +169,9 @@ namespace SIGENRD.Infrastructure.Identity.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("DeactivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int?>("DistributorType")
                         .HasColumnType("integer");
 

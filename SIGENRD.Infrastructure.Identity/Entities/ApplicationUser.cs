@@ -1,4 +1,4 @@
-﻿
+
 
 using Microsoft.AspNetCore.Identity;
 using SIGENRD.Core.Domain.Enums;
@@ -15,6 +15,9 @@ namespace SIGENRD.Infrastructure.Identity.Entities
         public DistributorType? DistributorType { get; set; }
 
         public int? InstallerCompanyId { get; set; }
+
+        /// <summary>Cuenta desactivada por un administrador (B-5): no puede iniciar sesión. Null si está activa.</summary>
+        public DateTime? DeactivatedAt { get; set; }
 
     }
 }

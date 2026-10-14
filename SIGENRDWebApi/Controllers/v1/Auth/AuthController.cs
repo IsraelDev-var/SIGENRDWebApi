@@ -68,6 +68,9 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
             if (result.IsLockedOut)
                 throw new TooManyRequestsException(result.Message!); // ← 429
 
+            if (result.IsDeactivated)
+                throw new ForbiddenException(result.Message!); // ← 403: la contraseña era correcta
+
             if (!result.Success)
                 throw new ApiException("Credenciales inválidas"); // ← el middleware lo convierte en 400
 
