@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
-import { canEnterZone, type Zone } from "@/config/permissions";
+import { can, canEnterZone, type Action, type Zone } from "@/config/permissions";
 import { serverEnv } from "@/server/env";
 import { verifyAccessToken, type SessionUser } from "@/server/token";
 
@@ -57,5 +57,12 @@ export async function requireZone(zone: Zone, currentPath: string): Promise<Sess
   const session = await getSession();
   if (!session) redirect(`/ingresar?next=${encodeURIComponent(currentPath)}`);
   if (!canEnterZone(session.role, zone)) redirect("/sin-acceso");
+  return session;
+}
+
+/** Como requireZone, y además la acción de la matriz 3.2 que pide la página (el ingeniero entra a la gestión, pero no a todo). */
+export async function requireAction(zone: Zone, currentPath: string, action: Action): Promise<Session> {
+  const session = await requireZone(zone, currentPath);
+  if (!can(session.role, action)) redirect("/sin-acceso");
   return session;
 }

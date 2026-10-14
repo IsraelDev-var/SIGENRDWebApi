@@ -2113,6 +2113,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/Transformers/manage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Code?: string;
+                    ServiceZoneId?: number;
+                    Status?: components["schemas"]["TransformerStatus"];
+                    Sort?: components["schemas"]["TransformerSort"];
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TransformerDetailDtoPagedDtoResponse"];
+                        "application/json": components["schemas"]["TransformerDetailDtoPagedDtoResponse"];
+                        "text/json": components["schemas"]["TransformerDetailDtoPagedDtoResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Transformers/critical-zones": {
         parameters: {
             query?: never;
@@ -3081,6 +3125,23 @@ export interface components {
             /** Format: date-time */
             lastUpdated: string;
         };
+        TransformerDetailDtoPagedDto: {
+            items: components["schemas"]["TransformerDetailDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            readonly totalPages: number;
+        };
+        TransformerDetailDtoPagedDtoResponse: {
+            succeeded: boolean;
+            message?: string | null;
+            errors?: string[] | null;
+            data?: components["schemas"]["TransformerDetailDtoPagedDto"];
+        };
         TransformerDetailDtoResponse: {
             succeeded: boolean;
             message?: string | null;
@@ -3116,6 +3177,8 @@ export interface components {
             errors?: string[] | null;
             data?: components["schemas"]["TransformerMapResultDto"];
         };
+        /** @enum {string} */
+        TransformerSort: "Code" | "Availability" | "LastUpdated";
         /** @enum {string} */
         TransformerStatus: "Available" | "Conditioned" | "Critical" | "Saturated" | "Maintenance";
         UpdateDraftRequestCommand: {

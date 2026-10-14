@@ -56,7 +56,8 @@ const apiServer = e2eDb
           ef("drop --force", "SIGENRD.Infrastructure.Persistences", "AppContextSIGENRD"),
           ef("update", "SIGENRD.Infrastructure.Persistences", "AppContextSIGENRD"),
           ef("update", "SIGENRD.Infrastructure.Identity", "IdentityDbContextSIGENRD"),
-          "dotnet run --project ../SIGENRDWebApi --no-launch-profile",
+          // E2E_API_CONFIGURATION=Release sirve si ya hay una API local en Debug corriendo (bloquea sus binarios).
+          `dotnet run --project ../SIGENRDWebApi --no-launch-profile -c ${process.env.E2E_API_CONFIGURATION ?? "Debug"}`,
         ].join(" && "),
         url: `http://localhost:${apiPort}/health/live`,
         reuseExistingServer: false,
@@ -113,14 +114,14 @@ export default defineConfig({
     {
       name: "con-api",
       testMatch: /\.api\.spec\.ts$/,
-      testIgnore: /(requests|simulations)\.api\.spec\.ts$/,
+      testIgnore: /(requests|simulations|management)\.api\.spec\.ts$/,
       fullyParallel: false,
       use: { ...devices["Desktop Chrome"] },
     },
-    // Solicitudes y simulaciones (F5, F6): después de "con-api", que prueba el primer ingreso de los mismos usuarios (perfil sin completar).
+    // Solicitudes, simulaciones y gestión (F5 a F7): después de "con-api", que prueba el primer ingreso de los mismos usuarios (perfil sin completar).
     {
       name: "con-api-solicitudes",
-      testMatch: /(requests|simulations)\.api\.spec\.ts$/,
+      testMatch: /(requests|simulations|management)\.api\.spec\.ts$/,
       dependencies: ["con-api"],
       fullyParallel: false,
       use: { ...devices["Desktop Chrome"] },

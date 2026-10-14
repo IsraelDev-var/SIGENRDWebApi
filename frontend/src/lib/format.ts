@@ -55,3 +55,8 @@ export function daysBetween(from: Date | string, to: Date): number {
 export function formatDaysAgo(value: Date | string, now: Date): string {
   return relative.format(-daysBetween(value, now), "day");
 }
+
+/** "1 solicitud", "12 solicitudes": cantidad con separador de miles y el sustantivo en singular o plural. */
+export function formatCount(count: number, singular: string, plural: string): string {
+  return `${count.toLocaleString(LOCALE)} ${count === 1 ? singular : plural}`;
+}

@@ -65,7 +65,8 @@ public class TransformerManagementTests(ApiFactory api)
         var client = await api.ClientFor(TestRole.Admin);
 
         var byAvailability = await Data(await client.GetAsync("/api/v1/Transformers/manage?serviceZoneId=" + zoneId + "&sort=Availability"));
-        Assert.Equal(new[] { prefix + "B", prefix + "C", prefix + "A" }, Codes(byAvailability));
+        // El de mantenimiento (C) va al final: su disponibilidad no se calcula.
+        Assert.Equal(new[] { prefix + "B", prefix + "A", prefix + "C" }, Codes(byAvailability));
 
         var byAge = await Data(await client.GetAsync("/api/v1/Transformers/manage?serviceZoneId=" + zoneId + "&sort=LastUpdated"));
         Assert.Equal(prefix + "B", Codes(byAge)[0]);

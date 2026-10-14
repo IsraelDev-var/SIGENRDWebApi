@@ -27,10 +27,12 @@ type Props = {
   documents: Schemas["DocumentDto"][];
   /** Borrador, Recibida o En corrección (RN-19: después de aprobada nada cambia). */
   canChange: boolean;
+  /** Ruta de la zona desde la que se descarga (portal o gestión): cada una tiene su guarda de acceso. */
+  downloadBase?: string;
 };
 
 /** Requisitos del expediente (RN-09, RN-11) y documentos subidos (RN-18). */
-export function DocumentsPanel({ requestId, required, documents, canChange }: Props) {
+export function DocumentsPanel({ requestId, required, documents, canChange, downloadBase = "/portal/solicitudes" }: Props) {
   return (
     <div className="grid gap-6">
       <section aria-labelledby="requisitos" className="grid gap-3">
@@ -94,7 +96,7 @@ export function DocumentsPanel({ requestId, required, documents, canChange }: Pr
                 </div>
                 <div className="flex gap-2">
                   <Button asChild variant="outline" size="sm">
-                    <a href={`/portal/solicitudes/${requestId}/documentos/${doc.id}`} download>
+                    <a href={`${downloadBase}/${requestId}/documentos/${doc.id}`} download>
                       <Download aria-hidden="true" /> Descargar<span className="sr-only"> {doc.fileName}</span>
                     </a>
                   </Button>

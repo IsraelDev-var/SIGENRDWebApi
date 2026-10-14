@@ -45,10 +45,12 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
             var total = await query.CountAsync(cancellationToken);
 
             // La disponibilidad es (disponible − reservada) / total, la misma cuenta que AvailabilityPct, escrita para SQL.
+            // En mantenimiento no se calcula (RN-02): esos van al final y no se mezclan con los saturados.
             var ordered = filter.Sort switch
             {
                 TransformerSort.Availability => query
-                    .OrderBy(t => t.TotalCapacityKva > 0 ? (t.AvailableCapacityKva - t.ReservedCapacityKva) / t.TotalCapacityKva : 0)
+                    .OrderBy(t => t.Status == TransformerStatus.Maintenance)
+                    .ThenBy(t => t.TotalCapacityKva > 0 ? (t.AvailableCapacityKva - t.ReservedCapacityKva) / t.TotalCapacityKva : 0)
                     .ThenBy(t => t.Code),
                 TransformerSort.LastUpdated => query.OrderBy(t => t.LastUpdated).ThenBy(t => t.Code),
                 _ => query.OrderBy(t => t.Code)

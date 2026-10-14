@@ -7,7 +7,7 @@ Lo que falta para terminar EnergyMap, actualizado el 2026-10-12. Al cerrar un pu
 | Pendiente | Requisito | Notas |
 |---|---|---|
 | Repetir las pruebas de carga en Azure | Fase 7 | Las de [carga.md](carga.md) son locales; falta medir con la red, la base y el almacenamiento reales |
-| Frontend (Next.js) | Todas las pantallas | F0 a F6 (fundaciones, Design System, sesión y permisos, mapa público, seguimiento y requisitos, solicitudes, simulador) hechos en `frontend/`; siguen F7 a F9 según la propuesta aprobada. La API ya tiene CORS por configuración para el origen del frontend |
+| Frontend (Next.js) | Todas las pantallas | F0 a F7 (fundaciones, Design System, sesión y permisos, mapa público, seguimiento y requisitos, solicitudes, simulador, gestión de solicitudes y red) hechos en `frontend/`; siguen F8 y F9 según la propuesta aprobada. La API ya tiene CORS por configuración para el origen del frontend |
 | Configurar `App:EmailConfirmationUrl` y `App:PasswordResetUrl` de la API hacia `/confirmar-correo` y `/restablecer` del frontend | F2 | Sin ellas, el correo de confirmación sigue apuntando a la API |
 | Búsqueda por dirección en el mapa | RF-04, D-3 | Funciona por código y por coordenadas; falta elegir el geocodificador |
 | Proveedor del mapa base en producción | D-2 | En desarrollo se usa CARTO; definir teselas propias (PMTiles) o un proveedor con contrato |

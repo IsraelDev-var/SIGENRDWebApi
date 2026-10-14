@@ -12,6 +12,7 @@ import { DOMINICAN_REPUBLIC_BOUNDS } from "@/config/map";
 import { asTransformerStatus, TRANSFORMER_STATUS, TRANSFORMER_STATUSES } from "@/config/status";
 import { MapLegend } from "@/features/map";
 import type { components } from "@/lib/api/schema";
+import { formatCount } from "@/lib/format";
 import { ApiError, apiData } from "@/server/api-client";
 
 export const metadata: Metadata = {
@@ -136,7 +137,7 @@ export default async function TransformersListPage({ searchParams }: PageProps<"
       ) : (
         <>
           <p role="status" className="text-sm text-muted-foreground">
-            {rows.length.toLocaleString("es-DO")} transformadores
+            {formatCount(rows.length, "transformador", "transformadores")}
             {result?.truncated ? ` (se muestran los primeros ${MAX_ROWS.toLocaleString("es-DO")}; filtra por zona para ver el resto)` : ""}. Página {current} de{" "}
             {pages}.
           </p>

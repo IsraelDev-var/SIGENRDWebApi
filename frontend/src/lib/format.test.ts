@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { daysBetween, formatDaysAgo, formatKva, formatMoney, formatPercent } from "@/lib/format";
+import { daysBetween, formatCount, formatDaysAgo, formatKva, formatMoney, formatPercent } from "@/lib/format";
 
 describe("formatos es-DO", () => {
   it("kVA con punto decimal y coma de miles", () => {
@@ -34,5 +34,13 @@ describe("antigüedad del dato", () => {
     expect(formatDaysAgo("2026-10-12T08:00:00Z", now)).toBe("hoy");
     expect(formatDaysAgo("2026-10-11T08:00:00Z", now)).toBe("ayer");
     expect(formatDaysAgo("2026-09-30T15:00:00Z", now)).toBe("hace 12 días");
+  });
+});
+
+describe("cantidades", () => {
+  it("concuerda el sustantivo con la cantidad", () => {
+    expect(formatCount(1, "solicitud", "solicitudes")).toBe("1 solicitud");
+    expect(formatCount(0, "solicitud", "solicitudes")).toBe("0 solicitudes");
+    expect(formatCount(10000, "transformador", "transformadores")).toBe("10,000 transformadores");
   });
 });

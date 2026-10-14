@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { asRequestStatus, REQUEST_STATUS, REQUEST_TYPE_LABEL } from "@/config/status";
 import { listMyRequests } from "@/features/requests";
-import { formatDate } from "@/lib/format";
+import { formatCount, formatDate } from "@/lib/format";
 import { ApiError } from "@/server/api-client";
 import { requireZone } from "@/server/session";
 
@@ -93,7 +93,7 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/porta
       ) : (
         <>
           <p role="status" className="text-sm text-muted-foreground">
-            {result.totalCount.toLocaleString("es-DO")} solicitudes. Página {result.page} de {Math.max(1, result.totalPages)}.
+            {formatCount(result.totalCount, "solicitud", "solicitudes")}. Página {result.page} de {Math.max(1, result.totalPages)}.
           </p>
           <div className="rounded-lg border bg-card">
             <Table label="Mis solicitudes">
