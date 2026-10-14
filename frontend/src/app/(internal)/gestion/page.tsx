@@ -86,7 +86,6 @@ export default async function InternalHomePage() {
             </li>
           ))}
         </ul>
-        <p className="text-sm text-muted-foreground">Los reportes, los usuarios internos y la auditoría se habilitan en la próxima entrega.</p>
       </section>
     </div>
   );

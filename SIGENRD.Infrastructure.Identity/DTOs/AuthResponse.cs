@@ -1,4 +1,4 @@
-﻿namespace SIGENRD.Infrastructure.Identity.DTOs
+namespace SIGENRD.Infrastructure.Identity.DTOs
 {
     public class AuthResponse
     {
@@ -13,5 +13,8 @@
         /// <summary>La cuenta está bloqueada temporalmente por intentos fallidos: no se devuelve en el JSON.</summary>
         [System.Text.Json.Serialization.JsonIgnore]
         public bool IsLockedOut { get; set; }
+
+        /// <summary>La contraseña es correcta pero un administrador desactivó la cuenta (B-5).</summary>
+        public bool IsDeactivated { get; set; }
     }
 }

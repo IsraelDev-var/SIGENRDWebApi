@@ -60,7 +60,8 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
     response = await apiRequest<AuthResponse>("/Auth/login", { method: "POST", body: parsed.data });
   } catch (error) {
     // 429: cuenta bloqueada por intentos fallidos; la API dice cuánto esperar.
-    if (error instanceof ApiError && error.status === 429) return failed(error, formData);
+    // 403: contraseña correcta, pero un administrador desactivó la cuenta (B-5); la API da el motivo.
+    if (error instanceof ApiError && (error.status === 429 || error.status === 403)) return failed(error, formData);
     // Mismo mensaje para correo inexistente, contraseña errónea o cuenta sin confirmar: no se revela cuál fue.
     return failed(error, formData, "El correo o la contraseña no son correctos, o la cuenta todavía no está confirmada.");
   }

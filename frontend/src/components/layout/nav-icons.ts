@@ -1,9 +1,27 @@
-import { Bell, ClipboardList, FileText, Gauge, Map, ScrollText, Search, Sun, User, Users, Zap, type LucideIcon } from "lucide-react";
+import {
+  Bell,
+  ChartColumn,
+  ClipboardList,
+  FileText,
+  Gauge,
+  Map,
+  ScrollText,
+  Search,
+  Sun,
+  TriangleAlert,
+  User,
+  UserCog,
+  Users,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 
 import type { NavIcon } from "@/config/navigation";
 
 export const NAV_ICONS: Record<NavIcon, LucideIcon> = {
+  alert: TriangleAlert,
   bell: Bell,
+  chart: ChartColumn,
   "clipboard-list": ClipboardList,
   "file-text": FileText,
   gauge: Gauge,
@@ -12,6 +30,7 @@ export const NAV_ICONS: Record<NavIcon, LucideIcon> = {
   search: Search,
   sun: Sun,
   user: User,
+  "user-cog": UserCog,
   users: Users,
   zap: Zap,
 };

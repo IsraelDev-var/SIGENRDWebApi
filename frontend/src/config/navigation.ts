@@ -2,7 +2,9 @@ import { can, type Action, type Role } from "@/config/permissions";
 
 /** Iconos disponibles para los menús. Son nombres y no componentes para poder pasar los menús a componentes cliente. */
 export type NavIcon =
+  | "alert"
   | "bell"
+  | "chart"
   | "clipboard-list"
   | "file-text"
   | "gauge"
@@ -11,6 +13,7 @@ export type NavIcon =
   | "search"
   | "sun"
   | "user"
+  | "user-cog"
   | "users"
   | "zap";
 
@@ -32,7 +35,6 @@ export const PUBLIC_NAV: NavItem[] = [
   { href: "/requisitos", label: "Requisitos", icon: "file-text" },
 ];
 
-// Los menús crecen con cada entrega (reportes y administración en F8).
 export const PORTAL_NAV: NavItem[] = [
   { href: "/portal", label: "Inicio", icon: "gauge" },
   { href: "/portal/solicitudes", label: "Mis solicitudes", icon: "clipboard-list", requires: "viewOwnRequests" },
@@ -45,6 +47,10 @@ export const INTERNAL_NAV: NavItem[] = [
   { href: "/gestion/solicitudes", label: "Solicitudes", icon: "clipboard-list", requires: "viewOthersRequests" },
   { href: "/gestion/transformadores", label: "Transformadores", icon: "zap", requires: "manageCatalogs" },
   { href: "/gestion/instaladoras", label: "Instaladoras", icon: "users", requires: "validateInstallers" },
+  { href: "/gestion/reportes", label: "Reportes", icon: "chart", requires: "viewReports" },
+  { href: "/gestion/zonas-criticas", label: "Zonas críticas", icon: "alert", requires: "viewReports" },
+  { href: "/gestion/usuarios", label: "Usuarios", icon: "user-cog", requires: "manageInternalUsers" },
+  { href: "/gestion/auditoria", label: "Auditoría", icon: "scroll-text", requires: "viewAudit" },
 ];
 
 /** Las opciones que el rol puede ver según la matriz de permisos. */

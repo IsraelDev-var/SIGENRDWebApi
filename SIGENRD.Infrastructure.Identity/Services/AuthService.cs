@@ -238,6 +238,19 @@ namespace SIGENRD.Infrastructure.Identity.Services
                 };
             }
 
+            // B-5: la contraseña ya se comprobó, así que decir que la cuenta está desactivada no revela nada nuevo.
+            if (user.DeactivatedAt is not null)
+            {
+                await _securityAudit.RecordAsync(SecurityEvents.LoginRejectedDeactivated, user.Id, request.Email);
+                EnergyMapMetrics.LoginFailed();
+                return new AuthResponse
+                {
+                    Success = false,
+                    IsDeactivated = true,
+                    Message = "Tu cuenta está desactivada. Pide al administrador que la reactive."
+                };
+            }
+
             var roles = await _userManager.GetRolesAsync(user);
             var token = _jwtTokenGenerator.GenerateToken(user, roles);
             await _securityAudit.RecordAsync(SecurityEvents.LoginSucceeded, user.Id, request.Email);
