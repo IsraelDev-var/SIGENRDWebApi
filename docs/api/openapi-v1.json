@@ -2702,6 +2702,82 @@
         }
       }
     },
+    "/api/v1/Transformers/manage": {
+      "get": {
+        "tags": [
+          "Transformers"
+        ],
+        "parameters": [
+          {
+            "name": "Code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ServiceZoneId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/TransformerStatus"
+            }
+          },
+          {
+            "name": "Sort",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/TransformerSort"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransformerDetailDtoPagedDtoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransformerDetailDtoPagedDtoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransformerDetailDtoPagedDtoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/Transformers/critical-zones": {
       "get": {
         "tags": [
@@ -5747,6 +5823,68 @@
         },
         "additionalProperties": false
       },
+      "TransformerDetailDtoPagedDto": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount",
+          "totalPages"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransformerDetailDto"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransformerDetailDtoPagedDtoResponse": {
+        "required": [
+          "succeeded"
+        ],
+        "type": "object",
+        "properties": {
+          "succeeded": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/TransformerDetailDtoPagedDto"
+          }
+        },
+        "additionalProperties": false
+      },
       "TransformerDetailDtoResponse": {
         "required": [
           "succeeded"
@@ -5887,6 +6025,14 @@
           }
         },
         "additionalProperties": false
+      },
+      "TransformerSort": {
+        "enum": [
+          "Code",
+          "Availability",
+          "LastUpdated"
+        ],
+        "type": "string"
       },
       "TransformerStatus": {
         "enum": [

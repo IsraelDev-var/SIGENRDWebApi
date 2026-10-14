@@ -174,6 +174,11 @@ namespace SIGENRD.Infrastructure.Persistences.Caching
         public Task<Transformer?> GetByIdAsync(int id, bool asTracking = false, CancellationToken cancellationToken = default)
             => inner.GetByIdAsync(id, asTracking, cancellationToken);
 
+        // La gestión necesita el dato recién guardado: va a la base, sin caché.
+        public Task<PagedResult<Transformer>> SearchForManagementAsync(
+            TransformerManagementFilter filter, int page, int pageSize, CancellationToken cancellationToken = default)
+            => inner.SearchForManagementAsync(filter, page, pageSize, cancellationToken);
+
         public Task<IReadOnlySet<string>> GetExistingCodesAsync(IEnumerable<string> codes, CancellationToken cancellationToken = default)
             => inner.GetExistingCodesAsync(codes, cancellationToken);
 

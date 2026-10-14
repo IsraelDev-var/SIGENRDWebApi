@@ -23,7 +23,16 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
  * Detalle técnico del transformador (RF-02, RF-05): todo viene calculado por la API, el frontend no recalcula
  * ni el porcentaje ni el estado. Lo usan el panel del mapa y la ficha /transformadores/[id].
  */
-export function TransformerDetail({ transformer, headingLevel = 2 }: { transformer: Detail; headingLevel?: 1 | 2 }) {
+export function TransformerDetail({
+  transformer,
+  headingLevel = 2,
+  applicantActions = true,
+}: {
+  transformer: Detail;
+  headingLevel?: 1 | 2;
+  /** Solicitar y simular son del solicitante; en la gestión no se muestran. */
+  applicantActions?: boolean;
+}) {
   const Heading = headingLevel === 1 ? "h1" : "h2";
 
   return (
@@ -59,6 +68,7 @@ export function TransformerDetail({ transformer, headingLevel = 2 }: { transform
       </p>
 
       {/* Sin sesión, el portal lleva a ingresar y vuelve aquí (proxy.ts). */}
+      {applicantActions && (
       <div className="flex flex-wrap gap-2">
         {transformer.acceptsNewRequests && (
           <Button asChild>
@@ -74,6 +84,7 @@ export function TransformerDetail({ transformer, headingLevel = 2 }: { transform
           </Link>
         </Button>
       </div>
+      )}
 
       <dl className="grid divide-y text-sm">
         <Row label="Capacidad total">

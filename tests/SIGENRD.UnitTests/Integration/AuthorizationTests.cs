@@ -35,6 +35,7 @@ public class AuthorizationTests(ApiFactory api)
         new("busqueda", HttpMethod.Get, "/api/v1/Transformers/search?Latitude=18.48&Longitude=-69.93", () => null, Anyone, HttpStatusCode.OK),
         new("detalle", HttpMethod.Get, "/api/v1/Transformers/999999", () => null, Anyone, HttpStatusCode.NotFound),
         new("zonas criticas", HttpMethod.Get, "/api/v1/Transformers/critical-zones", () => null, Staff, HttpStatusCode.OK),
+        new("lista de gestion de la red", HttpMethod.Get, "/api/v1/Transformers/manage?pageSize=1", () => null, Staff, HttpStatusCode.OK),
         new("crear transformador", HttpMethod.Post, "/api/v1/Transformers",
             () => Json("{\"code\":\"TR-AUTH\",\"distributorId\":999999,\"serviceZoneId\":1,\"totalCapacityKva\":100,\"availableCapacityKva\":50,\"latitude\":18.5,\"longitude\":-69.9}"),
             Staff, HttpStatusCode.BadRequest),

@@ -79,6 +79,10 @@ public class FakeTransformerRepository : ITransformerRepository
     public Task<Transformer?> GetByIdAsync(int id, bool asTracking = false, CancellationToken cancellationToken = default) =>
         Task.FromResult(Items.FirstOrDefault(t => t.Id == id));
 
+    public Task<PagedResult<Transformer>> SearchForManagementAsync(
+        TransformerManagementFilter filter, int page, int pageSize, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("La lista de gestión se prueba contra PostgreSQL.");
+
     public Task<IReadOnlySet<string>> GetExistingCodesAsync(IEnumerable<string> codes, CancellationToken cancellationToken = default)
     {
         var wanted = codes.ToHashSet();

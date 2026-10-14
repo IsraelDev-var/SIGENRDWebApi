@@ -166,6 +166,32 @@ test("instaladora: registra su empresa y queda pendiente de validación (RN-05)"
   await expect(page.getByRole("heading", { name: "Tu empresa está pendiente de validación" })).toBeVisible();
 });
 
+test("RN-05: la distribuidora valida la empresa desde la gestión y la instaladora ya puede solicitar", async ({ page }) => {
+  // El ingeniero no valida instaladoras: ni en el menú ni por URL.
+  await login(page, "Engineer");
+  await expect(page.getByRole("link", { name: "Instaladoras" })).toHaveCount(0);
+  await page.goto("/gestion/instaladoras");
+  await expect(page).toHaveURL("/sin-acceso");
+  await page.goto("/gestion");
+  await logout(page);
+
+  await login(page, "Distributor");
+  await page.getByRole("link", { name: "Instaladoras" }).first().click();
+  const row = page.getByRole("region", { name: "Empresas instaladoras" }).getByRole("row").filter({ hasText: "Solar Caribe SRL" });
+  await expect(row.getByText("Pendiente")).toBeVisible();
+  await row.getByRole("button", { name: "Validar Solar Caribe SRL" }).click();
+  // Sale de las pendientes y aparece entre las validadas.
+  await expect(row).toHaveCount(0);
+  await page.getByRole("link", { name: "Validadas" }).click();
+  await expect(
+    page.getByRole("region", { name: "Empresas instaladoras" }).getByRole("row").filter({ hasText: "Solar Caribe SRL" }).getByText("Validada"),
+  ).toBeVisible();
+  await logout(page);
+
+  await login(page, "InstallerCompany");
+  await expect(page.getByRole("heading", { name: "Tu empresa está pendiente de validación" })).toHaveCount(0);
+});
+
 test("registro de una cuenta nueva", async ({ page }) => {
   const email = `nuevo-${Date.now()}@test.energymap.local`;
   await page.goto("/registro");
