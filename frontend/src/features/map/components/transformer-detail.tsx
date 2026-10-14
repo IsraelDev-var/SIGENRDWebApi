@@ -59,13 +59,21 @@ export function TransformerDetail({ transformer, headingLevel = 2 }: { transform
       </p>
 
       {/* Sin sesión, el portal lleva a ingresar y vuelve aquí (proxy.ts). */}
-      {transformer.acceptsNewRequests && (
-        <Button asChild className="justify-self-start">
-          <Link href={`/portal/solicitudes/nueva?transformador=${transformer.id}`}>
-            Solicitar conexión<span className="sr-only"> en {transformer.code}</span>
+      <div className="flex flex-wrap gap-2">
+        {transformer.acceptsNewRequests && (
+          <Button asChild>
+            <Link href={`/portal/solicitudes/nueva?transformador=${transformer.id}`}>
+              Solicitar conexión<span className="sr-only"> en {transformer.code}</span>
+            </Link>
+          </Button>
+        )}
+        {/* La simulación es informativa: se ofrece aunque el transformador no acepte solicitudes. */}
+        <Button asChild variant="outline">
+          <Link href={`/portal/simulaciones/nueva?lat=${transformer.latitude.toFixed(6)}&lng=${transformer.longitude.toFixed(6)}`}>
+            Simular paneles solares<span className="sr-only"> cerca de {transformer.code}</span>
           </Link>
         </Button>
-      )}
+      </div>
 
       <dl className="grid divide-y text-sm">
         <Row label="Capacidad total">

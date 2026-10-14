@@ -32,7 +32,7 @@ import {
   type RequestFormValues,
   type WizardStep,
 } from "../schemas";
-import { ChoiceCards, SelectField, TextareaField } from "./fields";
+import { ChoiceCards, SelectField, TextareaField } from "@/components/shared/form-controls";
 
 export type WizardTransformer = {
   id: number;

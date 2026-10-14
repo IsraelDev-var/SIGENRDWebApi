@@ -145,3 +145,14 @@ export async function createSubmittedAsCustomer(request: APIRequestContext, tran
   await apiDataAs(request, "Customer", `/ConnectionRequest/${draft.id}/submit`, { method: "POST" });
   return draft;
 }
+
+/** Simulación creada por la API como cliente (consumo, potencia y ubicación en el Distrito Nacional). */
+export async function createSimulationAsCustomer(
+  request: APIRequestContext,
+  data: { name: string; monthlyConsumptionKwh: number; installedCapacityKw: number; latitude?: number; longitude?: number },
+) {
+  return apiDataAs<{ id: number }>(request, "Customer", "/Simulations", {
+    method: "POST",
+    data: { latitude: 18.4861, longitude: -69.9312, ...data, equipment: [] },
+  });
+}

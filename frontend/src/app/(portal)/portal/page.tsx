@@ -18,7 +18,7 @@ export default async function PortalHomePage() {
 
   return (
     <div className="grid gap-6">
-      <PageHeader title={`Hola, ${session.fullName || "bienvenido"}`} description="Desde aquí das seguimiento a tus solicitudes." />
+      <PageHeader title={`Hola, ${session.fullName || "bienvenido"}`} description="Desde aquí das seguimiento a tus solicitudes y simulaciones." />
 
       {missingProfile && (
         <section aria-labelledby="perfil-pendiente" className="flex flex-wrap items-start gap-3 rounded-lg bg-tone-warning-soft p-4 text-tone-warning-text">
@@ -69,6 +69,18 @@ export default async function PortalHomePage() {
             <Link href="/">Elegir en el mapa</Link>
           </Button>
         </div>
+      </section>
+
+      <section aria-labelledby="simulaciones" className="grid gap-2 rounded-lg border bg-card p-4">
+        <h2 id="simulaciones" className="font-medium">
+          Simulaciones
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Estima cuánto ahorrarías con paneles solares y en cuánto tiempo recuperas la inversión. Es informativo: no reserva capacidad.
+        </p>
+        <Button asChild variant="outline" size="sm" className="justify-self-start">
+          <Link href="/portal/simulaciones/nueva">Simular</Link>
+        </Button>
       </section>
     </div>
   );
