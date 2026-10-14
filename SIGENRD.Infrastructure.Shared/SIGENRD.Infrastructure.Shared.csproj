@@ -14,6 +14,8 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.10" />
     <PackageReference Include="MimeKit" Version="4.18.1" />
     <PackageReference Include="QuestPDF" Version="2026.8.0" />
+    <!-- MimeKit trae la 10.0.0, afectada por CVE-2026-84008 y CVE-2026-70162 (denegación de servicio). Quitar cuando MimeKit dependa de una corregida. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
