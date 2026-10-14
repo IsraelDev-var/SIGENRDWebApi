@@ -29,6 +29,40 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<PagedResult<Transformer>> SearchForManagementAsync(
+            TransformerManagementFilter filter, int page, int pageSize, CancellationToken cancellationToken = default)
+        {
+            var query = ReadOnly;
+
+            if (!string.IsNullOrWhiteSpace(filter.Code))
+            {
+                var escaped = filter.Code.Trim().Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
+                query = query.Where(t => EF.Functions.ILike(t.Code, "%" + escaped + "%"));
+            }
+            if (filter.ServiceZoneId.HasValue) query = query.Where(t => t.ServiceZoneId == filter.ServiceZoneId);
+            if (filter.Status.HasValue) query = query.Where(t => t.Status == filter.Status);
+
+            var total = await query.CountAsync(cancellationToken);
+
+            // La disponibilidad es (disponible − reservada) / total, la misma cuenta que AvailabilityPct, escrita para SQL.
+            var ordered = filter.Sort switch
+            {
+                TransformerSort.Availability => query
+                    .OrderBy(t => t.TotalCapacityKva > 0 ? (t.AvailableCapacityKva - t.ReservedCapacityKva) / t.TotalCapacityKva : 0)
+                    .ThenBy(t => t.Code),
+                TransformerSort.LastUpdated => query.OrderBy(t => t.LastUpdated).ThenBy(t => t.Code),
+                _ => query.OrderBy(t => t.Code)
+            };
+
+            var items = await ordered
+                .Skip((page - 1) * pageSize).Take(pageSize)
+                .Include(t => t.ServiceZone)
+                .Include(t => t.Distributor)
+                .ToListAsync(cancellationToken);
+
+            return new PagedResult<Transformer>(items, page, pageSize, total);
+        }
+
         public async Task<IReadOnlyList<Transformer>> SearchByCodeAsync(string term, int limit, CancellationToken cancellationToken = default)
         {
             // Los comodines de LIKE se escapan para que el término no cambie el significado de la búsqueda.

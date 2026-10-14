@@ -9,6 +9,7 @@ using SIGENRD.Core.Application.Features.Transformers.Commands.ImportTransformers
 using SIGENRD.Core.Application.Features.Transformers.Commands.SetTransformerMaintenance;
 using SIGENRD.Core.Application.Features.Transformers.Commands.UpdateTransformerCapacity;
 using SIGENRD.Core.Application.Features.Transformers.Queries.GetCriticalZones;
+using SIGENRD.Core.Application.Features.Transformers.Queries.ListTransformersForManagement;
 using SIGENRD.Core.Application.Features.Transformers.Queries.GetTransformerClusters;
 using SIGENRD.Core.Application.Features.Transformers.Queries.GetTransformerById;
 using SIGENRD.Core.Application.Features.Transformers.Queries.GetTransformersInBounds;
@@ -60,6 +61,13 @@ namespace SIGENRDWebApi.Controllers.v1.Transformers
             => Ok(await mediator.Send(query));
 
         // ---------- Gestión (distribuidora y administrador) ----------
+
+        /// <summary>Lista paginada para gestionar la red (B-3): por código, zona y estado; ordenada por código, disponibilidad o antigüedad del dato.</summary>
+        [ProducesResponseType<Response<PagedDto<TransformerDetailDto>>>(StatusCodes.Status200OK)]
+        [HttpGet("manage")]
+        [Authorize(Roles = $"{Roles.Distributor}, {Roles.Admin}")]
+        public async Task<IActionResult> ListForManagement([FromQuery] ListTransformersForManagementQuery query)
+            => Ok(await mediator.Send(query));
 
         /// <summary>Zonas con transformadores críticos o saturados (RF-29).</summary>
         [ProducesResponseType<Response<List<ZoneRiskDto>>>(StatusCodes.Status200OK)]
