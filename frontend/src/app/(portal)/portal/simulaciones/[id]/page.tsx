@@ -106,7 +106,7 @@ export default async function SimulationPage({ params }: PageProps<"/portal/simu
         </dl>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section aria-labelledby="detalle" className="grid content-start gap-3">
           <h2 id="detalle" className="text-lg font-semibold">
             Detalle del cálculo

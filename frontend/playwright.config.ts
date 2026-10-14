@@ -114,14 +114,14 @@ export default defineConfig({
     {
       name: "con-api",
       testMatch: /\.api\.spec\.ts$/,
-      testIgnore: /(requests|simulations|management)\.api\.spec\.ts$/,
+      testIgnore: /(requests|simulations|management|administration)\.api\.spec\.ts$/,
       fullyParallel: false,
       use: { ...devices["Desktop Chrome"] },
     },
-    // Solicitudes, simulaciones y gestión (F5 a F7): después de "con-api", que prueba el primer ingreso de los mismos usuarios (perfil sin completar).
+    // Solicitudes, simulaciones, gestión y administración (F5 a F8): después de "con-api", que prueba el primer ingreso de los mismos usuarios (perfil sin completar).
     {
       name: "con-api-solicitudes",
-      testMatch: /(requests|simulations|management)\.api\.spec\.ts$/,
+      testMatch: /(requests|simulations|management|administration)\.api\.spec\.ts$/,
       dependencies: ["con-api"],
       fullyParallel: false,
       use: { ...devices["Desktop Chrome"] },

@@ -7,12 +7,14 @@ Lo que falta para terminar EnergyMap, actualizado el 2026-10-12. Al cerrar un pu
 | Pendiente | Requisito | Notas |
 |---|---|---|
 | Repetir las pruebas de carga en Azure | Fase 7 | Las de [carga.md](carga.md) son locales; falta medir con la red, la base y el almacenamiento reales |
-| Frontend (Next.js) | Todas las pantallas | F0 a F7 (fundaciones, Design System, sesión y permisos, mapa público, seguimiento y requisitos, solicitudes, simulador, gestión de solicitudes y red) hechos en `frontend/`; siguen F8 y F9 según la propuesta aprobada. La API ya tiene CORS por configuración para el origen del frontend |
+| Frontend (Next.js) | Todas las pantallas | F0 a F8 (fundaciones, Design System, sesión y permisos, mapa público, seguimiento y requisitos, solicitudes, simulador, gestión de solicitudes y red, reportes y administración) hechos en `frontend/`; sigue F9 (cierre) según la propuesta aprobada. La API ya tiene CORS por configuración para el origen del frontend |
 | Configurar `App:EmailConfirmationUrl` y `App:PasswordResetUrl` de la API hacia `/confirmar-correo` y `/restablecer` del frontend | F2 | Sin ellas, el correo de confirmación sigue apuntando a la API |
 | Búsqueda por dirección en el mapa | RF-04, D-3 | Funciona por código y por coordenadas; falta elegir el geocodificador |
 | Proveedor del mapa base en producción | D-2 | En desarrollo se usa CARTO; definir teselas propias (PMTiles) o un proveedor con contrato |
 | Editar el perfil | RF-09 | Datos del usuario, cliente e instaladora |
 | Tokens de refresco | Seguridad | Hoy el JWT dura 60 minutos y luego hay que iniciar sesión otra vez |
+| Cerrar la sesión del navegador cuando la API responde 401 | F8, seguridad | Con una cuenta desactivada la API rechaza al instante, pero la cookie de Next sigue hasta que vence el JWT y la página muestra error de carga |
+| Obligar a cambiar la contraseña temporal del usuario interno en el primer ingreso | F8 | Hoy el administrador la comunica por otro canal y la persona puede usar "Olvidé mi contraseña" |
 | Persistir las llaves de Data Protection | Operación | Sin esto, al reiniciar el contenedor o con varias instancias dejan de servir los enlaces de confirmación y de restablecimiento pendientes |
 | Confirmar en Azure qué IP agrega App Service a `X-Forwarded-For` delante del frontend | F4, seguridad | El frontend toma la última entrada (`ENERGYMAP_TRUSTED_PROXIES=1`) y la reenvía a la API con `TrustedProxy:Key`. Si hay otro proxy delante (Front Door), subir a 2 |
 | Limpiar borradores abandonados | D-4 | Un borrador no reserva capacidad ni avisa a nadie, pero se acumula. Definir a los N días se descartan (tarea programada) |

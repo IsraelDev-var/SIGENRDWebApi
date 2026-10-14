@@ -53,7 +53,7 @@ export default async function ReviewRequestPage({ params }: PageProps<"/gestion/
         {status && <p className="max-w-prose text-muted-foreground">{REQUEST_STATUS[status].meaning}</p>}
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="grid min-w-0 content-start gap-6">
           <RequestSummary request={request} detailed />
           <DocumentsPanel requestId={request.id} required={required} documents={documents} canChange={false} downloadBase="/gestion/solicitudes" />

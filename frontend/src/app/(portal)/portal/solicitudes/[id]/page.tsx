@@ -66,7 +66,7 @@ export default async function RequestFilePage({ params, searchParams }: PageProp
         </section>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="grid min-w-0 content-start gap-6">
           <RequestSummary request={request} />
 

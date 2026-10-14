@@ -2330,6 +2330,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/Users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    text?: string;
+                    role?: components["schemas"]["UserType"];
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InternalUserDtoPagedDtoResponse"];
+                        "application/json": components["schemas"]["InternalUserDtoPagedDtoResponse"];
+                        "text/json": components["schemas"]["InternalUserDtoPagedDtoResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Users/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InternalUserDtoResponse"];
+                        "application/json": components["schemas"]["InternalUserDtoResponse"];
+                        "text/json": components["schemas"]["InternalUserDtoResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Users/{id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InternalUserDtoResponse"];
+                        "application/json": components["schemas"]["InternalUserDtoResponse"];
+                        "text/json": components["schemas"]["InternalUserDtoResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2371,6 +2491,7 @@ export interface components {
             token?: string | null;
             success: boolean;
             message?: string | null;
+            isDeactivated: boolean;
         };
         CancelRequestCommand: {
             /** Format: int32 */
@@ -2719,6 +2840,40 @@ export interface components {
         };
         /** @enum {string} */
         InterconnectionType: "Parallel" | "MomentaryParallel" | "Isolated";
+        InternalUserDto: {
+            id: string;
+            fullName: string;
+            email: string;
+            role: string;
+            emailConfirmed: boolean;
+            isActive: boolean;
+            /** Format: date-time */
+            deactivatedAt?: string | null;
+            isLockedOut: boolean;
+        };
+        InternalUserDtoPagedDto: {
+            items: components["schemas"]["InternalUserDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            readonly totalPages: number;
+        };
+        InternalUserDtoPagedDtoResponse: {
+            succeeded: boolean;
+            message?: string | null;
+            errors?: string[] | null;
+            data?: components["schemas"]["InternalUserDtoPagedDto"];
+        };
+        InternalUserDtoResponse: {
+            succeeded: boolean;
+            message?: string | null;
+            errors?: string[] | null;
+            data?: components["schemas"]["InternalUserDto"];
+        };
         LoginRequest: {
             /** Format: email */
             email: string;
