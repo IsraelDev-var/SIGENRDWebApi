@@ -22,6 +22,7 @@ namespace SIGENRD.Core.Domain.Interfaces
         public const string LoginLockedOut = "LoginLockedOut";
         public const string PasswordResetRequested = "PasswordResetRequested";
         public const string PasswordResetCompleted = "PasswordResetCompleted";
+        public const string PasswordChanged = "PasswordChanged";
         public const string AccountDeactivated = "AccountDeactivated";
         public const string AccountReactivated = "AccountReactivated";
         public const string LoginRejectedDeactivated = "LoginRejectedDeactivated";

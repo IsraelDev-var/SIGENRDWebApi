@@ -55,7 +55,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
         // -------------------------
         // REGISTRO DE USUARIO
         // -------------------------
-        public async Task<AuthResponse> RegisterAsync(RegisterRequest request, bool revealExistingAccount)
+        public async Task<AuthResponse> RegisterAsync(RegisterRequest request, bool revealExistingAccount, bool mustChangePassword = false)
         {
             var existingUser = await _userManager.FindByEmailAsync(request.Email);
             if (existingUser != null)
@@ -84,7 +84,8 @@ namespace SIGENRD.Infrastructure.Identity.Services
                 DistributorType = request.DistributorType,
                 InstallerCompanyId = request.InstallerCompanyId,
                 // Importante: El usuario nace sin confirmar
-                IsEmailConfirmed = false
+                IsEmailConfirmed = false,
+                MustChangePassword = mustChangePassword
             };
 
             var result = await _userManager.CreateAsync(user, request.Password);
@@ -260,6 +261,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
             {
                 Success = true,
                 Token = token,
+                MustChangePassword = user.MustChangePassword,
                 Email = user.Email,
                 FullName = user.FullName,
                 Role = roles.FirstOrDefault(),
@@ -378,12 +380,54 @@ namespace SIGENRD.Infrastructure.Identity.Services
                 };
             }
 
-            // Quien restablece desde su correo demuestra ser el dueño: se levanta el bloqueo.
+            // Quien restablece desde su correo demuestra ser el dueño: se levanta el bloqueo, y la contraseña ya es suya.
+            if (user.MustChangePassword)
+            {
+                user.MustChangePassword = false;
+                await _userManager.UpdateAsync(user);
+            }
             await _userManager.SetLockoutEndDateAsync(user, null);
             await _userManager.ResetAccessFailedCountAsync(user);
             await _securityAudit.RecordAsync(SecurityEvents.PasswordResetCompleted, user.Id, request.Email);
 
             return new AuthResponse { Success = true, Message = "Contraseña actualizada. Ya puede iniciar sesión." };
+        }
+    
+        public async Task<AuthResponse> ChangePasswordAsync(string userId, ChangePasswordRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user is null || user.DeactivatedAt is not null)
+                return new AuthResponse { Success = false, Message = "La cuenta no está disponible." };
+
+            if (request.CurrentPassword == request.NewPassword)
+                return new AuthResponse { Success = false, Message = "La contraseña nueva debe ser distinta de la actual." };
+
+            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+            if (!result.Succeeded)
+            {
+                var wrongCurrent = result.Errors.Any(e => e.Code == "PasswordMismatch");
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = wrongCurrent ? "La contraseña actual no es correcta." : string.Join("; ", result.Errors.Select(e => e.Description))
+                };
+            }
+
+            user.MustChangePassword = false;
+            await _userManager.UpdateAsync(user);
+            await _securityAudit.RecordAsync(SecurityEvents.PasswordChanged, user.Id, user.Email ?? string.Empty);
+
+            var roles = await _userManager.GetRolesAsync(user);
+            return new AuthResponse
+            {
+                Success = true,
+                Message = "Contraseña cambiada.",
+                Token = _jwtTokenGenerator.GenerateToken(user, roles),
+                UserId = user.Id,
+                Email = user.Email,
+                FullName = user.FullName,
+                Role = roles.FirstOrDefault()
+            };
         }
     }
 }

@@ -17,6 +17,8 @@ namespace SIGENRD.Infrastructure.Identity.JWT
             _credentials = keys.SigningCredentials; // RS256 con la llave privada
         }
 
+        public const string MustChangePasswordClaim = "pwd_change";
+
         public string GenerateToken(ApplicationUser user, IList<string> roles)
         {
             var claims = new List<Claim>
@@ -27,6 +29,10 @@ namespace SIGENRD.Infrastructure.Identity.JWT
                 new Claim("UserType", user.UserType.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            // Contraseña temporal: la API solo deja cambiarla (MustChangePasswordMiddleware) y el frontend lleva a ese formulario.
+            if (user.MustChangePassword)
+                claims.Add(new Claim(MustChangePasswordClaim, "true"));
 
             // Agregar roles
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
