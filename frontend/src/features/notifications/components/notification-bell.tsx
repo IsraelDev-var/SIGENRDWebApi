@@ -36,8 +36,8 @@ export function NotificationBell({ href }: { href: string }) {
           <span
             aria-hidden="true"
             className={cn(
-              "absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1",
-              "text-[10px] leading-none font-semibold text-white tabular-nums",
+              "absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1",
+              "text-[10px] leading-none font-semibold text-primary-foreground tabular-nums",
             )}
           >
             {count > 99 ? "99+" : count}

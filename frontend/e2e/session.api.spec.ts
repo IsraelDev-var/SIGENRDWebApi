@@ -133,7 +133,8 @@ test("cliente: completa su perfil en el primer ingreso", async ({ page }) => {
 
   await page.getByRole("link", { name: "Mi perfil" }).first().click();
   await expect(page.getByText("001-1234567-8")).toBeVisible();
-  await expect(page.getByText("809-555-0101")).toBeVisible();
+  // Desde F9 el contacto se edita en el perfil: el teléfono es el valor del campo.
+  await expect(page.getByLabel("Teléfono (opcional)")).toHaveValue("809-555-0101");
 });
 
 test("el cliente envía una solicitud y cualquiera la sigue con el número de expediente (RF-14)", async ({ page, request }) => {

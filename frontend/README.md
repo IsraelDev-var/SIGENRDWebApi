@@ -31,7 +31,12 @@ Si el puerto 3000 está ocupado, `PORT=3100 pnpm e2e`.
   `/gestion` para Ingeniero, Distribuidora y Admin) e inicio de cada rol. `permissions.test.ts` la compara fila por fila con el documento.
 - **Protección en tres capas:** `src/proxy.ts` (optimista: redirige a `/ingresar` o responde 403 con `/sin-acceso`),
   `requireZone()` en cada página privada y, siempre, la API.
-- Cerrar sesión borra la cookie. La API no revoca JWT: el token deja de usarse pero sigue vigente hasta que vence (60 min).
+- Cerrar sesión borra la cookie. Si la API responde 401 con un token (venció o un administrador desactivó la cuenta),
+  `server/api-client.ts` lleva a `/sesion-expirada`, que borra la cookie y vuelve a `/ingresar` con aviso. Cinco minutos
+  antes de que venza el JWT (60 min, sin renovación) se avisa en las zonas privadas.
+- **Contraseña temporal:** un usuario interno creado por el administrador entra con la contraseña que este eligió. El
+  token trae `pwd_change`: el proxy y `requireZone()` llevan a `/cambiar-contrasena` y la API rechaza todo lo demás.
+  Cualquier usuario puede cambiar su contraseña desde el menú de la sesión.
 - En la API, `App:EmailConfirmationUrl` y `App:PasswordResetUrl` deben apuntar a `/confirmar-correo` y `/restablecer` de este sitio.
 - **IP del usuario:** como las llamadas a la API salen de este servidor, la API vería una sola IP para todos y su límite
   por IP (ingreso, seguimiento) se aplicaría al sitio entero. `server/api-client.ts` y el proxy del mapa reenvían la IP
@@ -49,8 +54,40 @@ docker run -d --rm --name energymap-test-pg -e POSTGRES_PASSWORD=test-only-pass 
 ENERGYMAP_E2E_DB="Host=127.0.0.1;Port=5434;Username=postgres;Password=test-only-pass" pnpm e2e
 ```
 
-En Windows, si una prueba falla y Playwright la reintenta (modo CI), el proceso puede terminar sin el resumen.
-Para ver el reporte completo, ejecuta sin reintentos: `CI=1 pnpm exec playwright test --retries=0`.
+Los proyectos de Playwright que usan la API van en orden porque comparten usuarios de prueba: `con-api` (primer
+ingreso, sesión, mapa, seguimiento), `con-api-solicitudes` (solicitudes, simulaciones, gestión, administración) y
+`con-api-cierre` (cuenta: cambia la contraseña y desactiva usuarios, así que va solo y al final).
+
+- `CI=1` prueba el build de producción (`pnpm build` antes): sirve si hay un `pnpm dev` abierto en la misma carpeta.
+- `E2E_API_CONFIGURATION=Release` levanta la API en Release: sirve si hay una API en Debug corriendo (bloquea sus binarios).
+- En Windows, si una prueba falla y Playwright la reintenta (modo CI), el proceso puede terminar sin el resumen.
+  Para ver el reporte completo, ejecuta sin reintentos: `CI=1 pnpm exec playwright test --retries=0`.
+
+## Seguridad del navegador
+
+- **Content Security Policy con nonce:** `src/proxy.ts` genera un nonce por petición y la política de
+  `src/config/security.ts` (scripts solo con ese nonce y `'strict-dynamic'`, sin `unsafe-inline` ni `unsafe-eval` en
+  producción; sin marcos; formularios solo hacia el sitio). Por eso todas las páginas se renderizan por petición
+  (`connection()` en el layout raíz). Si cambia el proveedor del mapa base (D-2), se actualiza `MAP_ORIGINS`.
+- **Otras cabeceras** en `next.config.ts`: `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`,
+  `Cross-Origin-Opener-Policy` y HSTS en producción. Sin `X-Powered-By`.
+- Los estilos en línea están permitidos: MapLibre y Recharts usan atributos `style`, que no admiten nonce.
+
+## Módulos
+
+| Feature | Qué cubre |
+|---|---|
+| `auth` | Ingreso, registro, recuperación, perfil (alta y edición), cambio de contraseña, aviso de sesión |
+| `map` | Mapa público, filtros, búsqueda, detalle del transformador |
+| `requests` | Asistente de solicitud (borrador, D-4), expediente, documentos, acciones del solicitante |
+| `simulations` | Simulador de medición neta, resultado, comparación, PDF |
+| `management` | Bandeja y revisión del personal, red de transformadores (B-3, importación CSV), instaladoras |
+| `reports` | Estadísticas, ranking, zonas críticas, exportación |
+| `administration` | Usuarios internos (B-5) y auditoría |
+| `notifications` | Campana y lista de notificaciones |
+
+Documentación de arquitectura, seguridad, pruebas e integración en [`docs/frontend/`](../docs/frontend/) y decisiones en
+[`docs/adr/`](../docs/adr/).
 
 ## Contrato con la API
 

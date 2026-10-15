@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Public_Sans } from "next/font/google";
+import { connection } from "next/server";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -27,7 +28,11 @@ export const metadata: Metadata = {
   description: "Disponibilidad eléctrica de los transformadores de distribución en República Dominicana.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Todas las páginas se renderizan por petición: la Content Security Policy lleva un nonce nuevo cada vez (proxy.ts) y
+  // una página prerenderizada no lo tendría en sus scripts.
+  await connection();
+
   return (
     <html lang="es-DO" className={`${publicSans.variable} ${plexMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
