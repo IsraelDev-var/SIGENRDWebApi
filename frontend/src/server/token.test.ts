@@ -51,6 +51,11 @@ describe("verificación del token de la API", () => {
     expect(user?.role).toBe("Distributor");
   });
 
+  it("lee la marca de contraseña temporal (pwd_change) y por defecto no la tiene", async () => {
+    expect((await verifyAccessToken(await token(), settings))?.mustChangePassword).toBe(false);
+    expect((await verifyAccessToken(await token({ claims: { role: "Engineer", pwd_change: "true" } }), settings))?.mustChangePassword).toBe(true);
+  });
+
   it("acepta el rol como lista", async () => {
     const user = await verifyAccessToken(await token({ claims: { role: ["Admin"] } }), settings);
     expect(user?.role).toBe("Admin");

@@ -14,6 +14,8 @@ export type SessionUser = {
   role: Role;
   /** Expiración del token, en milisegundos desde 1970. */
   expiresAt: number;
+  /** Contraseña temporal puesta por un administrador: la API solo deja cambiarla (claim pwd_change). */
+  mustChangePassword: boolean;
 };
 
 export type TokenSettings = {
@@ -66,6 +68,7 @@ export async function verifyAccessToken(token: string | undefined, settings: Tok
       fullName: typeof payload.FullName === "string" ? payload.FullName : "",
       role,
       expiresAt: payload.exp * 1000,
+      mustChangePassword: payload.pwd_change === "true",
     };
   } catch {
     return null;

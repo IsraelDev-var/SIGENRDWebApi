@@ -11,7 +11,10 @@ import { ApiError, apiData, apiRequest } from "@/server/api-client";
 import { createSession, deleteSession, getSession } from "@/server/session";
 
 import {
+  changePasswordSchema,
   customerProfileSchema,
+  editCustomerProfileSchema,
+  editInstallerCompanySchema,
   forgotPasswordSchema,
   installerCompanySchema,
   loginSchema,
@@ -22,7 +25,7 @@ import {
 
 type AuthResponse = components["schemas"]["AuthResponse"];
 
-const SECRET_FIELDS = new Set(["password", "confirmPassword"]);
+const SECRET_FIELDS = new Set(["password", "confirmPassword", "currentPassword"]);
 
 function formValues(formData: FormData): Record<string, string> {
   const values: Record<string, string> = {};
@@ -70,6 +73,9 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
   if (!user) {
     return { status: "error", message: "No pudimos iniciar la sesión. Inténtalo de nuevo.", values: formValues(formData) };
   }
+
+  // Contraseña temporal (alta por un administrador): primero se cambia.
+  if (response.mustChangePassword) redirect("/cambiar-contrasena");
 
   // Vuelve a la página pedida solo si es interna y el rol puede entrar en ella.
   const home = homeFor(user.role);
@@ -204,4 +210,78 @@ export async function registerInstallerCompanyAction(_prev: FormState, formData:
 
   revalidatePath("/portal", "layout");
   redirect("/portal");
+}
+
+/** Cambio de contraseña con la sesión iniciada; obligatorio con la contraseña temporal. La API devuelve un token nuevo. */
+export async function changePasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const session = await getSession();
+  if (!session) redirect("/ingresar?next=/cambiar-contrasena");
+
+  const parsed = changePasswordSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+  if (!parsed.success) return invalid(parsed.error, formData);
+
+  let response: AuthResponse;
+  try {
+    response = await apiRequest<AuthResponse>("/Auth/change-password", {
+      method: "POST",
+      body: { currentPassword: parsed.data.currentPassword, newPassword: parsed.data.password },
+      token: session.token,
+    });
+  } catch (error) {
+    return failed(error, formData);
+  }
+
+  const user = response.token ? await createSession(response.token) : null;
+  if (!user) return { status: "error", message: "La contraseña cambió, pero no pudimos renovar la sesión. Ingresa de nuevo." };
+  redirect(`${homeFor(user.role)}?clave=1`);
+}
+
+/** Editar el perfil del cliente (B-6): nombre y contacto. */
+export async function updateCustomerProfileAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const session = await getSession();
+  if (!session || session.role !== "Customer") redirect("/ingresar?next=/portal/perfil");
+
+  const parsed = editCustomerProfileSchema.safeParse({
+    fullName: formData.get("fullName"),
+    email: formData.get("email") ?? "",
+    phone: formData.get("phone") ?? "",
+    address: formData.get("address") ?? "",
+  });
+  if (!parsed.success) return invalid(parsed.error, formData);
+
+  try {
+    await apiData("/Customers/me", { method: "PUT", body: parsed.data, token: session.token });
+  } catch (error) {
+    return failed(error, formData);
+  }
+
+  revalidatePath("/portal/perfil");
+  return { status: "success", message: "Perfil actualizado.", values: formValues(formData) };
+}
+
+/** Editar los datos de la empresa instaladora (B-6). El RNC no cambia. */
+export async function updateInstallerCompanyAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const session = await getSession();
+  if (!session || session.role !== "InstallerCompany") redirect("/ingresar?next=/portal/perfil");
+
+  const parsed = editInstallerCompanySchema.safeParse({
+    tradeName: formData.get("tradeName"),
+    contactEmail: formData.get("contactEmail") ?? "",
+    contactPhone: formData.get("contactPhone") ?? "",
+    address: formData.get("address") ?? "",
+  });
+  if (!parsed.success) return invalid(parsed.error, formData);
+
+  try {
+    await apiData("/InstallerCompanies/me", { method: "PUT", body: parsed.data, token: session.token });
+  } catch (error) {
+    return failed(error, formData);
+  }
+
+  revalidatePath("/portal/perfil");
+  return { status: "success", message: "Datos de la empresa actualizados.", values: formValues(formData) };
 }

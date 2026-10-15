@@ -75,6 +75,21 @@ export const installerCompanySchema = z.object({
   address: optionalText(250, "Máximo 250 caracteres."),
 });
 
+// UpdateMyCustomerProfileValidator: la cédula o el RNC no se editan.
+export const editCustomerProfileSchema = customerProfileSchema.pick({ fullName: true, email: true, phone: true, address: true });
+
+// UpdateMyInstallerCompanyValidator: el RNC no se edita.
+export const editInstallerCompanySchema = installerCompanySchema.pick({ tradeName: true, contactEmail: true, contactPhone: true, address: true });
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Escribe tu contraseña actual."),
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, { path: ["confirmPassword"], message: "Las contraseñas no coinciden." })
+  .refine((v) => v.password !== v.currentPassword, { path: ["password"], message: "La contraseña nueva debe ser distinta de la actual." });
+
 /** Resultado de un formulario enviado con una Server Action. */
 export type FormState = {
   status: "idle" | "error" | "success";

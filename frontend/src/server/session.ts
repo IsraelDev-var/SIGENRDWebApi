@@ -56,6 +56,7 @@ export async function deleteSession(): Promise<void> {
 export async function requireZone(zone: Zone, currentPath: string): Promise<Session> {
   const session = await getSession();
   if (!session) redirect(`/ingresar?next=${encodeURIComponent(currentPath)}`);
+  if (session.mustChangePassword) redirect("/cambiar-contrasena");
   if (!canEnterZone(session.role, zone)) redirect("/sin-acceso");
   return session;
 }

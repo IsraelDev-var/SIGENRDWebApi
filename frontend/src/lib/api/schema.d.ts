@@ -136,6 +136,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/Auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ChangePasswordRequest"];
+                    "text/json": components["schemas"]["ChangePasswordRequest"];
+                    "application/*+json": components["schemas"]["ChangePasswordRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AuthResponse"];
+                        "application/json": components["schemas"]["AuthResponse"];
+                        "text/json": components["schemas"]["AuthResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Auth/login": {
         parameters: {
             query?: never;
@@ -1153,7 +1196,34 @@ export interface paths {
                 };
             };
         };
-        put?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateMyCustomerProfileCommand"];
+                    "text/json": components["schemas"]["UpdateMyCustomerProfileCommand"];
+                    "application/*+json": components["schemas"]["UpdateMyCustomerProfileCommand"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CustomerProfileDtoResponse"];
+                        "application/json": components["schemas"]["CustomerProfileDtoResponse"];
+                        "text/json": components["schemas"]["CustomerProfileDtoResponse"];
+                    };
+                };
+            };
+        };
         post: {
             parameters: {
                 query?: never;
@@ -1254,7 +1324,34 @@ export interface paths {
                 };
             };
         };
-        put?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateMyInstallerCompanyCommand"];
+                    "text/json": components["schemas"]["UpdateMyInstallerCompanyCommand"];
+                    "application/*+json": components["schemas"]["UpdateMyInstallerCompanyCommand"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InstallerCompanyDtoResponse"];
+                        "application/json": components["schemas"]["InstallerCompanyDtoResponse"];
+                        "text/json": components["schemas"]["InstallerCompanyDtoResponse"];
+                    };
+                };
+            };
+        };
         post: {
             parameters: {
                 query?: never;
@@ -2492,11 +2589,16 @@ export interface components {
             success: boolean;
             message?: string | null;
             isDeactivated: boolean;
+            mustChangePassword: boolean;
         };
         CancelRequestCommand: {
             /** Format: int32 */
             id: number;
             comment?: string | null;
+        };
+        ChangePasswordRequest: {
+            currentPassword: string;
+            newPassword: string;
         };
         ConnectionRequestResponseDto: {
             /** Format: int32 */
@@ -3368,6 +3470,18 @@ export interface components {
             netMetering?: components["schemas"]["NetMeteringDetailsInput"];
             /** Format: int32 */
             id: number;
+        };
+        UpdateMyCustomerProfileCommand: {
+            fullName: string;
+            email?: string | null;
+            phone?: string | null;
+            address?: string | null;
+        };
+        UpdateMyInstallerCompanyCommand: {
+            tradeName: string;
+            contactEmail?: string | null;
+            contactPhone?: string | null;
+            address?: string | null;
         };
         UpdateTransformerCapacityCommand: {
             /** Format: int32 */

@@ -24,6 +24,8 @@ export async function proxy(request: NextRequest) {
       login.searchParams.set("next", pathname + search);
       return NextResponse.redirect(login);
     }
+    // Contraseña temporal: la API no responde a nada más hasta cambiarla.
+    if (user.mustChangePassword) return NextResponse.redirect(new URL("/cambiar-contrasena", request.url));
     if (!canEnterZone(user.role, zone)) {
       // Se queda la URL pedida y se responde 403 con la página de acceso denegado.
       return NextResponse.rewrite(new URL("/sin-acceso", request.url), { status: 403 });

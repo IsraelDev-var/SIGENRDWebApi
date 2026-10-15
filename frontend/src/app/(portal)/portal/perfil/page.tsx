@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/shared/page-header";
-import { CustomerProfileForm, getApplicantProfile, InstallerCompanyForm, isInstallerValidated } from "@/features/auth";
+import Link from "next/link";
+
+import {
+  CustomerProfileForm,
+  EditCustomerProfileForm,
+  EditInstallerCompanyForm,
+  getApplicantProfile,
+  InstallerCompanyForm,
+  isInstallerValidated,
+} from "@/features/auth";
 import { requireZone } from "@/server/session";
 
 export const metadata: Metadata = { title: "Mi perfil" };
@@ -37,32 +46,37 @@ export default async function ProfilePage() {
     );
   }
 
-  // Editar el perfil (RF-09) espera el endpoint de la API: por ahora solo se consulta.
+  // B-6 (RF-09): nombre y contacto se editan; lo que identifica al titular o a la empresa lo cambia la distribuidora.
   return (
     <div className="grid max-w-2xl gap-6">
-      <PageHeader title="Mi perfil" description="La edición de estos datos llega en una próxima entrega." />
+      <PageHeader title="Mi perfil" description="Mantén al día tus datos de contacto: Edesur los usa para avisarte de tus trámites." />
       <dl className="grid gap-3 rounded-lg border bg-card p-4">
         {applicant.kind === "customer" && applicant.profile && (
           <>
-            <Detail label="Titular" value={applicant.profile.fullName} />
             <Detail label="Cédula o RNC" value={applicant.profile.nationalIdOrRnc} />
             <Detail label="Tipo" value={applicant.profile.isLegalEntity ? "Persona jurídica" : "Persona física"} />
-            <Detail label="Correo" value={applicant.profile.email} />
-            <Detail label="Teléfono" value={applicant.profile.phone} />
-            <Detail label="Dirección" value={applicant.profile.address} />
           </>
         )}
         {applicant.kind === "installer" && applicant.company && (
           <>
-            <Detail label="Empresa" value={applicant.company.tradeName} />
             <Detail label="RNC" value={applicant.company.rnc} />
             <Detail label="Validación" value={isInstallerValidated(applicant.company) ? "Validada por Edesur" : "Pendiente de validación"} />
-            <Detail label="Correo" value={applicant.company.contactEmail} />
-            <Detail label="Teléfono" value={applicant.company.contactPhone} />
-            <Detail label="Dirección" value={applicant.company.address} />
           </>
         )}
       </dl>
+      <p className="-mt-4 text-sm text-muted-foreground">Para corregir estos datos, pídelo a Edesur: identifican al titular y deciden los documentos.</p>
+      <section aria-labelledby="editar" className="grid gap-4 rounded-lg border bg-card p-4">
+        <h2 id="editar" className="font-semibold">
+          Datos de contacto
+        </h2>
+        {applicant.kind === "customer" && applicant.profile && <EditCustomerProfileForm profile={applicant.profile} />}
+        {applicant.kind === "installer" && applicant.company && <EditInstallerCompanyForm company={applicant.company} />}
+      </section>
+      <p className="text-sm">
+        <Link href="/cambiar-contrasena" className="text-link underline underline-offset-4 hover:no-underline">
+          Cambiar la contraseña
+        </Link>
+      </p>
     </div>
   );
 }
