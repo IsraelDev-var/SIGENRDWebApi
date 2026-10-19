@@ -1,11 +1,12 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import { AvailabilityValue } from "./availability-value";
 import { CapacityMeter } from "./capacity-meter";
 import { KvaValue } from "./kva-value";
 import { LastUpdated } from "./last-updated";
 import { RequestStatusBadge } from "./request-status-badge";
+import { RouteError } from "./route-error";
 import { TransformerStatusBadge } from "./transformer-status-badge";
 
 describe("TransformerStatusBadge", () => {
@@ -96,5 +97,23 @@ describe("AvailabilityValue", () => {
   it("en los demás estados muestra el porcentaje de la API", () => {
     render(<AvailabilityValue pct={-4} status="Saturated" />);
     expect(screen.getByText("-4.0 %")).toBeInTheDocument();
+  });
+});
+
+describe("RouteError", () => {
+  it("muestra el código de referencia, no el mensaje del error, y reintenta", () => {
+    const retry = vi.fn();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = Object.assign(new Error("detalle interno de la API"), { digest: "1498288179" });
+
+    render(<RouteError error={error} retry={retry} homeHref="/portal" homeLabel="Ir al inicio del portal" />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("No pudimos cargar esta página");
+    expect(screen.getByText("Código de referencia: 1498288179")).toBeInTheDocument();
+    expect(screen.queryByText(/detalle interno/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ir al inicio del portal" })).toHaveAttribute("href", "/portal");
+
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(retry).toHaveBeenCalledOnce();
   });
 });

@@ -70,7 +70,7 @@ ingreso, sesión, mapa, seguimiento), `con-api-solicitudes` (solicitudes, simula
   producción; sin marcos; formularios solo hacia el sitio). Por eso todas las páginas se renderizan por petición
   (`connection()` en el layout raíz). Si cambia el proveedor del mapa base (D-2), se actualiza `MAP_ORIGINS`.
 - **Otras cabeceras** en `next.config.ts`: `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`,
-  `Cross-Origin-Opener-Policy` y HSTS en producción. Sin `X-Powered-By`.
+  `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy` y HSTS en producción. Sin `X-Powered-By`.
 - Los estilos en línea están permitidos: MapLibre y Recharts usan atributos `style`, que no admiten nonce.
 
 ## Módulos

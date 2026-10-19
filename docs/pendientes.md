@@ -1,58 +1,58 @@
 # Pendientes
 
-Lo que falta para terminar EnergyMap, actualizado el 2026-10-12. Al cerrar un punto, se borra de aquí y queda en el historial de git.
+Lo que falta para terminar EnergyMap, actualizado el 2026-10-17. Al cerrar un punto, se borra de aquí y queda en el historial de git. Cada punto lleva la recomendación acordada para resolverlo.
 
 ## Desarrollo
 
-| Pendiente | Requisito | Notas |
+| Pendiente | Requisito | Recomendación |
 |---|---|---|
-| Repetir las pruebas de carga en Azure | Fase 7 | Las de [carga.md](carga.md) son locales; falta medir con la red, la base y el almacenamiento reales |
-| Frontend (Next.js) | Todas las pantallas | F0 a F8 (fundaciones, Design System, sesión y permisos, mapa público, seguimiento y requisitos, solicitudes, simulador, gestión de solicitudes y red, reportes y administración) hechos en `frontend/`; sigue F9 (cierre) según la propuesta aprobada. La API ya tiene CORS por configuración para el origen del frontend |
-| Configurar `App:EmailConfirmationUrl` y `App:PasswordResetUrl` de la API hacia `/confirmar-correo` y `/restablecer` del frontend | F2 | Sin ellas, el correo de confirmación sigue apuntando a la API |
-| Búsqueda por dirección en el mapa | RF-04, D-3 | Funciona por código y por coordenadas; falta elegir el geocodificador |
-| Proveedor del mapa base en producción | D-2 | En desarrollo se usa CARTO; definir teselas propias (PMTiles) o un proveedor con contrato |
-| Editar el perfil | RF-09 | Datos del usuario, cliente e instaladora |
-| Tokens de refresco | Seguridad | Hoy el JWT dura 60 minutos y luego hay que iniciar sesión otra vez |
-| Cerrar la sesión del navegador cuando la API responde 401 | F8, seguridad | Con una cuenta desactivada la API rechaza al instante, pero la cookie de Next sigue hasta que vence el JWT y la página muestra error de carga |
-| Obligar a cambiar la contraseña temporal del usuario interno en el primer ingreso | F8 | Hoy el administrador la comunica por otro canal y la persona puede usar "Olvidé mi contraseña" |
-| Persistir las llaves de Data Protection | Operación | Sin esto, al reiniciar el contenedor o con varias instancias dejan de servir los enlaces de confirmación y de restablecimiento pendientes |
-| Confirmar en Azure qué IP agrega App Service a `X-Forwarded-For` delante del frontend | F4, seguridad | El frontend toma la última entrada (`ENERGYMAP_TRUSTED_PROXIES=1`) y la reenvía a la API con `TrustedProxy:Key`. Si hay otro proxy delante (Front Door), subir a 2 |
-| Limpiar borradores abandonados | D-4 | Un borrador no reserva capacidad ni avisa a nadie, pero se acumula. Definir a los N días se descartan (tarea programada) |
-| Vincular a una cuenta el cliente que registró una instaladora | B-11 | Hoy, si el titular crea su cuenta después, el perfil le pide pedir la vinculación a Edesur; falta la pantalla o endpoint de Edesur/Admin para hacerlo |
-| Cédulas con formatos distintos para el mismo titular | B-11 | La búsqueda normaliza guiones y espacios, pero el índice único guarda el texto como se escribió: dos formatos podrían crear dos clientes si se esquiva la búsqueda |
-| Actualizar RN-12 en el documento de análisis con el estado Borrador | D-4 | Borrador → Recibida (enviar) y Borrador → Cancelada (descartar) |
+| Persistir las llaves de Data Protection | Operación | En producción, `PersistKeysToAzureBlobStorage` + `ProtectKeysWithAzureKeyVault` (los dos servicios ya existen). Sin esto, al reiniciar o con varias instancias dejan de servir los enlaces de confirmación y de restablecimiento pendientes |
+| Validar al arrancar `App:EmailConfirmationUrl` y `App:PasswordResetUrl` | F2 | Definirlas como variables del App Service hacia `/confirmar-correo` y `/restablecer` del frontend, y que la API no arranque en producción si faltan (evita correos con enlaces a localhost) |
+| Tokens de refresco | Seguridad | No hacerlos en la Fase I: con el BFF, la cookie httpOnly y `/sesion-expirada`, los 60 minutos de sesión son seguros. Si se piden, refresh token rotativo en la base, de un solo uso, revocado al cerrar sesión o desactivar la cuenta |
+| Búsqueda por dirección en el mapa | RF-04, D-3 | Nominatim desde el BFF, con caché y respetando 1 petición/s; detrás de una interfaz para cambiar luego a MapTiler o Azure Maps si crece el tráfico |
+| Proveedor del mapa base en producción | D-2 | MapTiler (plan gratuito) para la entrega; a largo plazo, PMTiles propios en Blob (sin dependencia externa, pero hay que generar y actualizar las teselas). En desarrollo se usa CARTO |
+| Limpiar borradores abandonados | D-4 | `BackgroundService` diario, igual al despachador del outbox: descarta los borradores con 30 días sin cambios (valor configurable) y avisa al dueño 7 días antes |
+| Cédulas con formatos distintos para el mismo titular | B-11 | Columna `DocumentNumberNormalized` (solo dígitos) con el índice único sobre ella, llenada por la migración; revisar antes si ya hay duplicados |
+| Vincular a una cuenta el cliente que registró una instaladora | B-11 | `POST /customers/{id}/link-account` para Distribuidora y Admin, con pantalla en gestión; solo si la cédula del perfil coincide con la de la cuenta, y queda en la auditoría |
+| Repetir las pruebas de carga en Azure | Fase 7 | Los mismos scripts de k6 de [carga.md](carga.md) contra un ambiente de prueba con la base en su plan real; lo que importa es el p95 < 2 s con la red real |
+| Frontend (Next.js) | Todas las pantallas | F0 a F8 fusionadas; F9 (cierre) terminada en la rama `f9-cierre`, con F9-02 corregido; falta fusionarla a master |
+| Desplegar el frontend (F9-01) | Despliegue | `output: "standalone"`, Dockerfile de varias etapas con usuario sin privilegios, job en `cd.yml` hacia App Service y tabla de variables `ENERGYMAP_*` en [despliegue.md](despliegue.md) |
+| Reducir el JavaScript inicial (F9-03) | Rendimiento | Hoy 282 KB comprimidos en `/ingresar` (meta 170 KB). Analizar los fragmentos y cargar de forma diferida lo que no usan todas las páginas; Lighthouse CI con presupuesto por ruta |
+| Esperar 250 ms antes de pedir datos del mapa (F9-04) | Rendimiento | `viewport-watcher.tsx` emite en cada `moveend`; al redimensionar salen varias peticiones seguidas |
+| `pnpm.overrides` de `handlebars >=4.7.10` (F9-05) | Seguridad | Solo herramientas de desarrollo (plugins de ESLint); producción sin vulnerabilidades |
+| Prueba con lector de pantalla (NVDA) y proyecto de Playwright con WebKit (F9-10) | Accesibilidad | Pedido en la propuesta de la F9; hoy solo axe, Lighthouse y Chromium |
+| Actualizar RN-12 en el documento de análisis con el estado Borrador | D-4 | Solo documentación: Borrador → Recibida (enviar) y Borrador → Cancelada (descartar) en el análisis v1.2 |
 
 ## Pospuesto por decisión (esperan a Edesur)
 
-| Pendiente | Requisito |
-|---|---|
-| Plazo de 20 días de la Carta de Evaluación y escalamiento | FUN-02 |
-| Retiro automático a los 30 días sin corrección | FUN-02 |
-| Etapas finales: acuerdo firmado, póliza, prueba de aceptación, "Completada" | FUN-02 |
+| Pendiente | Requisito | Recomendación |
+|---|---|---|
+| Plazo de 20 días de la Carta de Evaluación y escalamiento | FUN-02 | No programarlo todavía. Preguntar a Edesur: ¿días hábiles o naturales?, ¿a quién se escala? |
+| Retiro automático a los 30 días sin corrección | FUN-02 | Preguntar qué pasa con la reserva de capacidad al retirar la solicitud |
+| Etapas finales: acuerdo firmado, póliza, prueba de aceptación, "Completada" | FUN-02 | Pedir el formato del acuerdo y de la póliza, y quién registra la prueba de aceptación |
 
 ## Decisiones pendientes
 
-### Cómo llegan a EnergyMap los datos de Edesur si no hay API JSON
+### Datos de Edesur sin API JSON
 
-**Regla base:** EnergyMap nunca consulta a Edesur en cada petición de usuario. Nuestra base de datos responde siempre y Edesur solo la alimenta cada cierto tiempo: capacidad nominal al cambiar o una vez al mes, carga medida una vez al día y tarifa BTS-1 cada trimestre. Las reservas de capacidad son de EnergyMap y ninguna importación las toca.
+**Regla base:** EnergyMap nunca consulta a Edesur en cada petición de usuario. Nuestra base de datos responde siempre y Edesur solo la alimenta cada cierto tiempo: capacidad nominal al cambiar o una vez al mes, carga medida una vez al día y tarifa BTS-1 cada trimestre. Las reservas de capacidad son de EnergyMap y ninguna importación las toca. La disponibilidad se calcula siempre en EnergyMap: capacidad − carga − reservas activas.
 
-| Opción | Valoración |
-|---|---|
-| Archivo con plantilla fija (CSV o Excel) que sube la Distribuidora (`POST /transformers/import`), o que se deja en SFTP o Blob y se procesa de noche | **Recomendada para la Fase I** |
-| Ingreso manual (lo que ya existe) | Respaldo y correcciones puntuales |
-| XML o SOAP, si es lo que tiene Edesur | Viable con un adaptador más |
-| Extraer los datos de su web (scraping) | No recomendada: se rompe con cada cambio de la página, puede violar sus términos de uso y la capacidad no suele publicarse |
+**Lo que ya existe:** importación por CSV (`POST /api/v1/Transformers/import`, máximo 5 MB, pantalla `/gestion/transformadores/importar`) y el alta y edición manual por la Distribuidora.
 
-**Diseño propuesto:** una interfaz `IDistributorDataSource` con una implementación por formato. El proceso valida fila por fila y guarda los datos en una tabla de staging junto con un `ImportBatch` (autor, fecha, hash del archivo y filas correctas o con error). Luego compara con lo actual, aplica los cambios en una transacción e invalida la caché del mapa.
+**Mejoras recomendadas a la importación:**
 
-- Idempotencia por hash: un archivo repetido no se procesa otra vez.
-- Si la carga falla, se siguen sirviendo los últimos datos buenos, se avisa al administrador y el mapa muestra "Datos actualizados al <fecha>".
-- La disponibilidad se calcula siempre en EnergyMap: capacidad − carga − reservas activas.
+- Guardar el hash del archivo: un archivo repetido no se procesa otra vez.
+- Registrar cada carga en un `ImportBatch` (autor, fecha, hash, filas correctas y con error).
+- Mostrar en el mapa "Datos actualizados al <fecha>"; si una carga falla, se siguen sirviendo los últimos datos buenos y se avisa al administrador.
+- Si Edesur entrega otro formato (Excel, XML o SOAP): un adaptador más detrás de una interfaz `IDistributorDataSource`, sin tocar el resto.
 - Si Edesur ofrece una API más adelante: preguntar con `If-Modified-Since` o `ETag` antes de descargar, con reintentos con espera y *circuit breaker* (`Microsoft.Extensions.Http.Resilience`).
+- No extraer los datos de su web (scraping): se rompe con cada cambio de la página, puede violar sus términos de uso y la capacidad no suele publicarse.
 
-**Preguntas para Edesur:** qué formato pueden exportar (CSV, Excel, XML o una vista de su base de datos), cada cuánto, si pueden dejar los archivos de forma automática y qué identificador único usan para cada transformador (sin él no se pueden comparar los datos sin crear duplicados).
+**Preguntas para Edesur:** qué formato pueden exportar (CSV, Excel, XML o una vista de su base de datos), cada cuánto, si pueden dejar los archivos de forma automática (SFTP o Blob) y qué identificador único usan para cada transformador (sin él no se pueden comparar los datos sin crear duplicados).
 
 ## A confirmar con Edesur o la SIE
+
+Todos ya son configurables. Recomendación: reunir estas preguntas en un solo documento para Edesur y la SIE, y poner un recordatorio trimestral para la tarifa BTS-1.
 
 | Supuesto | Dónde se usa | Valor provisional |
 |---|---|---|
@@ -67,10 +67,11 @@ Lo que falta para terminar EnergyMap, actualizado el 2026-10-12. Al cerrar un pu
 
 ## Acciones del equipo (fuera del código)
 
-| Acción | Prioridad |
-|---|---|
-| Revocar la contraseña de aplicación de Gmail que quedó en el historial público del repositorio | **Crítica** |
-| Crear y configurar Azure: base con PostGIS y `pg_trgm`, Storage, Key Vault, variables de entorno | Antes de desplegar |
-| Activar Microsoft Defender for Storage (escaneo de malware al subir documentos) | Recomendada |
-| Programar el respaldo diario y hacer un simulacro de restauración en el servidor real | Antes de producción |
-| Configurar las alertas de [observabilidad.md](observabilidad.md) | Antes de producción |
+| Acción | Prioridad | Recomendación |
+|---|---|---|
+| Revocar la contraseña de aplicación de Gmail que quedó en el historial público del repositorio | **Crítica** | Revocarla en la cuenta de Google y crear una nueva solo en User Secrets o Key Vault. No hace falta reescribir el historial: ya pudo copiarse, lo único que la invalida es revocarla |
+| Confirmar en Azure qué IP agrega App Service a `X-Forwarded-For` delante del frontend | Antes de desplegar | Comprobarlo con una petición real en el ambiente de prueba. App Service solo: `ENERGYMAP_TRUSTED_PROXIES=1`; con Front Door delante: 2. De esto depende el límite de peticiones por IP |
+| Crear y configurar Azure: base con PostGIS y `pg_trgm`, Storage, Key Vault, variables de entorno | Antes de desplegar | PostgreSQL Flexible Server con las extensiones habilitadas en `azure.extensions` (si no, fallan las migraciones). Ideal como Bicep; a mano siguiendo [despliegue.md](despliegue.md) basta para la entrega |
+| Programar el respaldo diario y hacer un simulacro de restauración en el servidor real | Antes de producción | Flexible Server ya respalda a diario: subir la retención a 14–35 días y restaurar una vez en otro servidor para comprobarlo |
+| Configurar las alertas de [observabilidad.md](observabilidad.md) | Antes de producción | Empezar con tres: `/health` caído, errores 5xx > 1 % y CPU de la base > 80 % |
+| Activar Microsoft Defender for Storage | Recomendada | Solo en la cuenta de documentos, con escaneo al subir |
