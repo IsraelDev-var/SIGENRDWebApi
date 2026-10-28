@@ -20,7 +20,7 @@ export const hasApi = !!process.env.ENERGYMAP_E2E_DB;
 export async function login(page: Page, role: TestRole, path = "/ingresar") {
   await page.goto(path);
   await page.getByLabel("Correo").fill(TEST_USERS[role]);
-  await page.getByLabel("Contraseña").fill(E2E_TEST_PASSWORD);
+  await page.getByLabel("Contraseña", { exact: true }).fill(E2E_TEST_PASSWORD);
   await page.getByRole("button", { name: "Ingresar" }).click();
   // Espera a que la sesión quede creada y la página cambie.
   await page.waitForURL((url) => url.pathname !== "/ingresar");
