@@ -17,8 +17,10 @@ const COLUMNS = [
 
 /** Carga masiva desde la plantilla CSV (todo o nada): si una fila falla no se importa ninguna. */
 export default async function ImportTransformersPage() {
-  await requireAction("gestion", "/gestion/transformadores/importar", "manageCatalogs");
-  const [zones, distributors] = await Promise.all([listZones(), listDistributors()]);
+  const session = await requireAction("gestion", "/gestion/transformadores/importar", "manageCatalogs");
+  const [zones, all] = await Promise.all([listZones(), listDistributors()]);
+  // El personal de una EDE solo carga en la suya (la API lo impone igual); el administrador elige.
+  const distributors = session.distributorId ? all.filter((d) => d.id === session.distributorId) : all;
 
   return (
     <div className="grid max-w-3xl gap-6">
