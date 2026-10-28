@@ -18,13 +18,29 @@ public class UserAdministrationTests(ApiFactory api)
         return doc.RootElement.GetProperty("data").Clone();
     }
 
-    /// <summary>Un usuario interno nuevo, dado de alta por el administrador y con el correo confirmado.</summary>
+    private const string TemporaryPassword = "Temporal-Admin-2026";
+
+    /// <summary>
+    /// Un usuario interno nuevo, dado de alta por el administrador, con el correo confirmado y la contraseña temporal ya
+    /// cambiada por <see cref="ApiFactory.TestPassword"/>, como lo usaría la persona.
+    /// </summary>
     private async Task<(string Id, string Email)> NewInternalAsync(string role)
+    {
+        var (id, email) = await NewInternalWithTemporaryPasswordAsync(role);
+        var client = api.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", await TokenAsync(email, TemporaryPassword));
+        var changed = await client.PostAsJsonAsync("/api/v1/Auth/change-password",
+            new { currentPassword = TemporaryPassword, newPassword = ApiFactory.TestPassword });
+        Assert.Equal(HttpStatusCode.OK, changed.StatusCode);
+        return (id, email);
+    }
+
+    private async Task<(string Id, string Email)> NewInternalWithTemporaryPasswordAsync(string role)
     {
         var admin = await api.ClientFor(TestRole.Admin);
         var email = "int-" + Guid.NewGuid().ToString("N")[..8] + "@test.energymap.local";
         var created = await admin.PostAsJsonAsync("/api/v1/Auth/register-internal",
-            new { fullName = "Interno " + email[..12], email, password = ApiFactory.TestPassword, userType = role });
+            new { fullName = "Interno " + email[..12], email, password = TemporaryPassword, userType = role });
         Assert.Equal(HttpStatusCode.OK, created.StatusCode);
 
         var mail = api.Emails.Sent.Single(e => e.To == email);
@@ -33,6 +49,52 @@ public class UserAdministrationTests(ApiFactory api)
 
         var userId = JsonDocument.Parse(await created.Content.ReadAsStringAsync()).RootElement.GetProperty("userId").GetString()!;
         return (userId, email);
+    }
+
+    private async Task<string> TokenAsync(string email, string password)
+    {
+        var login = await api.CreateClient().PostAsJsonAsync("/api/v1/Auth/login", new { email, password });
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        return JsonDocument.Parse(await login.Content.ReadAsStringAsync()).RootElement.GetProperty("token").GetString()!;
+    }
+
+    [FactIfDatabase]
+    public async Task Con_la_contrasena_temporal_solo_se_puede_cambiarla()
+    {
+        var (_, email) = await NewInternalWithTemporaryPasswordAsync("Engineer");
+
+        var login = await api.CreateClient().PostAsJsonAsync("/api/v1/Auth/login", new { email, password = TemporaryPassword });
+        using (var doc = JsonDocument.Parse(await login.Content.ReadAsStringAsync()))
+            Assert.True(doc.RootElement.GetProperty("mustChangePassword").GetBoolean());
+
+        var client = api.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", await TokenAsync(email, TemporaryPassword));
+
+        var blocked = await client.GetAsync("/api/v1/ConnectionRequest/search");
+        Assert.Equal(HttpStatusCode.Forbidden, blocked.StatusCode);
+        Assert.Contains("temporal", await blocked.Content.ReadAsStringAsync()); // el JSON escapa la eñe
+
+        // La actual equivocada, o repetir la misma, no sirve.
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/v1/Auth/change-password",
+            new { currentPassword = "Otra-Clave-2026", newPassword = "Nueva-Clave-2026" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/v1/Auth/change-password",
+            new { currentPassword = TemporaryPassword, newPassword = TemporaryPassword })).StatusCode);
+
+        var changed = await client.PostAsJsonAsync("/api/v1/Auth/change-password",
+            new { currentPassword = TemporaryPassword, newPassword = "Nueva-Clave-2026" });
+        Assert.Equal(HttpStatusCode.OK, changed.StatusCode);
+        var newToken = JsonDocument.Parse(await changed.Content.ReadAsStringAsync()).RootElement.GetProperty("token").GetString()!;
+
+        var free = api.CreateClient();
+        free.DefaultRequestHeaders.Authorization = new("Bearer", newToken);
+        Assert.Equal(HttpStatusCode.OK, (await free.GetAsync("/api/v1/ConnectionRequest/search")).StatusCode);
+
+        // La anterior ya no entra; la nueva sí, sin la marca.
+        Assert.Equal(HttpStatusCode.BadRequest, (await api.CreateClient().PostAsJsonAsync("/api/v1/Auth/login",
+            new { email, password = TemporaryPassword })).StatusCode);
+        var again = await api.CreateClient().PostAsJsonAsync("/api/v1/Auth/login", new { email, password = "Nueva-Clave-2026" });
+        using (var doc = JsonDocument.Parse(await again.Content.ReadAsStringAsync()))
+            Assert.False(doc.RootElement.GetProperty("mustChangePassword").GetBoolean());
     }
 
     private Task<HttpResponseMessage> Login(string email) =>
@@ -112,8 +174,7 @@ public class UserAdministrationTests(ApiFactory api)
     {
         // Otro administrador: el token se obtiene antes de desactivarlo y todavía no vence.
         var (otherAdmin, email) = await NewInternalAsync("Admin");
-        var login = await Login(email);
-        var token = JsonDocument.Parse(await login.Content.ReadAsStringAsync()).RootElement.GetProperty("token").GetString()!;
+        var token = await TokenAsync(email, ApiFactory.TestPassword);
         var other = api.CreateClient();
         other.DefaultRequestHeaders.Authorization = new("Bearer", token);
         Assert.Equal(HttpStatusCode.OK, (await other.GetAsync("/api/v1/Users")).StatusCode);

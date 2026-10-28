@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { KeyRound, LogOut } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,11 @@ export async function SessionMenu() {
         <span className="block font-medium">{session.fullName || session.email}</span>
         <span className="text-muted-foreground">{ROLE_LABEL[session.role]}</span>
       </p>
+      <Button asChild variant="ghost" size="icon">
+        <Link href="/cambiar-contrasena" aria-label="Cambiar contraseña" title="Cambiar contraseña">
+          <KeyRound aria-hidden="true" />
+        </Link>
+      </Button>
       <form action={logoutAction}>
         <Button type="submit" variant="outline" size="sm">
           <LogOut aria-hidden="true" />

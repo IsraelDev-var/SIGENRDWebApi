@@ -48,3 +48,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /blob-report/
+
+# mediciones locales (Lighthouse, CA-01, ZAP): pueden llevar cookies de sesión de prueba
+/.medicion/

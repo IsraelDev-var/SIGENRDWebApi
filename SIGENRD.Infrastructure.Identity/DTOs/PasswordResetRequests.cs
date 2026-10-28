@@ -8,6 +8,16 @@ namespace SIGENRD.Infrastructure.Identity.DTOs
         public string Email { get; set; } = string.Empty;
     }
 
+    /// <summary>Cambio de contraseña con la sesión iniciada (también el de la contraseña temporal).</summary>
+    public class ChangePasswordRequest
+    {
+        [Required]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required]
+        public string NewPassword { get; set; } = string.Empty;
+    }
+
     public class ResetPasswordRequest
     {
         [Required, EmailAddress]

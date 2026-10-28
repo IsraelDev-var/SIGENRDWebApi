@@ -44,6 +44,52 @@ namespace SIGENRD.Core.Application.Features.Customers
 
     public record GetMyCustomerProfileQuery : IRequest<Response<CustomerProfileDto>>;
 
+    /// <summary>
+    /// Edita el perfil (B-6, RF-09): nombre y contacto. La cédula o el RNC y el tipo de persona no se cambian aquí:
+    /// identifican al titular y deciden los documentos de sus solicitudes; ese cambio lo hace la distribuidora.
+    /// </summary>
+    public class UpdateMyCustomerProfileCommand : IRequest<Response<CustomerProfileDto>>
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public string? Address { get; set; }
+    }
+
+    public class UpdateMyCustomerProfileValidator : AbstractValidator<UpdateMyCustomerProfileCommand>
+    {
+        public UpdateMyCustomerProfileValidator()
+        {
+            RuleFor(c => c.FullName).NotEmpty().MaximumLength(150).WithMessage("El nombre es obligatorio (máximo 150 caracteres).");
+            RuleFor(c => c.Email).EmailAddress().MaximumLength(150).When(c => !string.IsNullOrWhiteSpace(c.Email))
+                .WithMessage("El correo no es válido.");
+            RuleFor(c => c.Phone).MaximumLength(30).WithMessage("El teléfono no puede exceder los 30 caracteres.");
+            RuleFor(c => c.Address).MaximumLength(250).WithMessage("La dirección no puede exceder los 250 caracteres.");
+        }
+    }
+
+    public class UpdateMyCustomerProfileHandler(ICustomerRepository customers, IUnitOfWork unitOfWork, ICurrentUserService currentUser)
+        : IRequestHandler<UpdateMyCustomerProfileCommand, Response<CustomerProfileDto>>
+    {
+        public async Task<Response<CustomerProfileDto>> Handle(UpdateMyCustomerProfileCommand request, CancellationToken cancellationToken)
+        {
+            var userId = currentUser.UserId ?? throw new ForbiddenException();
+            var mine = await customers.GetByUserIdAsync(userId, cancellationToken)
+                ?? throw new KeyNotFoundException("Aún no tienes un perfil de cliente.");
+
+            var customer = (await unitOfWork.Repository<Customer>().GetByIdAsync(mine.Id))!;
+            customer.FullName = request.FullName.Trim();
+            customer.Email = Blank(request.Email);
+            customer.Phone = Blank(request.Phone);
+            customer.Address = Blank(request.Address);
+            await unitOfWork.SaveChangesAsync();
+
+            return new Response<CustomerProfileDto>(CustomerProfileDto.From(customer), "Perfil actualizado.");
+        }
+
+        private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
     public class CreateMyCustomerProfileValidator : AbstractValidator<CreateMyCustomerProfileCommand>
     {
         public CreateMyCustomerProfileValidator()

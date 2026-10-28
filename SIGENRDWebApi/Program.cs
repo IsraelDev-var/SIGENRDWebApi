@@ -130,6 +130,7 @@ app.UseHttpsRedirection();
 app.UseCors(CorsSettings.PolicyName);
 
 app.UseAuthentication();
+app.UseMiddleware<MustChangePasswordMiddleware>();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.MapHealthChecks("/health");

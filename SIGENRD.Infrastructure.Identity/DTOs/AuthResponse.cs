@@ -16,5 +16,8 @@ namespace SIGENRD.Infrastructure.Identity.DTOs
 
         /// <summary>La contraseña es correcta pero un administrador desactivó la cuenta (B-5).</summary>
         public bool IsDeactivated { get; set; }
+
+        /// <summary>Contraseña temporal puesta por un administrador: el token solo sirve para cambiarla.</summary>
+        public bool MustChangePassword { get; set; }
     }
 }

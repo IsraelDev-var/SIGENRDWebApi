@@ -24,6 +24,13 @@ namespace SIGENRDWebApi.Controllers.v1.InstallerCompanies
         public async Task<IActionResult> GetMine()
             => Ok(await mediator.Send(new GetMyInstallerCompanyQuery()));
 
+        /// <summary>Edita nombre comercial y contacto (B-6, RF-09). El RNC no se cambia.</summary>
+        [ProducesResponseType<Response<InstallerCompanyDto>>(StatusCodes.Status200OK)]
+        [HttpPut("me")]
+        [Authorize(Roles = Roles.InstallerCompany)]
+        public async Task<IActionResult> UpdateMine([FromBody] UpdateMyInstallerCompanyCommand command)
+            => Ok(await mediator.Send(command));
+
         /// <summary>Empresas instaladoras, por estado de validación (RF-10).</summary>
         [ProducesResponseType<Response<List<InstallerCompanyDto>>>(StatusCodes.Status200OK)]
         [HttpGet]

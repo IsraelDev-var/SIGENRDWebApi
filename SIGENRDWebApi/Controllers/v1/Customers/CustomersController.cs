@@ -23,5 +23,11 @@ namespace SIGENRDWebApi.Controllers.v1.Customers
         [HttpGet("me")]
         public async Task<IActionResult> GetMine()
             => Ok(await mediator.Send(new GetMyCustomerProfileQuery()));
+
+        /// <summary>Edita nombre y contacto (B-6, RF-09). La cédula o el RNC no se cambian.</summary>
+        [ProducesResponseType<Response<CustomerProfileDto>>(StatusCodes.Status200OK)]
+        [HttpPut("me")]
+        public async Task<IActionResult> UpdateMine([FromBody] UpdateMyCustomerProfileCommand command)
+            => Ok(await mediator.Send(command));
     }
 }

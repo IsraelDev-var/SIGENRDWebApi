@@ -19,5 +19,8 @@ namespace SIGENRD.Infrastructure.Identity.Entities
         /// <summary>Cuenta desactivada por un administrador (B-5): no puede iniciar sesión. Null si está activa.</summary>
         public DateTime? DeactivatedAt { get; set; }
 
+        /// <summary>La contraseña la puso un administrador: hay que cambiarla antes de usar el sistema.</summary>
+        public bool MustChangePassword { get; set; }
+
     }
 }

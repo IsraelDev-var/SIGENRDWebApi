@@ -8,6 +8,9 @@ import type { Bounds } from "../lib/viewport";
 
 export type Viewport = { bounds: Bounds; zoom: number };
 
+/** Espera tras el último `moveend`: al redimensionar o arrastrar seguido salen varios y basta con una petición (F9-04). */
+export const VIEWPORT_DEBOUNCE_MS = 250;
+
 /** Avisa del área visible al terminar cada movimiento del mapa (no en cada fotograma). */
 export function ViewportWatcher({ onChange }: { onChange: (viewport: Viewport) => void }) {
   const { map, isLoaded } = useMap();
@@ -25,10 +28,16 @@ export function ViewportWatcher({ onChange }: { onChange: (viewport: Viewport) =
         zoom: map.getZoom(),
       });
     };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const emitLater = () => {
+      clearTimeout(timer);
+      timer = setTimeout(emit, VIEWPORT_DEBOUNCE_MS);
+    };
     emit();
-    map.on("moveend", emit);
+    map.on("moveend", emitLater);
     return () => {
-      map.off("moveend", emit);
+      clearTimeout(timer);
+      map.off("moveend", emitLater);
     };
   }, [map, isLoaded]);
 

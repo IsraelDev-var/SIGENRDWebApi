@@ -1,6 +1,7 @@
 import "server-only";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { clientIpFrom } from "@/server/client-ip";
 import { serverEnv } from "@/server/env";
@@ -89,6 +90,10 @@ export async function apiResponse(path: string, { method = "GET", body, token, s
   } catch {
     throw new ApiError(503, GENERIC_ERROR);
   }
+
+  // El token de la cookie ya no sirve (venció o un administrador desactivó la cuenta): se cierra la sesión en lugar de
+  // mostrar un error de carga. redirect() funciona en páginas, Server Actions y route handlers.
+  if (response.status === 401 && token) redirect("/sesion-expirada");
 
   if (!response.ok) {
     const json = (await readJson(response)) as { message?: unknown; errors?: unknown } | null;

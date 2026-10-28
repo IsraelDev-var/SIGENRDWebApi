@@ -50,6 +50,51 @@ namespace SIGENRD.Core.Application.Features.InstallerCompanies
 
     public record ValidateInstallerCompanyCommand(int Id) : IRequest<Response<InstallerCompanyDto>>;
 
+    /// <summary>
+    /// Edita los datos de la empresa (B-6, RF-09). El RNC no cambia: es lo que la distribuidora validó (RN-05).
+    /// </summary>
+    public class UpdateMyInstallerCompanyCommand : IRequest<Response<InstallerCompanyDto>>
+    {
+        public string TradeName { get; set; } = string.Empty;
+        public string? ContactEmail { get; set; }
+        public string? ContactPhone { get; set; }
+        public string? Address { get; set; }
+    }
+
+    public class UpdateMyInstallerCompanyValidator : AbstractValidator<UpdateMyInstallerCompanyCommand>
+    {
+        public UpdateMyInstallerCompanyValidator()
+        {
+            RuleFor(c => c.TradeName).NotEmpty().MaximumLength(150).WithMessage("El nombre comercial es obligatorio (máximo 150 caracteres).");
+            RuleFor(c => c.ContactEmail).EmailAddress().MaximumLength(150).When(c => !string.IsNullOrWhiteSpace(c.ContactEmail))
+                .WithMessage("El correo de contacto no es válido.");
+            RuleFor(c => c.ContactPhone).MaximumLength(20).WithMessage("El teléfono no puede exceder los 20 caracteres.");
+            RuleFor(c => c.Address).MaximumLength(250).WithMessage("La dirección no puede exceder los 250 caracteres.");
+        }
+    }
+
+    public class UpdateMyInstallerCompanyHandler(IInstallerCompanyRepository companies, IUnitOfWork unitOfWork, ICurrentUserService currentUser)
+        : IRequestHandler<UpdateMyInstallerCompanyCommand, Response<InstallerCompanyDto>>
+    {
+        public async Task<Response<InstallerCompanyDto>> Handle(UpdateMyInstallerCompanyCommand request, CancellationToken cancellationToken)
+        {
+            var userId = currentUser.UserId ?? throw new ForbiddenException();
+            var mine = await companies.GetByUserIdAsync(userId, cancellationToken)
+                ?? throw new KeyNotFoundException("Aún no tienes una empresa instaladora registrada.");
+
+            var company = (await companies.GetForUpdateAsync(mine.Id, cancellationToken))!;
+            company.TradeName = request.TradeName.Trim();
+            company.ContactEmail = Blank(request.ContactEmail);
+            company.ContactPhone = Blank(request.ContactPhone);
+            company.Address = Blank(request.Address);
+            await unitOfWork.SaveChangesAsync();
+
+            return new Response<InstallerCompanyDto>(InstallerCompanyDto.From(company), "Datos de la empresa actualizados.");
+        }
+
+        private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
     public class RegisterInstallerCompanyValidator : AbstractValidator<RegisterInstallerCompanyCommand>
     {
         public RegisterInstallerCompanyValidator()

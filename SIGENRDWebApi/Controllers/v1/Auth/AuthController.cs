@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -52,10 +53,24 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
             if (request.UserType is UserType.Customer or UserType.InstallerCompany)
                 throw new ApiException("Los clientes e instaladoras se registran por el registro público.");
 
-            var result = await _authService.RegisterAsync(request, revealExistingAccount: true);
+            // La contraseña la eligió el administrador: la persona la cambia en su primer ingreso.
+            var result = await _authService.RegisterAsync(request, revealExistingAccount: true, mustChangePassword: true);
             if (!result.Success)
                 throw new ApiException(result.Message!);
 
+            return Ok(result);
+        }
+
+        /// <summary>Cambia la contraseña con la sesión iniciada. Devuelve un token nuevo. Obligatorio tras el alta interna.</summary>
+        [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new ForbiddenException();
+            var result = await _authService.ChangePasswordAsync(userId, request);
+            if (!result.Success)
+                throw new ApiException(result.Message!);
             return Ok(result);
         }
 
