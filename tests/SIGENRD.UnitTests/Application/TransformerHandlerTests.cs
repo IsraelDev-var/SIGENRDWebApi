@@ -9,11 +9,14 @@ using SIGENRD.Core.Application.Features.Transformers.Queries.GetTransformerById;
 using SIGENRD.Core.Application.Features.Transformers.Queries.GetTransformersInBounds;
 using SIGENRD.Core.Domain.Entities;
 using SIGENRD.Core.Domain.Enums;
+using SIGENRD.UnitTests.Integration;
 
 namespace SIGENRD.UnitTests.Application;
 
 public class TransformerHandlerTests
 {
+    private static readonly FakeCurrentUser Admin = new("admin", nameof(UserType.Admin));
+
     private static Point At(double lat, double lng) => new(lng, lat) { SRID = 4326 };
 
     private static Transformer NewTransformer(int id, string code, decimal total = 1000, decimal available = 800) => new()
@@ -107,7 +110,7 @@ public class TransformerHandlerTests
             TotalCapacityKva = 1000, AvailableCapacityKva = 200, Latitude = 18.5, Longitude = -69.9
         };
 
-        var result = await new CreateTransformerHandler(uow, repo).Handle(command, default);
+        var result = await new CreateTransformerHandler(uow, repo, Admin).Handle(command, default);
 
         Assert.True(result.Succeeded);
         var created = Assert.Single(repo.Items);
@@ -128,7 +131,7 @@ public class TransformerHandlerTests
             TotalCapacityKva = 1000, AvailableCapacityKva = 200, Latitude = 18.5, Longitude = -69.9
         };
 
-        await Assert.ThrowsAsync<ApiException>(() => new CreateTransformerHandler(uow, repo).Handle(command, default));
+        await Assert.ThrowsAsync<ApiException>(() => new CreateTransformerHandler(uow, repo, Admin).Handle(command, default));
         Assert.Equal(0, uow.SaveCalls);
     }
 
@@ -142,7 +145,7 @@ public class TransformerHandlerTests
             TotalCapacityKva = 1000, AvailableCapacityKva = 200, Latitude = 18.5, Longitude = -69.9
         };
 
-        await Assert.ThrowsAsync<ApiException>(() => new CreateTransformerHandler(uow, repo).Handle(command, default));
+        await Assert.ThrowsAsync<ApiException>(() => new CreateTransformerHandler(uow, repo, Admin).Handle(command, default));
     }
 
     // ---------------- capacidad y mantenimiento ----------------
@@ -153,7 +156,7 @@ public class TransformerHandlerTests
         var (uow, repo) = Setup();
         repo.Items.Add(NewTransformer(1, "TR-1", total: 1000, available: 900));
 
-        var result = await new UpdateTransformerCapacityHandler(uow, repo)
+        var result = await new UpdateTransformerCapacityHandler(uow, repo, Admin)
             .Handle(new UpdateTransformerCapacityCommand { Id = 1, TotalCapacityKva = 1000, AvailableCapacityKva = 0 }, default);
 
         Assert.Equal("Saturated", result.Data!.Status);
@@ -167,7 +170,7 @@ public class TransformerHandlerTests
         var (uow, repo) = Setup();
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            new UpdateTransformerCapacityHandler(uow, repo)
+            new UpdateTransformerCapacityHandler(uow, repo, Admin)
                 .Handle(new UpdateTransformerCapacityCommand { Id = 5, TotalCapacityKva = 10, AvailableCapacityKva = 1 }, default));
     }
 
@@ -176,7 +179,7 @@ public class TransformerHandlerTests
     {
         var (uow, repo) = Setup();
         repo.Items.Add(NewTransformer(1, "TR-1", total: 1000, available: 900));
-        var handler = new SetTransformerMaintenanceHandler(uow, repo);
+        var handler = new SetTransformerMaintenanceHandler(uow, repo, Admin);
 
         var inside = await handler.Handle(new SetTransformerMaintenanceCommand { Id = 1, InMaintenance = true }, default);
         var outside = await handler.Handle(new SetTransformerMaintenanceCommand { Id = 1, InMaintenance = false }, default);
@@ -200,7 +203,7 @@ public class TransformerHandlerTests
     {
         var (uow, repo) = Setup();
 
-        var result = await new ImportTransformersHandler(uow, repo).Handle(
+        var result = await new ImportTransformersHandler(uow, repo, Admin).Handle(
             Import(Header, "TR-1,1,1000,900,18.4,-69.9", "TR-2,1,1000,100,18.5,-69.8", "TR-3,1,1000,0,18.6,-69.7"), default);
 
         Assert.Equal(3, result.Data!.Imported);
@@ -215,7 +218,7 @@ public class TransformerHandlerTests
     {
         var (uow, repo) = Setup();
 
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => new ImportTransformersHandler(uow, repo).Handle(
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => new ImportTransformersHandler(uow, repo, Admin).Handle(
             Import(Header, "TR-1,1,1000,900,18.4,-69.9", "TR-2,1,1000,5000,18.5,-69.8"), default));
 
         Assert.Contains(ex.Errors, e => e.StartsWith("Línea 3:"));
@@ -229,7 +232,7 @@ public class TransformerHandlerTests
         var (uow, repo) = Setup();
         repo.Items.Add(NewTransformer(1, "TR-1"));
 
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => new ImportTransformersHandler(uow, repo).Handle(
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => new ImportTransformersHandler(uow, repo, Admin).Handle(
             Import(Header, "TR-1,1,1000,900,18.4,-69.9", "TR-2,42,1000,900,18.5,-69.8"), default));
 
         Assert.Contains(ex.Errors, e => e.Contains("ya existe") && e.Contains("TR-1"));
@@ -244,6 +247,61 @@ public class TransformerHandlerTests
         var command = Import(Header, "TR-1,1,1000,900,18.4,-69.9");
         command.DistributorId = 77;
 
-        await Assert.ThrowsAsync<ApiException>(() => new ImportTransformersHandler(uow, repo).Handle(command, default));
+        await Assert.ThrowsAsync<ApiException>(() => new ImportTransformersHandler(uow, repo, Admin).Handle(command, default));
+    }
+
+    // ---------------- personal limitado a su EDE ----------------
+
+    private static FakeCurrentUser StaffOf(int? distributorId) => new("staff", nameof(UserType.Distributor)) { DistributorId = distributorId };
+
+    [Fact]
+    public async Task El_personal_crea_en_su_EDE_aunque_indique_otra()
+    {
+        var (uow, repo) = Setup();
+        uow.Fake<Distributor>().Items.Add(new Distributor { Id = 2, Name = "Edenorte", AvailableThresholdPct = 70, ConditionedThresholdPct = 30 });
+        var command = new CreateTransformerCommand
+        {
+            Code = "TR-200", DistributorId = 1, ServiceZoneId = 1,
+            TotalCapacityKva = 1000, AvailableCapacityKva = 900, Latitude = 18.5, Longitude = -69.9
+        };
+
+        await new CreateTransformerHandler(uow, repo, StaffOf(2)).Handle(command, default);
+
+        Assert.Equal(2, Assert.Single(repo.Items).DistributorId);
+    }
+
+    [Fact]
+    public async Task El_personal_no_toca_transformadores_de_otra_EDE()
+    {
+        var (uow, repo) = Setup();
+        repo.Items.Add(NewTransformer(1, "TR-1"));
+        var otherEde = StaffOf(2);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => new UpdateTransformerCapacityHandler(uow, repo, otherEde)
+            .Handle(new UpdateTransformerCapacityCommand { Id = 1, TotalCapacityKva = 1000, AvailableCapacityKva = 0 }, default));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => new SetTransformerMaintenanceHandler(uow, repo, otherEde)
+            .Handle(new SetTransformerMaintenanceCommand { Id = 1, InMaintenance = true }, default));
+        Assert.Equal(TransformerStatus.Available, repo.Items[0].Status);
+        Assert.Equal(0, uow.SaveCalls);
+    }
+
+    [Fact]
+    public async Task El_personal_sin_EDE_asignada_no_puede_importar()
+    {
+        var (uow, repo) = Setup();
+
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            new ImportTransformersHandler(uow, repo, StaffOf(null)).Handle(Import(Header, "TR-1,1,1000,900,18.4,-69.9"), default));
+        Assert.Empty(repo.Items);
+    }
+
+    [Fact]
+    public async Task No_se_importa_en_una_EDE_desactivada()
+    {
+        var (uow, repo) = Setup();
+        uow.Fake<Distributor>().Items.Single(d => d.Id == 1).IsActive = false;
+
+        await Assert.ThrowsAsync<ApiException>(() =>
+            new ImportTransformersHandler(uow, repo, Admin).Handle(Import(Header, "TR-1,1,1000,900,18.4,-69.9"), default));
     }
 }

@@ -39,6 +39,7 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
                 var escaped = filter.Code.Trim().Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
                 query = query.Where(t => EF.Functions.ILike(t.Code, "%" + escaped + "%"));
             }
+            if (filter.DistributorId.HasValue) query = query.Where(t => t.DistributorId == filter.DistributorId);
             if (filter.ServiceZoneId.HasValue) query = query.Where(t => t.ServiceZoneId == filter.ServiceZoneId);
             if (filter.Status.HasValue) query = query.Where(t => t.Status == filter.Status);
 
@@ -111,9 +112,10 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
         public async Task AddRangeAsync(IEnumerable<Transformer> transformers, CancellationToken cancellationToken = default)
             => await context.Transformers.AddRangeAsync(transformers, cancellationToken);
 
-        public async Task<IReadOnlyList<ZoneRiskSummary>> GetZoneRiskAsync(CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<ZoneRiskSummary>> GetZoneRiskAsync(int? distributorId = null, CancellationToken cancellationToken = default)
         {
-            var rows = await ReadOnly
+            var query = distributorId.HasValue ? ReadOnly.Where(t => t.DistributorId == distributorId) : ReadOnly;
+            var rows = await query
                 .GroupBy(t => new { t.ServiceZoneId, t.ServiceZone!.ZoneName })
                 .Select(g => new
                 {
@@ -130,5 +132,8 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
 
             return rows.Select(r => new ZoneRiskSummary(r.ServiceZoneId, r.ZoneName, r.Total, r.Critical, r.Saturated)).ToList();
         }
+
+        public async Task<IReadOnlyList<Transformer>> GetByDistributorForUpdateAsync(int distributorId, CancellationToken cancellationToken = default)
+            => await context.Transformers.Where(t => t.DistributorId == distributorId).ToListAsync(cancellationToken);
     }
 }

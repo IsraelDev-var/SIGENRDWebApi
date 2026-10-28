@@ -2,6 +2,7 @@ using SIGENRD.Core.Application.Mediator;
 using NetTopologySuite.Geometries;
 using SIGENRD.Core.Application.DTOs.Transformer;
 using SIGENRD.Core.Application.Exceptions;
+using SIGENRD.Core.Application.Services;
 using SIGENRD.Core.Application.Wrappers;
 using SIGENRD.Core.Domain.Entities;
 using SIGENRD.Core.Domain.Interfaces;
@@ -9,13 +10,15 @@ using SIGENRD.Core.Domain.Repositories;
 
 namespace SIGENRD.Core.Application.Features.Transformers.Commands.ImportTransformers
 {
-    public class ImportTransformersHandler(IUnitOfWork unitOfWork, ITransformerRepository repository)
+    public class ImportTransformersHandler(IUnitOfWork unitOfWork, ITransformerRepository repository, ICurrentUserService currentUser)
         : IRequestHandler<ImportTransformersCommand, Response<ImportTransformersResultDto>>
     {
         public async Task<Response<ImportTransformersResultDto>> Handle(ImportTransformersCommand request, CancellationToken cancellationToken)
         {
-            var distributor = await unitOfWork.Repository<Distributor>().GetByIdAsync(request.DistributorId)
-                ?? throw new ApiException("La distribuidora indicada no existe.");
+            // El personal de una EDE solo importa en la suya, indique lo que indique.
+            var distributor = await unitOfWork.Repository<Distributor>().GetByIdAsync(DistributorScope.ForWrite(currentUser, request.DistributorId));
+            if (distributor is null || !distributor.IsActive)
+                throw new ApiException("La distribuidora indicada no existe o está desactivada.");
 
             var parsed = await TransformerCsvParser.ParseAsync(request.Content, cancellationToken);
             var errors = new List<string>(parsed.Errors);

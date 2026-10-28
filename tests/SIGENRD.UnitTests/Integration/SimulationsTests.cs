@@ -1,3 +1,4 @@
+using SIGENRD.Infrastructure.Persistences.Seeds;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -23,7 +24,7 @@ public class SimulationsTests(ApiFactory api)
         var lng = -71.60 + Random.Shared.NextDouble() * 0.2;
 
         await using var context = api.NewAppContext();
-        var distributor = await context.Distributors.FirstOrDefaultAsync() ?? context.Distributors.Add(new Distributor { Name = "Edesur" }).Entity;
+        var distributor = await context.Distributors.FirstOrDefaultAsync(d => d.Name == DevelopmentDemoData.DistributorName) ?? context.Distributors.Add(new Distributor { Name = "Edesur" }).Entity;
         var zone = context.ServiceZones.Add(new ServiceZone { ZoneName = "Zona sim " + Unique() }).Entity;
         await context.SaveChangesAsync();
 

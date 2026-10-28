@@ -7,15 +7,17 @@ namespace SIGENRD.Core.Application.Services
 {
     /// <summary>
     /// Deja una notificación interna a quienes revisan y deciden (Distributor y Admin) cuando llega algo nuevo.
+    /// Con distributorId, solo al personal de esa EDE (y a los administradores).
     /// Solo agrega las filas: guarda quien la llama, dentro de su misma transacción.
     /// </summary>
     public class StaffNotifier(IStaffDirectory staff, IUnitOfWork unitOfWork)
     {
         private static readonly string[] Recipients = { nameof(UserType.Distributor), nameof(UserType.Admin) };
 
-        public async Task NotifyAsync(string title, string message, NotificationType type, CancellationToken cancellationToken = default)
+        public async Task NotifyAsync(
+            string title, string message, NotificationType type, int? distributorId = null, CancellationToken cancellationToken = default)
         {
-            var userIds = await staff.GetUserIdsInRolesAsync(Recipients, cancellationToken);
+            var userIds = await staff.GetUserIdsInRolesAsync(Recipients, distributorId, cancellationToken);
 
             foreach (var userId in userIds)
             {

@@ -148,7 +148,7 @@ namespace SIGENRD.Core.Application.Features.InstallerCompanies
                 "Empresa instaladora por validar",
                 "La empresa " + company.TradeName + " (RNC " + company.Rnc + ") solicitó su validación.",
                 NotificationType.InstallerPendingValidation,
-                cancellationToken);
+                cancellationToken: cancellationToken);
 
             await unitOfWork.SaveChangesAsync();
 

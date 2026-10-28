@@ -34,6 +34,9 @@ public class FakeCurrentUser(string? userId, params string[] roles) : ICurrentUs
     public string? UserId => userId;
 
     public bool IsInRole(string role) => roles.Contains(role);
+
+    /// <summary>EDE del personal (Ingeniero o Distribuidora).</summary>
+    public int? DistributorId { get; init; }
 }
 
 public class PostgisFixture : IAsyncLifetime

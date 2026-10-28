@@ -2,8 +2,10 @@ using FluentValidation;
 using SIGENRD.Core.Application.DTOs.Transformer;
 using SIGENRD.Core.Application.Mappings;
 using SIGENRD.Core.Application.Mediator;
+using SIGENRD.Core.Application.Services;
 using SIGENRD.Core.Application.Wrappers;
 using SIGENRD.Core.Domain.Enums;
+using SIGENRD.Core.Domain.Interfaces;
 using SIGENRD.Core.Domain.Repositories;
 
 namespace SIGENRD.Core.Application.Features.Transformers.Queries.ListTransformersForManagement
@@ -17,6 +19,9 @@ namespace SIGENRD.Core.Application.Features.Transformers.Queries.ListTransformer
         /// <summary>Texto contenido en el código.</summary>
         public string? Code { get; set; }
         public int? ServiceZoneId { get; set; }
+
+        /// <summary>Solo lo usa el administrador; el personal de una EDE siempre ve la suya.</summary>
+        public int? DistributorId { get; set; }
         public TransformerStatus? Status { get; set; }
         public TransformerSort Sort { get; set; } = TransformerSort.Code;
 
@@ -38,13 +43,14 @@ namespace SIGENRD.Core.Application.Features.Transformers.Queries.ListTransformer
         }
     }
 
-    public class ListTransformersForManagementHandler(ITransformerRepository repository)
+    public class ListTransformersForManagementHandler(ITransformerRepository repository, ICurrentUserService currentUser)
         : IRequestHandler<ListTransformersForManagementQuery, Response<PagedDto<TransformerDetailDto>>>
     {
         public async Task<Response<PagedDto<TransformerDetailDto>>> Handle(ListTransformersForManagementQuery query, CancellationToken cancellationToken)
         {
             var page = await repository.SearchForManagementAsync(
-                new TransformerManagementFilter(query.Code, query.ServiceZoneId, query.Status, query.Sort),
+                new TransformerManagementFilter(query.Code, query.ServiceZoneId, query.Status, query.Sort,
+                    DistributorScope.Filter(currentUser, query.DistributorId)),
                 query.Page, query.PageSize, cancellationToken);
 
             return new Response<PagedDto<TransformerDetailDto>>(new PagedDto<TransformerDetailDto>

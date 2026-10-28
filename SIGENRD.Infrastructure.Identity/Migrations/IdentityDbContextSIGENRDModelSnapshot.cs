@@ -172,6 +172,9 @@ namespace SIGENRD.Infrastructure.Identity.Migrations
                     b.Property<DateTime?>("DeactivatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("DistributorId")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("DistributorType")
                         .HasColumnType("integer");
 

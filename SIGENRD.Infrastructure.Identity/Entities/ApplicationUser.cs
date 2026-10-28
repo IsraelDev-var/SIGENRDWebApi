@@ -16,6 +16,9 @@ namespace SIGENRD.Infrastructure.Identity.Entities
 
         public int? InstallerCompanyId { get; set; }
 
+        /// <summary>EDE del personal (Ingeniero o Distribuidora): solo ve y gestiona lo de esa distribuidora.</summary>
+        public int? DistributorId { get; set; }
+
         /// <summary>Cuenta desactivada por un administrador (B-5): no puede iniciar sesión. Null si está activa.</summary>
         public DateTime? DeactivatedAt { get; set; }
 

@@ -47,7 +47,9 @@ namespace SIGENRD.Core.Application.Features.Catalogs
         public async Task<Response<List<DistributorDto>>> Handle(ListDistributorsQuery request, CancellationToken cancellationToken)
         {
             var all = await distributors.GetAllAsync();
+            // Las desactivadas no se ofrecen en el mapa ni en los formularios.
             var items = all
+                .Where(d => d.IsActive)
                 .OrderBy(d => d.Name, StringComparer.CurrentCulture)
                 .Select(d => new DistributorDto { Id = d.Id, Name = d.Name, Type = d.Type.ToString() })
                 .ToList();

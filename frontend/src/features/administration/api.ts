@@ -8,6 +8,7 @@ type Schemas = components["schemas"];
 export type InternalUser = Schemas["InternalUserDto"];
 export type UserPage = Schemas["InternalUserDtoPagedDto"];
 export type AuditPage = Schemas["AuditLogDtoPagedDto"];
+export type ManagedDistributor = Schemas["DistributorDetailDto"];
 
 export const INTERNAL_ROLES = ["Engineer", "Distributor", "Admin"] as const;
 export type InternalRole = (typeof INTERNAL_ROLES)[number];
@@ -19,6 +20,20 @@ export function listUsers(session: Session, filters: { text?: string; role?: str
   if (filters.text) query.set("text", filters.text);
   if (filters.role) query.set("role", filters.role);
   return apiData<UserPage>(`/Users?${query}`, { token: session.token });
+}
+
+/** Roles internos que pertenecen a una EDE; el administrador trabaja para todas. */
+export const STAFF_ROLES: readonly InternalRole[] = ["Engineer", "Distributor"];
+
+export const DISTRIBUTOR_TYPES = ["EDESUR", "EDENORTE", "EDEESTE", "OTRA"] as const;
+
+/** Todas las EDE, también las desactivadas (solo el administrador). */
+export function listManagedDistributors(session: Session) {
+  return apiData<ManagedDistributor[]>("/Distributors/manage", { token: session.token });
+}
+
+export function getManagedDistributor(session: Session, id: number) {
+  return apiData<ManagedDistributor>(`/Distributors/manage/${id}`, { token: session.token });
 }
 
 export type AuditFilters = { entity?: string; entityId?: string; action?: string; userId?: string; from?: string; to?: string; page: number };
