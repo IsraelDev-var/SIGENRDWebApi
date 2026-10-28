@@ -8,6 +8,10 @@ using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SIGENRD.Core.Domain.Interfaces;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using SIGENRD.Infrastructure.Identity.Entities;
+using SIGENRD.Infrastructure.Identity.JWT;
 using SIGENRD.Infrastructure.Identity.Services;
 
 namespace SIGENRD.UnitTests.Integration;
@@ -44,13 +48,29 @@ public class AccountSecurityTests(ApiFactory api)
         Assert.False(string.IsNullOrEmpty(token.Header.Kid));
     }
 
-    private static string ForgeAdminToken(SigningCredentials credentials) =>
-        new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+    /// <summary>
+    /// Token del administrador de prueba, con su sello de seguridad vigente, firmado con las credenciales dadas: así los
+    /// tokens falsificados solo pueden fallar por la firma.
+    /// </summary>
+    private async Task<string> ForgeAdminToken(SigningCredentials credentials)
+    {
+        var adminId = (await api.LoginAsync(TestRole.Admin)).UserId;
+        using var scope = api.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var stamp = await users.GetSecurityStampAsync((await users.FindByIdAsync(adminId))!);
+
+        return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
             issuer: Issuer,
             audience: Audience,
-            claims: new[] { new Claim(JwtRegisteredClaimNames.Sub, "intruso"), new Claim(ClaimTypes.Role, "Admin") },
+            claims: new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, adminId),
+                new Claim(ClaimTypes.Role, "Admin"),
+                new Claim(JwtTokenGenerator.SecurityStampClaim, AccountSessions.StampHash(stamp))
+            },
             expires: DateTime.UtcNow.AddMinutes(10),
             signingCredentials: credentials));
+    }
 
     private async Task<HttpStatusCode> CallStaffEndpointWith(string token)
     {
@@ -63,7 +83,7 @@ public class AccountSecurityTests(ApiFactory api)
     public async Task Un_token_firmado_con_la_llave_de_la_API_es_aceptado()
     {
         // Control: confirma que los tokens falsificados de abajo solo fallan por la firma.
-        var token = ForgeAdminToken(new SigningCredentials(new RsaSecurityKey(api.SigningKey), SecurityAlgorithms.RsaSha256));
+        var token = await ForgeAdminToken(new SigningCredentials(new RsaSecurityKey(api.SigningKey), SecurityAlgorithms.RsaSha256));
 
         Assert.Equal(HttpStatusCode.OK, await CallStaffEndpointWith(token));
     }
@@ -72,7 +92,7 @@ public class AccountSecurityTests(ApiFactory api)
     public async Task Un_token_firmado_con_otra_llave_RSA_es_401()
     {
         using var otherKey = RSA.Create(2048);
-        var token = ForgeAdminToken(new SigningCredentials(new RsaSecurityKey(otherKey), SecurityAlgorithms.RsaSha256));
+        var token = await ForgeAdminToken(new SigningCredentials(new RsaSecurityKey(otherKey), SecurityAlgorithms.RsaSha256));
 
         Assert.Equal(HttpStatusCode.Unauthorized, await CallStaffEndpointWith(token));
     }
@@ -82,7 +102,7 @@ public class AccountSecurityTests(ApiFactory api)
     {
         // Confusión de algoritmo: la llave pública no es secreta, no debe servir como llave HMAC.
         var publicKeyBytes = api.SigningKey.ExportSubjectPublicKeyInfo();
-        var token = ForgeAdminToken(new SigningCredentials(new SymmetricSecurityKey(publicKeyBytes), SecurityAlgorithms.HmacSha256));
+        var token = await ForgeAdminToken(new SigningCredentials(new SymmetricSecurityKey(publicKeyBytes), SecurityAlgorithms.HmacSha256));
 
         Assert.Equal(HttpStatusCode.Unauthorized, await CallStaffEndpointWith(token));
     }
@@ -196,6 +216,66 @@ public class AccountSecurityTests(ApiFactory api)
         var reused = await client.PostAsJsonAsync("/api/v1/Auth/reset-password",
             new { email, code, newPassword = "Otra-Clave-Segura-88" });
         Assert.Equal(HttpStatusCode.BadRequest, reused.StatusCode);
+    }
+
+    // ---------------- A28-08: el token anterior deja de servir al cambiar la contraseña ----------------
+
+    private const string AnyUserUrl = "/api/v1/ConnectionRequest/search";
+
+    private async Task<HttpStatusCode> CallWith(string token, string url = AnyUserUrl)
+    {
+        var client = api.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+        return (await client.GetAsync(url)).StatusCode;
+    }
+
+    [FactIfDatabase]
+    public async Task A28_08_cambiar_la_contraseña_invalida_el_token_anterior_y_el_nuevo_sirve()
+    {
+        var (client, _, _) = await api.NewUserAsync();
+        var oldToken = client.DefaultRequestHeaders.Authorization!.Parameter!;
+        Assert.Equal(HttpStatusCode.OK, await CallWith(oldToken));
+
+        var changed = await client.PostAsJsonAsync("/api/v1/Auth/change-password",
+            new { currentPassword = ApiFactory.TestPassword, newPassword = "Nueva-Clave-Segura-55" });
+        Assert.Equal(HttpStatusCode.OK, changed.StatusCode);
+        var newToken = JsonDocument.Parse(await changed.Content.ReadAsStringAsync()).RootElement.GetProperty("token").GetString()!;
+
+        Assert.Equal(HttpStatusCode.Unauthorized, await CallWith(oldToken));
+        Assert.Equal(HttpStatusCode.OK, await CallWith(newToken));
+    }
+
+    [FactIfDatabase]
+    public async Task A28_08_restablecer_la_contraseña_invalida_el_token_anterior()
+    {
+        var (client, _, email) = await api.NewUserAsync();
+        var oldToken = client.DefaultRequestHeaders.Authorization!.Parameter!;
+        Assert.Equal(HttpStatusCode.OK, await CallWith(oldToken));
+
+        var anonymous = api.CreateClient();
+        var code = await RequestResetCodeAsync(anonymous, email);
+        (await anonymous.PostAsJsonAsync("/api/v1/Auth/reset-password",
+            new { email, code, newPassword = "Nueva-Clave-Segura-66" })).EnsureSuccessStatusCode();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, await CallWith(oldToken));
+    }
+
+    [FactIfDatabase]
+    public async Task A28_08_un_token_firmado_por_la_API_sin_sello_o_de_un_usuario_inexistente_es_401()
+    {
+        var credentials = new SigningCredentials(new RsaSecurityKey(api.SigningKey), SecurityAlgorithms.RsaSha256);
+        var adminId = (await api.LoginAsync(TestRole.Admin)).UserId;
+
+        string Token(string subject, params Claim[] extra) => new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            issuer: Issuer, audience: Audience,
+            claims: new[] { new Claim(JwtRegisteredClaimNames.Sub, subject), new Claim(ClaimTypes.Role, "Admin") }.Concat(extra),
+            expires: DateTime.UtcNow.AddMinutes(10), signingCredentials: credentials));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, await CallStaffEndpointWith(Token(adminId)));
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            await CallStaffEndpointWith(Token(adminId, new Claim(JwtTokenGenerator.SecurityStampClaim, "otro-sello"))));
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            await CallStaffEndpointWith(Token("no-existe", new Claim(JwtTokenGenerator.SecurityStampClaim, AccountSessions.StampHash("x")))));
     }
 
     [FactIfDatabase]

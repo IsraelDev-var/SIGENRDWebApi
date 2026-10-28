@@ -94,16 +94,25 @@ namespace SIGENRD.Infrastructure.Identity
                         // Solo RS256: evita que se acepte un token con otro algoritmo (alg=none, HS256 con la llave pública).
                         ValidAlgorithms = [SecurityAlgorithms.RsaSha256]
                     };
-                    // B-5: un token vigente de una cuenta desactivada deja de servir de inmediato.
+                    // Un token vigente deja de servir de inmediato si la cuenta se desactiva (B-5) o si cambia su sello de
+                    // seguridad, como al cambiar o restablecer la contraseña (A28-08).
                     opt.Events = new JwtBearerEvents
                     {
                         OnTokenValidated = async context =>
                         {
                             var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
                                          ?? context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub);
-                            var accounts = context.HttpContext.RequestServices.GetRequiredService<DeactivatedAccounts>();
-                            if (userId is not null && await accounts.IsDeactivatedAsync(userId, context.HttpContext.RequestAborted))
-                                context.Fail("La cuenta está desactivada.");
+                            if (userId is null)
+                            {
+                                context.Fail(AccountSessions.FailedMessage);
+                                return;
+                            }
+
+                            var accounts = context.HttpContext.RequestServices.GetRequiredService<AccountSessions>();
+                            var failure = await accounts.ValidateAsync(
+                                userId, context.Principal?.FindFirstValue(JwtTokenGenerator.SecurityStampClaim), context.HttpContext.RequestAborted);
+                            if (failure is not null)
+                                context.Fail(failure);
                         }
                     };
                 })
@@ -135,8 +144,8 @@ namespace SIGENRD.Infrastructure.Identity
 
                             if (userId is null || ticketId is null)
                                 context.Fail("El permiso de subida no es válido.");
-                            else if (await services.GetRequiredService<DeactivatedAccounts>().IsDeactivatedAsync(userId, context.HttpContext.RequestAborted))
-                                context.Fail("La cuenta está desactivada.");
+                            else if (await services.GetRequiredService<AccountSessions>().IsDeactivatedAsync(userId, context.HttpContext.RequestAborted))
+                                context.Fail(AccountSessions.DeactivatedMessage);
                             else if (!services.GetRequiredService<UsedUploadTickets>().TryConsume(ticketId, context.SecurityToken.ValidTo))
                                 context.Fail("El permiso de subida ya se usó.");
                         }
@@ -144,7 +153,7 @@ namespace SIGENRD.Infrastructure.Identity
                 });
 
                 services.AddMemoryCache();
-                services.AddSingleton<DeactivatedAccounts>();
+                services.AddSingleton<AccountSessions>();
                 services.AddSingleton<UsedUploadTickets>();
                 services.AddScoped<IDocumentUploadTickets, DocumentUploadTickets>();
 
