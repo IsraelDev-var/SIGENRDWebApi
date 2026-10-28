@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // La imagen Docker (F9-01) lleva solo el servidor mínimo y los archivos que usa. Solo ahí: en Windows, el modo
+  // standalone puede pedir permisos para crear enlaces simbólicos, y en local y en las E2E basta con `next start`.
+  output: process.env.ENERGYMAP_STANDALONE === "true" ? "standalone" : undefined,
   // Sin la cabecera X-Powered-By, igual que la API, que no anuncia su servidor.
   poweredByHeader: false,
   // Cabeceras de seguridad de todas las respuestas (F9). La Content Security Policy, con nonce, la pone proxy.ts.

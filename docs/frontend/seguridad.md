@@ -19,7 +19,7 @@ API está en la auditoría del backend (`AUDITORIA_2026-10-10.md`) y en `Securit
 | Archivos de otra persona | Las descargas pasan por el servidor con el token (la API aplica RN-22); un 403 se muestra como 404; siempre `attachment` y `nosniff` | `server/download.ts` |
 | Proxy abierto hacia la API | `/api/mapa/…` solo deja pasar 6 endpoints públicos de lectura y consultas de hasta 1.024 caracteres | `app/api/mapa/[...ruta]/route.ts` |
 | Límite por IP inservible detrás del BFF | Se reenvía la IP del usuario con una clave compartida (`ENERGYMAP_PROXY_KEY` = `TrustedProxy:Key`) | `server/client-ip.ts` |
-| Código de terceros | Sin CDN: el worker de MapLibre se sirve desde el propio sitio; solo el mapa base viene de fuera (`MAP_ORIGINS`) | `scripts/copy-maplibre-worker.mjs` |
+| Código de terceros | Sin CDN: el worker de MapLibre se sirve desde el propio sitio; solo el mapa base viene de fuera (`MAP_ORIGINS` y el origen de `NEXT_PUBLIC_MAP_STYLE_*`) | `scripts/copy-maplibre-worker.mjs` |
 | Secretos en el cliente | Solo las variables `NEXT_PUBLIC_*` llegan al navegador, y son URLs de estilos del mapa; el resto se valida al arrancar | `config/env.ts`, `server/env.ts` |
 
 `dangerouslySetInnerHTML` solo aparece en `components/ui/chart.tsx` (shadcn), que escribe variables CSS a partir de la

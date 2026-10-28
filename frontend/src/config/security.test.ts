@@ -22,6 +22,17 @@ describe("Content Security Policy", () => {
     expect(directive("worker-src")).toBe("worker-src 'self' blob:");
   });
 
+  it("permite el origen de los estilos del mapa configurados (proveedor de producción, D-2)", () => {
+    const withMapTiler = contentSecurityPolicy("n", {
+      dev: false,
+      https: true,
+      mapStyles: ["https://api.maptiler.com/maps/streets-v2/style.json?key=abc", "https://api.maptiler.com/maps/dark/style.json"],
+    });
+    const connect = withMapTiler.split("; ").find((d) => d.startsWith("connect-src ")) ?? "";
+    expect(connect).toBe("connect-src 'self' https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://api.maptiler.com");
+    expect(withMapTiler).toContain("img-src 'self' data: blob: https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://api.maptiler.com");
+  });
+
   it("en desarrollo permite eval y el websocket de recarga; por HTTP no fuerza HTTPS", () => {
     const dev = contentSecurityPolicy("n", { dev: true, https: false });
     expect(dev).toContain("'unsafe-eval'");

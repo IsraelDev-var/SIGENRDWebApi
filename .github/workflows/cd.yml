@@ -1,7 +1,7 @@
 name: CD
 
 # Entrega continua:
-#   master  -> publica la imagen (sha y latest) y deja los scripts SQL de migracion.
+#   master  -> publica las imagenes de la API y del frontend (sha y latest) y deja los scripts SQL de migracion.
 #   v*.*.*  -> ademas la etiqueta con la version.
 #   El despliegue solo corre si el repositorio define la variable DEPLOY_ENABLED=true
 #   (ver docs/despliegue.md).
@@ -26,6 +26,10 @@ jobs:
   ci:
     name: Verificacion (CI)
     uses: ./.github/workflows/ci.yml
+
+  frontend-ci:
+    name: Verificacion del frontend
+    uses: ./.github/workflows/frontend.yml
 
   migrations:
     name: Scripts de migracion
@@ -159,4 +163,102 @@ jobs:
             sleep 10
           done
           echo "::error::La API no respondio Healthy tras el despliegue."
+          exit 1
+
+  publish-frontend-image:
+    name: Publicar imagen del frontend
+    needs: [ci, frontend-ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.name.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Nombre de la imagen en minusculas
+        id: name
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/frontend" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Etiquetas
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.name.outputs.image }}
+          tags: |
+            type=sha,format=long
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Los estilos del mapa quedan escritos en el JavaScript al compilar: cambiarlos exige publicar otra imagen.
+      - name: Construir y publicar
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_MAP_STYLE_LIGHT=${{ vars.NEXT_PUBLIC_MAP_STYLE_LIGHT }}
+            NEXT_PUBLIC_MAP_STYLE_DARK=${{ vars.NEXT_PUBLIC_MAP_STYLE_DARK }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+  deploy-frontend:
+    name: Desplegar el frontend a produccion
+    # Despues de la API: el frontend nuevo puede usar rutas que solo tiene la API nueva.
+    needs: [publish-frontend-image, deploy]
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.FRONTEND_URL }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Iniciar sesion en Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Desplegar la imagen
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_FRONTEND_WEBAPP_NAME }}
+          images: ${{ needs.publish-frontend-image.outputs.image }}:sha-${{ github.sha }}
+
+      # /api/salud solo dice Healthy con la configuracion completa; /requisitos ademas pasa por la API.
+      - name: Prueba de humo
+        env:
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+        run: |
+          for _ in $(seq 1 30); do
+            if curl -sf "$FRONTEND_URL/api/salud" | grep -q Healthy; then
+              curl -sfI "$FRONTEND_URL/" | grep -qi '^content-security-policy:' || { echo "::error::El frontend responde sin CSP."; exit 1; }
+              # Sin la API, /requisitos responde 200 con el aviso de error: se busca el aviso, no el codigo.
+              page=$(curl -sf "$FRONTEND_URL/requisitos") || { echo "::error::/requisitos no responde."; exit 1; }
+              if grep -q "No se pudieron cargar los requisitos" <<< "$page"; then
+                echo "::error::El frontend no llega a la API: revisar ENERGYMAP_API_URL."
+                exit 1
+              fi
+              echo "El frontend responde Healthy, con CSP y llega a la API"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::El frontend no respondio Healthy tras el despliegue."
           exit 1

@@ -14,6 +14,7 @@ Aplicación web de EnergyMap: Next.js (App Router), React, TypeScript estricto, 
 | `pnpm install` | Instala las dependencias |
 | `pnpm dev` | Servidor de desarrollo en http://localhost:3000 |
 | `pnpm build` y `pnpm start` | Build de producción y servidor |
+| `docker build -t energymap-web .` | Imagen de producción (modo standalone, puerto 8080, sin root). Variables y despliegue en [despliegue.md](../docs/despliegue.md#frontend-nextjs) |
 | `pnpm lint` | ESLint, incluidos los límites entre capas |
 | `pnpm typecheck` | Genera los tipos de rutas y ejecuta `tsc` |
 | `pnpm test` | Pruebas unitarias (Vitest) |

@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.medicion/
+coverage/
+e2e/
+playwright-report/
+test-results/
+public/vendor/
+**/*.test.ts
+**/*.test.tsx
+.env*
+!.env.example
+*.tsbuildinfo
+Dockerfile
+.dockerignore
