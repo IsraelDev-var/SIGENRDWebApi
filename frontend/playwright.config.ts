@@ -84,6 +84,9 @@ const apiServer = e2eDb
           RateLimiting__PublicTrackingPermitLimit: "4",
           App__EmailConfirmationUrl: `http://localhost:${port}/confirmar-correo`,
           App__PasswordResetUrl: `http://localhost:${port}/restablecer`,
+          // El navegador sube los documentos directo a la API (direct-upload.ts): los dos servidores de Next son otro origen.
+          Cors__AllowedOrigins__0: `http://localhost:${port}`,
+          Cors__AllowedOrigins__1: `http://localhost:${port + 1}`,
         },
       },
     ]

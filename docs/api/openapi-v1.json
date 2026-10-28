@@ -940,6 +940,131 @@
         }
       }
     },
+    "/api/v1/ConnectionRequest/{id}/documents/upload-ticket": {
+      "post": {
+        "tags": [
+          "ConnectionRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadTicketForm"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadTicketForm"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadTicketForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentUploadTicketDtoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentUploadTicketDtoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentUploadTicketDtoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ConnectionRequest/{id}/documents/direct": {
+      "post": {
+        "tags": [
+          "ConnectionRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "File": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "DocumentType": {
+                    "$ref": "#/components/schemas/DocumentType"
+                  }
+                }
+              },
+              "encoding": {
+                "File": {
+                  "style": "form"
+                },
+                "DocumentType": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDtoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDtoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDtoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/ConnectionRequest/{id}/documents/{documentId}/content": {
       "get": {
         "tags": [
@@ -4238,6 +4363,53 @@
         ],
         "type": "string"
       },
+      "DocumentUploadTicketDto": {
+        "required": [
+          "expiresAt",
+          "ticket",
+          "uploadPath"
+        ],
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "uploadPath": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DocumentUploadTicketDtoResponse": {
+        "required": [
+          "succeeded"
+        ],
+        "type": "object",
+        "properties": {
+          "succeeded": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocumentUploadTicketDto"
+          }
+        },
+        "additionalProperties": false
+      },
       "ForgotPasswordRequest": {
         "required": [
           "email"
@@ -6660,6 +6832,18 @@
           "availableCapacityKva": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UploadTicketForm": {
+        "required": [
+          "documentType"
+        ],
+        "type": "object",
+        "properties": {
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
           }
         },
         "additionalProperties": false

@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { MAP_STYLES } from "@/config/map";
 import { canEnterZone, homeFor, zoneOf } from "@/config/permissions";
 import { contentSecurityPolicy, newNonce } from "@/config/security";
-import { serverEnv } from "@/server/env";
+import { publicApiOrigin, serverEnv } from "@/server/env";
 import { verifyAccessToken } from "@/server/token";
 
 const AUTH_PAGES = new Set(["/ingresar", "/registro"]);
@@ -53,6 +53,7 @@ function withCsp(request: NextRequest, respond: (headers: Headers) => NextRespon
     dev: process.env.NODE_ENV === "development",
     https: request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https",
     mapStyles: [MAP_STYLES.light, MAP_STYLES.dark],
+    apiOrigin: publicApiOrigin(),
   });
 
   const headers = new Headers(request.headers);

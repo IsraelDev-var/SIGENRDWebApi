@@ -17,6 +17,7 @@ API está en la auditoría del backend (`AUDITORIA_2026-10-10.md`) y en `Securit
 | Incrustar el sitio en otro (clickjacking) | `frame-ancestors 'none'` y `X-Frame-Options: DENY` | `config/security.ts`, `next.config.ts` |
 | Redirección abierta tras el ingreso | `?next=` solo acepta rutas internas | `lib/safe-redirect.ts` |
 | Archivos de otra persona | Las descargas pasan por el servidor con el token (la API aplica RN-22); un 403 se muestra como 404; siempre `attachment` y `nosniff` | `server/download.ts` |
+| Subida de documentos sin pasar por el servidor | El navegador sube directo a la API (Vercel no acepta 10 MB) con un permiso que pide el servidor con la sesión: JWT de 5 minutos, un solo uso, solo para esa solicitud y ese tipo, con otra audiencia (no sirve como sesión). El JWT de sesión nunca sale del servidor; la petición va sin cookies. CORS y `connect-src` solo para el origen de la API | `features/requests/direct-upload.ts`, `requestUploadTicketAction` |
 | Proxy abierto hacia la API | `/api/mapa/…` solo deja pasar 6 endpoints públicos de lectura y consultas de hasta 1.024 caracteres | `app/api/mapa/[...ruta]/route.ts` |
 | Límite por IP inservible detrás del BFF | Se reenvía la IP del usuario con una clave compartida (`ENERGYMAP_PROXY_KEY` = `TrustedProxy:Key`) | `server/client-ip.ts` |
 | Código de terceros | Sin CDN: el worker de MapLibre se sirve desde el propio sitio; solo el mapa base viene de fuera (`MAP_ORIGINS` y el origen de `NEXT_PUBLIC_MAP_STYLE_*`) | `scripts/copy-maplibre-worker.mjs` |

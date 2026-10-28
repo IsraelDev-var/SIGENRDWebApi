@@ -281,3 +281,29 @@ test("solicitudes sin violaciones de accesibilidad graves, también a 360 px", a
     }
   }
 });
+
+test("un PDF de 6 MB se sube directo del navegador a la API, sin pasar por el servidor de Next", async ({ page, request }) => {
+  const { id } = await createDraftAsCustomer(request, transformer, "Calle del archivo grande 3");
+  await login(page, "Customer", `/ingresar?next=/portal/solicitudes/${id}`);
+
+  // Más que el límite de cuerpo de Vercel (4,5 MB) y menos que el de la API (10 MB, RN-18).
+  const big = Buffer.alloc(6 * 1024 * 1024, 0x20);
+  SAMPLE_PDF.copy(big);
+
+  const directUpload = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith(`/api/v1/ConnectionRequest/${id}/documents/direct`));
+  const item = requirements(page).first();
+  await item.getByLabel(/^Archivo para/).setInputFiles({ name: "plano grande.pdf", mimeType: "application/pdf", buffer: big });
+  await item.getByRole("button", { name: "Subir" }).click();
+
+  // La petición va a la API, con el permiso y no con la cookie de sesión.
+  const sent = await directUpload;
+  expect(sent.headers().authorization).toMatch(/^Bearer /);
+  expect(sent.headers().cookie).toBeUndefined();
+  const response = await sent.response();
+  expect(response?.status()).toBe(200);
+
+  // El requisito queda cumplido (su formulario desaparece) y el documento está en el expediente.
+  await expect
+    .poll(() => apiDataAs<{ fileName: string; sizeBytes: number }[]>(request, "Customer", `/ConnectionRequest/${id}/documents`))
+    .toEqual([expect.objectContaining({ fileName: "plano grande.pdf", sizeBytes: big.length })]);
+});

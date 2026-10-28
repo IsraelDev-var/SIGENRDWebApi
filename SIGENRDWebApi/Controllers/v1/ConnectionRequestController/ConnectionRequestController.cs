@@ -12,6 +12,7 @@ using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetRequiredDo
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.SearchAndTrack;
 using SIGENRD.Core.Application.Features.ConnectionRequests.Queries.GetConnectionRequestById;
 using SIGENRD.Core.Application.Exceptions;
+using SIGENRD.Core.Application.Interfaces.Services;
 using SIGENRD.Core.Application.Features.Documents;
 using SIGENRD.Core.Application.Services;
 using SIGENRD.Core.Domain.Enums;
@@ -97,7 +98,45 @@ namespace SIGENRDWebApi.Controllers.v1.ConnectionRequestController
         [Consumes("multipart/form-data")]
         [RequestSizeLimit(UploadLimitBytes)]
         [RequestFormLimits(MultipartBodyLengthLimit = UploadLimitBytes)]
-        public async Task<IActionResult> UploadDocument(int id, [FromForm] UploadDocumentForm form, CancellationToken cancellationToken)
+        public Task<IActionResult> UploadDocument(int id, [FromForm] UploadDocumentForm form, CancellationToken cancellationToken)
+            => SendUpload(id, form, cancellationToken);
+
+        public class UploadTicketForm
+        {
+            public DocumentType DocumentType { get; set; }
+        }
+
+        /// <summary>
+        /// Permiso de un solo uso, válido 5 minutos, para subir un documento de este tipo directo desde el navegador
+        /// (sin pasar por el servidor del frontend). Mismas reglas que la subida: RN-22, RN-19 y el tipo.
+        /// </summary>
+        [ProducesResponseType<Response<DocumentUploadTicketDto>>(StatusCodes.Status200OK)]
+        [HttpPost("{id:int}/documents/upload-ticket")]
+        [Authorize(Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
+        public async Task<IActionResult> CreateUploadTicket(int id, [FromBody] UploadTicketForm form, CancellationToken cancellationToken)
+            => Ok(await _mediator.Send(new CreateDocumentUploadTicketCommand(id, form.DocumentType), cancellationToken));
+
+        /// <summary>
+        /// Sube un documento con un permiso de upload-ticket ("Authorization: Bearer permiso"), no con el token de sesión.
+        /// El permiso tiene que ser de esta solicitud y de este tipo de documento. Necesita el origen del frontend en CORS.
+        /// </summary>
+        [ProducesResponseType<Response<DocumentDto>>(StatusCodes.Status200OK)]
+        [HttpPost("{id:int}/documents/direct")]
+        [Authorize(AuthenticationSchemes = DocumentUploadTicketDefaults.Scheme, Roles = $"{Roles.Customer}, {Roles.InstallerCompany}")]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(UploadLimitBytes)]
+        [RequestFormLimits(MultipartBodyLengthLimit = UploadLimitBytes)]
+        public Task<IActionResult> UploadDocumentWithTicket(int id, [FromForm] UploadDocumentForm form, CancellationToken cancellationToken)
+        {
+            var ticketRequest = User.FindFirst(DocumentUploadTicketDefaults.RequestIdClaim)?.Value;
+            var ticketType = User.FindFirst(DocumentUploadTicketDefaults.DocumentTypeClaim)?.Value;
+            if (ticketRequest != id.ToString() || ticketType != form.DocumentType.ToString())
+                throw new ForbiddenException("El permiso de subida es para otra solicitud o para otro tipo de documento.");
+
+            return SendUpload(id, form, cancellationToken);
+        }
+
+        private async Task<IActionResult> SendUpload(int id, UploadDocumentForm form, CancellationToken cancellationToken)
         {
             if (form.File is null || form.File.Length == 0)
                 throw new ApiException("Adjunte el archivo en el campo 'file'.");

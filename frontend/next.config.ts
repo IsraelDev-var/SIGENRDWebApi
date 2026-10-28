@@ -29,10 +29,11 @@ const nextConfig: NextConfig = {
     ];
   },
   experimental: {
-    // Los documentos de una solicitud pesan hasta 10 MB (RN-18) y se suben con una Server Action. Se deja margen para
-    // el resto del formulario multipart. proxy.ts copia el cuerpo de las rutas /portal, así que su límite es el mismo.
-    serverActions: { bodySizeLimit: "11mb" },
-    proxyClientMaxBodySize: "11mb",
+    // La Server Action más grande es la importación de transformadores (CSV de hasta 5 MB). Los documentos de una
+    // solicitud (10 MB, RN-18) ya no pasan por aquí: el navegador los sube directo a la API (direct-upload.ts).
+    // proxy.ts copia el cuerpo de las rutas privadas, así que su límite es el mismo.
+    serverActions: { bodySizeLimit: "6mb" },
+    proxyClientMaxBodySize: "6mb",
   },
 };
 

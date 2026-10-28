@@ -683,6 +683,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ConnectionRequest/{id}/documents/upload-ticket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UploadTicketForm"];
+                    "text/json": components["schemas"]["UploadTicketForm"];
+                    "application/*+json": components["schemas"]["UploadTicketForm"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DocumentUploadTicketDtoResponse"];
+                        "application/json": components["schemas"]["DocumentUploadTicketDtoResponse"];
+                        "text/json": components["schemas"]["DocumentUploadTicketDtoResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ConnectionRequest/{id}/documents/direct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "multipart/form-data": {
+                        /** Format: binary */
+                        File?: string;
+                        DocumentType?: components["schemas"]["DocumentType"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DocumentDtoResponse"];
+                        "application/json": components["schemas"]["DocumentDtoResponse"];
+                        "text/json": components["schemas"]["DocumentDtoResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ConnectionRequest/{id}/documents/{documentId}/content": {
         parameters: {
             query?: never;
@@ -2812,6 +2904,18 @@ export interface components {
         };
         /** @enum {string} */
         DocumentType: "Blueprint" | "TechnicalSheet" | "Invoice" | "IdentityDocument" | "CODIALicense" | "CompanyRegistration" | "RequestLetter" | "Permit" | "Other" | "InterconnectionScheme" | "InverterSpecification" | "CalculationMemory" | "ApprovalCertificate" | "ProofOfOwnership" | "OwnerAuthorization" | "TaxIdCard" | "ConstitutiveDocuments" | "BoardMinutes" | "IndustrialRegistry" | "EngineerIdentityDocument" | "DescriptiveMemory" | "FeasibilityRequestForm" | "ApprovedPlans" | "NoApprovedPlansLetter" | "SitePlan" | "EquipmentCertificate";
+        DocumentUploadTicketDto: {
+            ticket: string;
+            /** Format: date-time */
+            expiresAt: string;
+            uploadPath: string;
+        };
+        DocumentUploadTicketDtoResponse: {
+            succeeded: boolean;
+            message?: string | null;
+            errors?: string[] | null;
+            data?: components["schemas"]["DocumentUploadTicketDto"];
+        };
         ForgotPasswordRequest: {
             /** Format: email */
             email: string;
@@ -3490,6 +3594,9 @@ export interface components {
             totalCapacityKva: number;
             /** Format: double */
             availableCapacityKva: number;
+        };
+        UploadTicketForm: {
+            documentType: components["schemas"]["DocumentType"];
         };
         /** @enum {string} */
         UsageType: "Residential" | "Commercial" | "Industrial" | "Government" | "PublicService" | "Agricultural";

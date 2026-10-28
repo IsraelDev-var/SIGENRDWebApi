@@ -286,4 +286,90 @@ public class DocumentsTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.NotFound,
             (await (await api.ClientFor(TestRole.Customer)).GetAsync("/api/v1/ConnectionRequest/" + seeded.RequestId + "/certificate")).StatusCode);
     }
+
+    // ---------------- subida directa con permiso (Vercel no acepta cuerpos de 10 MB) ----------------
+
+    private async Task<HttpResponseMessage> RequestTicket(TestRole role, int requestId, DocumentType type)
+        => await (await api.ClientFor(role)).PostAsync("/api/v1/ConnectionRequest/" + requestId + "/documents/upload-ticket",
+            new StringContent("{\"documentType\":\"" + type + "\"}", Encoding.UTF8, "application/json"));
+
+    private async Task<HttpResponseMessage> UploadWithTicket(string ticket, string path, byte[] content, string fileName, DocumentType type)
+    {
+        var client = api.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ticket);
+        return await client.PostAsync(path, Form(content, fileName, type));
+    }
+
+    [FactIfDatabase]
+    public async Task El_solicitante_sube_directo_con_un_permiso_de_un_solo_uso()
+    {
+        var seeded = await SeedAsync();
+        var ticket = await Data(await RequestTicket(TestRole.Customer, seeded.RequestId, DocumentType.IdentityDocument));
+        var token = ticket.GetProperty("ticket").GetString()!;
+        var path = ticket.GetProperty("uploadPath").GetString()!;
+        Assert.Equal("/api/v1/ConnectionRequest/" + seeded.RequestId + "/documents/direct", path);
+        Assert.True(ticket.GetProperty("expiresAt").GetDateTime() <= DateTime.UtcNow.AddMinutes(5.1));
+
+        var pdf = DocumentComponentsTests.Pdf();
+        var uploaded = await Data(await UploadWithTicket(token, path, pdf, "cédula.pdf", DocumentType.IdentityDocument));
+        Assert.Equal("IdentityDocument", uploaded.GetProperty("documentType").GetString());
+        Assert.Equal(pdf.Length, uploaded.GetProperty("sizeBytes").GetInt64());
+
+        // Queda a nombre del solicitante: lo ve en su expediente.
+        var list = await Data(await (await api.ClientFor(TestRole.Customer)).GetAsync("/api/v1/ConnectionRequest/" + seeded.RequestId + "/documents"));
+        Assert.Contains(list.EnumerateArray(), d => d.GetProperty("id").GetInt32() == uploaded.GetProperty("id").GetInt32());
+
+        // El mismo permiso no sirve dos veces.
+        Assert.Equal(HttpStatusCode.Unauthorized, (await UploadWithTicket(token, path, pdf, "otra.pdf", DocumentType.IdentityDocument)).StatusCode);
+    }
+
+    [FactIfDatabase]
+    public async Task El_permiso_solo_vale_para_su_solicitud_y_su_tipo()
+    {
+        var seeded = await SeedAsync();
+        var other = await SeedAsync();
+        var pdf = DocumentComponentsTests.Pdf();
+
+        var forType = await Data(await RequestTicket(TestRole.Customer, seeded.RequestId, DocumentType.IdentityDocument));
+        Assert.Equal(HttpStatusCode.Forbidden, (await UploadWithTicket(forType.GetProperty("ticket").GetString()!,
+            "/api/v1/ConnectionRequest/" + seeded.RequestId + "/documents/direct", pdf, "a.pdf", DocumentType.Other)).StatusCode);
+
+        var forRequest = await Data(await RequestTicket(TestRole.Customer, seeded.RequestId, DocumentType.IdentityDocument));
+        Assert.Equal(HttpStatusCode.Forbidden, (await UploadWithTicket(forRequest.GetProperty("ticket").GetString()!,
+            "/api/v1/ConnectionRequest/" + other.RequestId + "/documents/direct", pdf, "a.pdf", DocumentType.IdentityDocument)).StatusCode);
+    }
+
+    [FactIfDatabase]
+    public async Task El_permiso_y_la_sesion_no_se_intercambian()
+    {
+        var seeded = await SeedAsync();
+        var path = "/api/v1/ConnectionRequest/" + seeded.RequestId + "/documents/direct";
+
+        // El token de sesión no sirve para la subida directa.
+        var session = await api.LoginAsync(TestRole.Customer);
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await UploadWithTicket(session.Token, path, DocumentComponentsTests.Pdf(), "a.pdf", DocumentType.IdentityDocument)).StatusCode);
+
+        // Ni el permiso sirve como sesión en otra ruta.
+        var ticket = (await Data(await RequestTicket(TestRole.Customer, seeded.RequestId, DocumentType.IdentityDocument))).GetProperty("ticket").GetString()!;
+        var client = api.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ticket);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/ConnectionRequest/" + seeded.RequestId + "/documents")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsync("/api/v1/ConnectionRequest/" + seeded.RequestId + "/documents",
+            Form(DocumentComponentsTests.Pdf(), "a.pdf", DocumentType.IdentityDocument))).StatusCode);
+    }
+
+    [FactIfDatabase]
+    public async Task Sin_derecho_sobre_la_solicitud_no_se_emite_permiso()
+    {
+        var seeded = await SeedAsync();
+
+        // Solicitud ajena: como si no existiera (RN-22). Personal: 403 (matriz 3.2). Certificado: lo genera el sistema.
+        Assert.Equal(HttpStatusCode.NotFound, (await RequestTicket(TestRole.InstallerCompany, seeded.RequestId, DocumentType.Other)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await RequestTicket(TestRole.Engineer, seeded.RequestId, DocumentType.Other)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await RequestTicket(TestRole.Customer, seeded.RequestId, DocumentType.ApprovalCertificate)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await api.CreateClient().PostAsync("/api/v1/ConnectionRequest/" + seeded.RequestId + "/documents/upload-ticket",
+                new StringContent("{\"documentType\":\"Other\"}", Encoding.UTF8, "application/json"))).StatusCode);
+    }
 }

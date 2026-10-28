@@ -40,6 +40,7 @@
 | Variable | Qué |
 |---|---|
 | `ENERGYMAP_API_URL` | URL base de la API |
+| `ENERGYMAP_PUBLIC_API_URL` | Opcional. URL de la API vista desde el navegador, para la subida directa de documentos; por defecto `ENERGYMAP_API_URL` |
 | `ENERGYMAP_JWT_PUBLIC_KEY`, `ENERGYMAP_JWT_ISSUER`, `ENERGYMAP_JWT_AUDIENCE` | Verificación del JWT (RS256) |
 | `ENERGYMAP_PROXY_KEY`, `ENERGYMAP_TRUSTED_PROXIES` | Reenvío de la IP del usuario (= `TrustedProxy:Key` de la API) |
 | `ENERGYMAP_DESIGN_CATALOG` | `true` habilita `/catalogo` (solo desarrollo) |

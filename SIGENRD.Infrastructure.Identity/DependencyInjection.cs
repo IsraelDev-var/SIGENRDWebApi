@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using SIGENRD.Core.Application.Interfaces.Services;
 using SIGENRD.Infrastructure.Identity.Configurations;
 using SIGENRD.Infrastructure.Identity.Entities;
 using SIGENRD.Infrastructure.Identity.Interfaces;
@@ -105,10 +106,47 @@ namespace SIGENRD.Infrastructure.Identity
                                 context.Fail("La cuenta está desactivada.");
                         }
                     };
+                })
+                // Permisos de subida directa de documentos: misma llave, otra audiencia, 5 minutos y un solo uso.
+                // Solo lo usa el endpoint que lo pide por nombre; nunca es el esquema por defecto.
+                .AddJwtBearer(DocumentUploadTicketDefaults.Scheme, opt =>
+                {
+                    opt.RequireHttpsMetadata = false;
+                    opt.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings.Issuer,
+                        ValidAudience = jwtSettings.Audience + DocumentUploadTicketDefaults.AudienceSuffix,
+                        IssuerSigningKey = signingKeys.ValidationKey,
+                        ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
+                        ClockSkew = TimeSpan.FromSeconds(30)
+                    };
+                    opt.Events = new JwtBearerEvents
+                    {
+                        OnTokenValidated = async context =>
+                        {
+                            var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
+                                         ?? context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                            var ticketId = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+                            var services = context.HttpContext.RequestServices;
+
+                            if (userId is null || ticketId is null)
+                                context.Fail("El permiso de subida no es válido.");
+                            else if (await services.GetRequiredService<DeactivatedAccounts>().IsDeactivatedAsync(userId, context.HttpContext.RequestAborted))
+                                context.Fail("La cuenta está desactivada.");
+                            else if (!services.GetRequiredService<UsedUploadTickets>().TryConsume(ticketId, context.SecurityToken.ValidTo))
+                                context.Fail("El permiso de subida ya se usó.");
+                        }
+                    };
                 });
 
                 services.AddMemoryCache();
                 services.AddSingleton<DeactivatedAccounts>();
+                services.AddSingleton<UsedUploadTickets>();
+                services.AddScoped<IDocumentUploadTickets, DocumentUploadTickets>();
 
                 // 🔹 JWT generator
                 services.AddScoped<JwtTokenGenerator>();
