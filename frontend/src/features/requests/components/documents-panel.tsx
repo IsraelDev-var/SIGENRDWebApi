@@ -1,6 +1,7 @@
 "use client";
 
 import { CircleCheck, CircleDashed, Download, Trash2, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useActionState, useId, useState } from "react";
 
 import { FormMessage } from "@/components/shared/form-field";
@@ -9,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import type { components } from "@/lib/api/schema";
 import { formatDate, formatFileSize } from "@/lib/format";
 
-import { deleteDocumentAction, uploadDocumentAction, type RequestActionState } from "../actions";
+import { deleteDocumentAction, documentUploadedAction, requestUploadTicketAction, type RequestActionState } from "../actions";
+import { uploadDirect } from "../direct-upload";
 import { DOCUMENT_TYPE_LABEL, documentTypeLabel } from "../labels";
 import { DOCUMENT_ACCEPT, documentFileError } from "../schemas";
 import { controlClass } from "@/components/shared/form-controls";
@@ -112,25 +114,49 @@ export function DocumentsPanel({ requestId, required, documents, canChange, down
 }
 
 function UploadForm({ requestId, types, label }: { requestId: number; types: string[]; label: string }) {
-  const [state, action, pending] = useActionState(uploadDocumentAction, IDLE);
-  const [fileError, setFileError] = useState<string | null>(null);
+  const router = useRouter();
+  const [state, setState] = useState<RequestActionState>(IDLE);
+  const [pending, setPending] = useState(false);
+  // Error del archivo elegido, revisado en el navegador antes de pedir el permiso.
+  const [error, setFileError] = useState<string | null>(null);
   const id = useId();
-  const error = fileError ?? state.fieldErrors?.file?.join(" ") ?? null;
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const input = form.elements.namedItem("file") as HTMLInputElement;
+    const file = input.files?.[0];
+    // Se revisa en el navegador para no enviar 10 MB que la API rechazaría (CA-06).
+    const problem = documentFileError(file);
+    setFileError(problem);
+    if (problem || !file) return;
+
+    const documentType = String(new FormData(form).get("documentType") ?? "");
+    setPending(true);
+    setState(IDLE);
+    try {
+      // El servidor pide el permiso con la sesión; el archivo va del navegador a la API sin pasar por él.
+      const ticket = await requestUploadTicketAction(requestId, documentType);
+      if (ticket.status === "error") {
+        setState({ status: "error", message: ticket.message });
+        return;
+      }
+      const result = await uploadDirect({ uploadUrl: ticket.uploadUrl, ticket: ticket.ticket, file, documentType });
+      if (!result.ok) {
+        setState({ status: "error", message: result.message });
+        return;
+      }
+      form.reset();
+      setState({ status: "success", message: `Subimos ${file.name}.` });
+      await documentUploadedAction(requestId);
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
-    <form
-      action={action}
-      noValidate
-      className="grid gap-3"
-      onSubmit={(e) => {
-        // Se revisa en el navegador para no enviar 10 MB que la API rechazaría (CA-06).
-        const file = (e.currentTarget.elements.namedItem("file") as HTMLInputElement).files?.[0];
-        const problem = documentFileError(file);
-        setFileError(problem);
-        if (problem) e.preventDefault();
-      }}
-    >
-      <input type="hidden" name="id" value={requestId} />
+    <form noValidate className="grid gap-3" onSubmit={onSubmit} aria-busy={pending || undefined}>
       <FormMessage status={state.status === "error" && !error ? "error" : state.status === "success" ? "success" : "idle"} message={state.message} />
       <div className="grid gap-3 sm:grid-cols-[minmax(0,14rem)_1fr]">
         {types.length > 1 ? (

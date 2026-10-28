@@ -5,9 +5,10 @@ import { redirect } from "next/navigation";
 
 import { can } from "@/config/permissions";
 import { ApiError, apiData } from "@/server/api-client";
+import { serverEnv } from "@/server/env";
 import { getSession, type Session } from "@/server/session";
 
-import { documentFileError, parseRequestForm, type FieldErrors, type RequestFormValues } from "./schemas";
+import { parseRequestForm, type FieldErrors, type RequestFormValues } from "./schemas";
 
 /** Resultado de una acción sobre una solicitud. */
 export type RequestActionState = {
@@ -118,31 +119,42 @@ export async function requestTransitionAction(_prev: RequestActionState, formDat
   return { status: "success", message: done };
 }
 
-/** Sube un documento del expediente (RN-18). Se revisa antes de enviarlo para no hacer esperar 10 MB en vano. */
-export async function uploadDocumentAction(_prev: RequestActionState, formData: FormData): Promise<RequestActionState> {
-  const session = await applicantSession();
-  if (!session) return NO_SESSION;
+/** Permiso para que el navegador suba el archivo directo a la API (RN-18). */
+export type UploadTicketState =
+  | { status: "ok"; ticket: string; uploadUrl: string }
+  | { status: "error"; message: string };
 
-  const id = parseId(formData.get("id"));
-  const documentType = String(formData.get("documentType") ?? "");
-  const file = formData.get("file");
+/**
+ * Pide a la API un permiso de un solo uso para subir un documento de este tipo. El archivo no pasa por este servidor:
+ * algunas plataformas (Vercel) no aceptan cuerpos de 10 MB. El token de sesión tampoco sale de aquí: el permiso solo
+ * sirve para esa subida y vence en 5 minutos.
+ */
+export async function requestUploadTicketAction(requestId: number, documentType: string): Promise<UploadTicketState> {
+  const session = await applicantSession();
+  if (!session) return { status: "error", message: NO_SESSION.message! };
+
+  const id = parseId(requestId);
   if (!id || !/^[A-Za-z]{1,40}$/.test(documentType)) return { status: "error", message: "Elige el tipo de documento." };
 
-  const fileError = documentFileError(file instanceof File ? file : null);
-  if (fileError) return { status: "error", message: fileError, fieldErrors: { file: [fileError] } };
-
-  const upload = new FormData();
-  upload.set("File", file as File);
-  upload.set("DocumentType", documentType);
-
   try {
-    await apiData(`/ConnectionRequest/${id}/documents`, { method: "POST", body: upload, token: session.token });
+    const data = await apiData<{ ticket: string; uploadPath: string }>(`/ConnectionRequest/${id}/documents/upload-ticket`, {
+      method: "POST",
+      body: { documentType },
+      token: session.token,
+    });
+    const env = serverEnv();
+    const uploadUrl = new URL(data.uploadPath, env.ENERGYMAP_PUBLIC_API_URL ?? env.ENERGYMAP_API_URL).toString();
+    return { status: "ok", ticket: data.ticket, uploadUrl };
   } catch (error) {
-    return failure(error);
+    const failed = failure(error);
+    return { status: "error", message: failed.message ?? "No pudimos preparar la subida." };
   }
+}
 
-  revalidatePath(`/portal/solicitudes/${id}`);
-  return { status: "success", message: `Subimos ${(file as File).name}.` };
+/** Después de subir directo a la API: la página del expediente vuelve a leer los documentos. */
+export async function documentUploadedAction(requestId: number): Promise<void> {
+  const id = parseId(requestId);
+  if (id) revalidatePath(`/portal/solicitudes/${id}`);
 }
 
 export async function deleteDocumentAction(_prev: RequestActionState, formData: FormData): Promise<RequestActionState> {

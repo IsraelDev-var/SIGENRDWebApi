@@ -33,6 +33,13 @@ describe("Content Security Policy", () => {
     expect(withMapTiler).toContain("img-src 'self' data: blob: https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://api.maptiler.com");
   });
 
+  it("deja al navegador subir documentos directo a la API, y solo a ella", () => {
+    const withApi = contentSecurityPolicy("n", { dev: false, https: true, apiOrigin: "https://energymap-api.onrender.com" });
+    const connect = withApi.split("; ").find((d) => d.startsWith("connect-src ")) ?? "";
+    expect(connect).toContain("https://energymap-api.onrender.com");
+    expect(directive("connect-src")).not.toContain("onrender.com");
+  });
+
   it("en desarrollo permite eval y el websocket de recarga; por HTTP no fuerza HTTPS", () => {
     const dev = contentSecurityPolicy("n", { dev: true, https: false });
     expect(dev).toContain("'unsafe-eval'");

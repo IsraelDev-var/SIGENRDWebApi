@@ -9,6 +9,11 @@ import { z } from "zod";
 const serverEnvSchema = z.object({
   /** URL base de la API .NET vista desde el servidor de Next, sin /api/v1. */
   ENERGYMAP_API_URL: z.url(),
+  /**
+   * URL base de la API vista desde el navegador, para la subida directa de documentos. Por defecto, ENERGYMAP_API_URL.
+   * Se define aparte cuando el servidor de Next llega a la API por una dirección interna.
+   */
+  ENERGYMAP_PUBLIC_API_URL: z.preprocess((v) => (v === "" ? undefined : v), z.url().optional()),
   /** Llave pública RSA (PEM, SPKI) con la que se verifica el JWT de la API. Saltos de línea como \n. */
   ENERGYMAP_JWT_PUBLIC_KEY: z.string().includes("BEGIN PUBLIC KEY"),
   ENERGYMAP_JWT_ISSUER: z.string().default("SIGENRD.API"),
@@ -40,4 +45,18 @@ export function serverEnv(): ServerEnv {
     cached = parsed.data;
   }
   return cached;
+}
+
+/**
+ * Origen público de la API para la Content Security Policy (connect-src) de la subida directa. No lanza: proxy.ts
+ * arma la CSP de todas las páginas, también de las que no necesitan la configuración del servidor.
+ */
+export function publicApiOrigin(): string | null {
+  const url = process.env.ENERGYMAP_PUBLIC_API_URL || process.env.ENERGYMAP_API_URL;
+  if (!url) return null;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
 }

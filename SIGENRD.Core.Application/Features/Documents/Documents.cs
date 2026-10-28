@@ -113,6 +113,57 @@ namespace SIGENRD.Core.Application.Features.Documents
         }
     }
 
+    // ---------------- permiso de subida directa ----------------
+
+    public class DocumentUploadTicketDto
+    {
+        /// <summary>Se manda como "Authorization: Bearer ..." al subir. Vale una vez.</summary>
+        public string Ticket { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
+        /// <summary>Ruta de la API donde se sube el archivo con el permiso.</summary>
+        public string UploadPath { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Pide un permiso para que el navegador suba el archivo directo a la API. Se comprueba aquí lo mismo que al subir
+    /// (RN-22, RN-19 y el tipo), para no emitir permisos que de todas formas se rechazarían.
+    /// </summary>
+    public record CreateDocumentUploadTicketCommand(int RequestId, DocumentType DocumentType) : IRequest<Response<DocumentUploadTicketDto>>;
+
+    public class CreateDocumentUploadTicketValidator : AbstractValidator<CreateDocumentUploadTicketCommand>
+    {
+        public CreateDocumentUploadTicketValidator()
+        {
+            RuleFor(c => c.DocumentType).IsInEnum().WithMessage("Tipo de documento inválido.")
+                .NotEqual(DocumentType.ApprovalCertificate).WithMessage("El certificado de aprobación lo genera el sistema.");
+        }
+    }
+
+    public class CreateDocumentUploadTicketHandler(
+        IConnectionRequestRepository requests, IDocumentUploadTickets tickets, ICurrentUserService currentUser)
+        : IRequestHandler<CreateDocumentUploadTicketCommand, Response<DocumentUploadTicketDto>>
+    {
+        public async Task<Response<DocumentUploadTicketDto>> Handle(CreateDocumentUploadTicketCommand command, CancellationToken cancellationToken)
+        {
+            var request = await requests.GetForUpdateAsync(command.RequestId, RequestScopeResolver.For(currentUser), cancellationToken)
+                ?? throw new KeyNotFoundException("Solicitud " + command.RequestId + " no encontrada.");
+
+            if (!RequestWorkflow.AllowsDocumentChanges(request.Status))
+                throw new DocumentsLockedException(request.Status);
+
+            // Solo el solicitante sube documentos (matriz 3.2): el controlador ya limita a estos dos roles.
+            var role = currentUser.IsInRole(nameof(UserType.Customer)) ? nameof(UserType.Customer) : nameof(UserType.InstallerCompany);
+            var ticket = tickets.Issue(currentUser.UserId!, currentUser.FullName ?? string.Empty, role, request.Id, command.DocumentType);
+
+            return new Response<DocumentUploadTicketDto>(new DocumentUploadTicketDto
+            {
+                Ticket = ticket.Ticket,
+                ExpiresAt = ticket.ExpiresAt,
+                UploadPath = "/api/v1/ConnectionRequest/" + request.Id + "/documents/direct"
+            });
+        }
+    }
+
     // ---------------- listar ----------------
 
     public record ListDocumentsQuery(int RequestId) : IRequest<Response<List<DocumentDto>>>;

@@ -63,7 +63,7 @@ La imagen no lleva secretos. Se definen como *Application settings* de la Web Ap
 | `App__EmailConfirmationUrl` | Página del frontend que confirma el correo (`https://…/confirmar-correo`); recibe `?userId=...&code=...`. Sin ella, el enlace del correo apunta a la API |
 | `TrustedProxy__Key` | Clave compartida con el servidor del frontend (`ENERGYMAP_PROXY_KEY`, 16 caracteres o más). Con ella la API acepta la IP del usuario que reenvía el frontend y el límite por IP se aplica a cada persona. Sin ella, todo lo que llega por el frontend comparte un mismo límite. Es un secreto (Key Vault) |
 | `App__PasswordResetUrl` | Página del frontend que pide la nueva contraseña; recibe `?email=...&code=...`. Por defecto `{App__PublicBaseUrl}/reset-password` |
-| `Cors__AllowedOrigins__0`, `__1`, ... | Orígenes del frontend que pueden llamar a la API desde el navegador. Vacío: ninguno |
+| `Cors__AllowedOrigins__0`, `__1`, ... | Orígenes del frontend que pueden llamar a la API desde el navegador: hace falta el del frontend para la subida directa de documentos. Vacío: ninguno |
 | `RateLimiting__AuthPermitLimit`, `__PublicTrackingPermitLimit`, `__WindowSeconds` | Peticiones por IP y ventana en `/Auth/*` (10) y en el seguimiento público (30), por minuto |
 | `EmailOutbox__DispatcherEnabled`, `__PollIntervalSeconds`, `__MaxAttempts`, `__KeepSentDays` | Bandeja de salida de correo: las peticiones solo guardan el correo; un proceso en segundo plano lo envía y reintenta (1 min, 5 min, 15 min, 1 h, 4 h). Ya vienen en `appsettings.json` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` y relacionadas | Trazas y métricas por OpenTelemetry. Sin ella no se activan. Ver [observabilidad.md](observabilidad.md) |
@@ -106,12 +106,13 @@ Una Web App para contenedores aparte de la de la API, con la imagen `…/fronten
 | `ENERGYMAP_PROXY_KEY` | Recomendada | La misma clave que `TrustedProxy__Key` de la API, 16 caracteres o más. Sin ella, la API ve la IP del frontend para todos y el límite de intentos por IP se aplica al sitio entero. Es un secreto (referencia a Key Vault) |
 | `ENERGYMAP_TRUSTED_PROXIES` | No (1) | Proxies delante de Next que agregan la IP del usuario a `X-Forwarded-For`. App Service solo: `1`. Con Front Door delante: `2`. Hay que confirmarlo en el ambiente real (ver pendientes) |
 | `ENERGYMAP_JWT_ISSUER`, `ENERGYMAP_JWT_AUDIENCE` | No | Solo si se cambian `JwtSettings__Issuer` o `__Audience` en la API |
+| `ENERGYMAP_PUBLIC_API_URL` | No | URL de la API que usa el navegador para subir documentos. Solo si el servidor de Next llega a la API por una dirección interna; por defecto, `ENERGYMAP_API_URL` |
 | `WEBSITES_PORT` | Sí, en App Service | `8080`, el puerto de la imagen |
 | `ENERGYMAP_DESIGN_CATALOG` | No | **No definirla en producción**: abre el catálogo del Design System en `/catalogo` |
 
 Además, en la API:
 
-- `Cors__AllowedOrigins__0`: no hace falta para el frontend, porque el navegador no llama a la API directamente.
+- `Cors__AllowedOrigins__0` = `{FRONTEND_URL}`: el navegador sube los documentos directo a la API (`POST …/documents/direct`) con un permiso de un solo uso, para no pasar 10 MB por el servidor de Next. Sin esto, subir documentos falla.
 - `App__EmailConfirmationUrl` = `{FRONTEND_URL}/confirmar-correo` y `App__PasswordResetUrl` = `{FRONTEND_URL}/restablecer`, para que los enlaces de los correos lleven al frontend.
 
 **Health check.** En la Web App del frontend, *Health check* con la ruta `/api/salud`: responde `Healthy` si el servidor tiene su configuración completa y 503 si le falta algo (sin decir qué, porque es pública). No consulta la API, que tiene su propio `/health`. La imagen trae también un `HEALTHCHECK` de Docker con la misma ruta.
@@ -120,7 +121,7 @@ Además, en la API:
 
 **Mapa base.** La CSP permite el origen de CARTO y el de los estilos configurados en `NEXT_PUBLIC_MAP_STYLE_*`. Si el proveedor sirve las teselas, las fuentes o los sprites desde otro dominio distinto al del estilo, hay que agregarlo en `frontend/src/config/security.ts`.
 
-**En Vercel (demo).** También se puede publicar en Vercel sin la imagen: proyecto con *Root Directory* `frontend` y las mismas variables `ENERGYMAP_*` (sin `WEBSITES_PORT`). `frontend/vercel.json` fija pnpm 12.9.1, porque el pnpm que trae Vercel no lee el lockfile del proyecto. Vercel reemplaza `X-Forwarded-For` por la IP del usuario, así que `ENERGYMAP_TRUSTED_PROXIES=1`. Límite de Vercel: las peticiones de más de 4,5 MB fallan, así que un documento de más de ese tamaño no se puede subir con la Server Action actual.
+**En Vercel (demo).** También se puede publicar en Vercel sin la imagen: proyecto con *Root Directory* `frontend` y las mismas variables `ENERGYMAP_*` (sin `WEBSITES_PORT`). `frontend/vercel.json` fija pnpm 12.9.1, porque el pnpm que trae Vercel no lee el lockfile del proyecto. Vercel reemplaza `X-Forwarded-For` por la IP del usuario, así que `ENERGYMAP_TRUSTED_PROXIES=1`. Vercel no acepta peticiones de más de 4,5 MB: por eso los documentos (hasta 10 MB) van del navegador a la API con un permiso de un solo uso, y la API necesita el origen de Vercel en `Cors__AllowedOrigins__0`. La importación de transformadores sigue pasando por el servidor (CSV de hasta 5 MB): en Vercel, un CSV de más de 4,5 MB falla.
 
 **Probar la imagen en local:**
 

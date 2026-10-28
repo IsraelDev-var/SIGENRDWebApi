@@ -16,13 +16,15 @@ type Options = {
    * proveedor de producción (MapTiler, PMTiles propios) funcione sin tocar este archivo si sirve todo desde ese origen.
    */
   mapStyles?: string[];
+  /** Origen de la API, al que el navegador sube los documentos directamente (sin pasar por el servidor de Next). */
+  apiOrigin?: string | null;
 };
 
 function mapOrigins(mapStyles: string[]): string[] {
   return [...new Set([...MAP_ORIGINS, ...mapStyles.map((url) => new URL(url).origin)])];
 }
 
-export function contentSecurityPolicy(nonce: string, { dev, https, mapStyles = [] }: Options): string {
+export function contentSecurityPolicy(nonce: string, { dev, https, mapStyles = [], apiOrigin }: Options): string {
   const map = mapOrigins(mapStyles);
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
@@ -32,7 +34,7 @@ export function contentSecurityPolicy(nonce: string, { dev, https, mapStyles = [
     "style-src": ["'self'", "'unsafe-inline'"],
     "img-src": ["'self'", "data:", "blob:", ...map],
     "font-src": ["'self'", "data:"],
-    "connect-src": ["'self'", ...map, ...(dev ? ["ws:", "wss:"] : [])],
+    "connect-src": ["'self'", ...map, ...(apiOrigin ? [apiOrigin] : []), ...(dev ? ["ws:", "wss:"] : [])],
     // El worker de MapLibre se sirve desde nuestro origen; MapLibre también crea workers desde blob:.
     "worker-src": ["'self'", "blob:"],
     "object-src": ["'none'"],
