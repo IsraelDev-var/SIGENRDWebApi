@@ -7,9 +7,12 @@ on:
   pull_request:
     branches: [master, main]
     paths: ['frontend/**', 'docs/api/**', 'SIGENRD*/**', '.github/workflows/frontend.yml']
+  # El CD lo llama antes de publicar la imagen del frontend.
+  workflow_call:
 
 concurrency:
-  group: frontend-${{ github.ref }}
+  # github.workflow es el del flujo que llama: el CD no cancela ni es cancelado por la corrida del push.
+  group: frontend-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -104,3 +107,42 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report/
           if-no-files-found: ignore
+
+  docker:
+    name: Imagen Docker del frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Solo comprueba que compila; la publica el CD.
+      - name: Construir la imagen
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          push: false
+          load: true
+          tags: energymap-web:ci
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+      # La imagen arranca como usuario sin privilegios y responde /api/salud con su configuración mínima.
+      - name: Prueba de humo de la imagen
+        working-directory: .
+        run: |
+          # Una llave pública cualquiera (PEM con saltos de línea; en App Service va en una línea con \n).
+          key=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 2>/dev/null | openssl pkey -pubout)
+          docker run -d --name web -p 8080:8080 \
+            -e ENERGYMAP_API_URL=http://api.invalid:8080 \
+            -e ENERGYMAP_JWT_PUBLIC_KEY="$key" \
+            energymap-web:ci
+          for _ in $(seq 1 30); do
+            if curl -sf http://localhost:8080/api/salud | grep -q Healthy; then break; fi
+            sleep 2
+          done
+          curl -sf http://localhost:8080/api/salud | grep -q Healthy || { docker logs web; exit 1; }
+          test "$(docker exec web id -u)" != "0" || { echo "::error::La imagen corre como root."; exit 1; }
+          curl -sfI http://localhost:8080/ | grep -qi '^content-security-policy:' || { echo "::error::Falta la CSP."; exit 1; }
+          echo "La imagen responde Healthy, con CSP y sin root."

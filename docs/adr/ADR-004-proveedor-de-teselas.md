@@ -17,4 +17,4 @@ En desarrollo el mapa usa los estilos gratuitos de CARTO (`basemaps.cartocdn.com
 ## Qué cambia al decidir
 
 - Las URLs del estilo en `src/config/map.ts` y `components/ui/map.tsx`.
-- `MAP_ORIGINS` en `src/config/security.ts` (Content Security Policy).
+- Las variables `NEXT_PUBLIC_MAP_STYLE_LIGHT` y `NEXT_PUBLIC_MAP_STYLE_DARK` del CD (se escriben al construir la imagen). La Content Security Policy permite su origen sin cambiar código; solo si el proveedor sirve teselas, fuentes o sprites desde otro dominio hay que agregarlo a `MAP_ORIGINS` en `src/config/security.ts`.

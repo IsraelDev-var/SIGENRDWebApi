@@ -5,13 +5,17 @@
 | Flujo | Cuándo corre | Qué hace |
 |---|---|---|
 | `ci.yml` | En cada push y en cada pull request a `master` | Compila, revisa paquetes vulnerables, corre las pruebas contra PostGIS y smtp4dev reales y comprueba que la imagen Docker compila |
-| `cd.yml` | Al hacer push a `master`, al crear una etiqueta `vX.Y.Z` o a mano | Repite el CI, publica la imagen en GitHub Container Registry, genera los scripts SQL de migración y, si está activado, despliega |
+| `frontend.yml` | En cada push y pull request que toca `frontend/`, el contrato o la API | Lint, tipos, pruebas unitarias, build, E2E contra la API real, y construye y prueba la imagen Docker del frontend (responde `/api/salud`, con CSP y sin root) |
+| `cd.yml` | Al hacer push a `master`, al crear una etiqueta `vX.Y.Z` o a mano | Repite los dos CI, publica las imágenes de la API y del frontend en GitHub Container Registry, genera los scripts SQL de migración y, si está activado, despliega la API y después el frontend |
 
 El CI se bloquea si hay un paquete con vulnerabilidad conocida o si falla una prueba. El CD no publica nada que no haya pasado el CI.
 
 ## Imágenes
 
-`ghcr.io/<usuario>/<repositorio>` en minúsculas, con estas etiquetas:
+- API: `ghcr.io/<usuario>/<repositorio>` en minúsculas.
+- Frontend: `ghcr.io/<usuario>/<repositorio>/frontend`.
+
+Las dos con estas etiquetas:
 
 - `sha-<commit completo>`: la que se despliega.
 - `latest`: el último `master`.
@@ -28,8 +32,11 @@ El despliegue es opcional y está apagado hasta que se configuren estos valores 
 | Nombre | Valor |
 |---|---|
 | `DEPLOY_ENABLED` | `true` |
-| `AZURE_WEBAPP_NAME` | Nombre de la Web App para contenedores en Azure App Service |
-| `APP_URL` | URL pública, por ejemplo `https://energymap.azurewebsites.net` |
+| `AZURE_WEBAPP_NAME` | Nombre de la Web App para contenedores de la API en Azure App Service |
+| `APP_URL` | URL pública de la API, por ejemplo `https://energymap-api.azurewebsites.net` |
+| `AZURE_FRONTEND_WEBAPP_NAME` | Nombre de la Web App para contenedores del frontend |
+| `FRONTEND_URL` | URL pública del frontend, la que usan las personas, por ejemplo `https://energymap.azurewebsites.net` |
+| `NEXT_PUBLIC_MAP_STYLE_LIGHT`, `NEXT_PUBLIC_MAP_STYLE_DARK` | URL del estilo del mapa base claro y oscuro (decisión D-2, por ejemplo MapTiler). Se escriben en el JavaScript al construir la imagen: cambiarlas exige volver a publicarla. Vacías, se usa CARTO, que es solo para desarrollo |
 
 **Secretos**
 
@@ -87,6 +94,41 @@ Cambiar la llave invalida todos los tokens emitidos: los usuarios vuelven a inic
 
 **Detrás de un proxy.** El límite de peticiones es por IP. Si la API queda detrás de un proxy o balanceador que no entrega la IP real del cliente, todos compartirían el mismo límite: hay que habilitar las cabeceras reenviadas (`ForwardedHeaders`) antes de exponerla.
 
+## Frontend (Next.js)
+
+Una Web App para contenedores aparte de la de la API, con la imagen `…/frontend`. La imagen usa el modo *standalone* de Next (solo el servidor mínimo y los archivos que usa, unos 40 MB más Node), corre como el usuario `node` y escucha en el puerto **8080**. No lleva secretos: todo llega por *Application settings*.
+
+| Variable | Obligatoria | Para qué |
+|---|---|---|
+| `ENERGYMAP_API_URL` | Sí | URL base de la API vista desde el servidor de Next, sin `/api/v1` (por ejemplo `https://energymap-api.azurewebsites.net`). El navegador nunca llama a la API: todo pasa por el servidor de Next |
+| `ENERGYMAP_JWT_PUBLIC_KEY` | Sí | Llave pública RSA (PEM, SPKI) del par con el que la API firma el JWT, en una sola línea con `
+`. Se obtiene de la privada con `openssl pkey -in privada.pem -pubout`. No es un secreto, pero si cambia la llave de la API hay que cambiarla también aquí |
+| `ENERGYMAP_PROXY_KEY` | Recomendada | La misma clave que `TrustedProxy__Key` de la API, 16 caracteres o más. Sin ella, la API ve la IP del frontend para todos y el límite de intentos por IP se aplica al sitio entero. Es un secreto (referencia a Key Vault) |
+| `ENERGYMAP_TRUSTED_PROXIES` | No (1) | Proxies delante de Next que agregan la IP del usuario a `X-Forwarded-For`. App Service solo: `1`. Con Front Door delante: `2`. Hay que confirmarlo en el ambiente real (ver pendientes) |
+| `ENERGYMAP_JWT_ISSUER`, `ENERGYMAP_JWT_AUDIENCE` | No | Solo si se cambian `JwtSettings__Issuer` o `__Audience` en la API |
+| `WEBSITES_PORT` | Sí, en App Service | `8080`, el puerto de la imagen |
+| `ENERGYMAP_DESIGN_CATALOG` | No | **No definirla en producción**: abre el catálogo del Design System en `/catalogo` |
+
+Además, en la API:
+
+- `Cors__AllowedOrigins__0`: no hace falta para el frontend, porque el navegador no llama a la API directamente.
+- `App__EmailConfirmationUrl` = `{FRONTEND_URL}/confirmar-correo` y `App__PasswordResetUrl` = `{FRONTEND_URL}/restablecer`, para que los enlaces de los correos lleven al frontend.
+
+**Health check.** En la Web App del frontend, *Health check* con la ruta `/api/salud`: responde `Healthy` si el servidor tiene su configuración completa y 503 si le falta algo (sin decir qué, porque es pública). No consulta la API, que tiene su propio `/health`. La imagen trae también un `HEALTHCHECK` de Docker con la misma ruta.
+
+**Prueba de humo del CD.** Después de desplegar, comprueba `/api/salud`, que la página de inicio lleva la Content Security Policy y que `/requisitos` llega a la API.
+
+**Mapa base.** La CSP permite el origen de CARTO y el de los estilos configurados en `NEXT_PUBLIC_MAP_STYLE_*`. Si el proveedor sirve las teselas, las fuentes o los sprites desde otro dominio distinto al del estilo, hay que agregarlo en `frontend/src/config/security.ts`.
+
+**En Vercel (demo).** También se puede publicar en Vercel sin la imagen: proyecto con *Root Directory* `frontend` y las mismas variables `ENERGYMAP_*` (sin `WEBSITES_PORT`). `frontend/vercel.json` fija pnpm 12.9.1, porque el pnpm que trae Vercel no lee el lockfile del proyecto. Vercel reemplaza `X-Forwarded-For` por la IP del usuario, así que `ENERGYMAP_TRUSTED_PROXIES=1`. Límite de Vercel: las peticiones de más de 4,5 MB fallan, así que un documento de más de ese tamaño no se puede subir con la Server Action actual.
+
+**Probar la imagen en local:**
+
+```bash
+docker build -t energymap-web frontend
+docker run --rm -p 8080:8080 -e ENERGYMAP_API_URL=http://host.docker.internal:5116 -e ENERGYMAP_JWT_PUBLIC_KEY="$(cat publica.pem)" energymap-web
+```
+
 ## Health checks
 
 | Ruta | Qué comprueba | Uso |
@@ -109,4 +151,5 @@ Cambiar la llave invalida todos los tokens emitidos: los usuarios vuelven a inic
 - Plazos de evaluación (20 días) y retiro automático (30 días): pospuestos hasta que Edesur confirme las reglas.
 - Las llaves de Data Protection (códigos de confirmación de correo y de restablecimiento) viven en el contenedor: si se reinicia o hay más de una instancia, los enlaces pendientes dejan de servir. Hay que persistirlas antes de escalar.
 - Los logs salen como JSON por la salida estándar fuera de desarrollo: la plataforma los recoge. Las alertas recomendadas están en [observabilidad.md](observabilidad.md) y se configuran en la herramienta de monitoreo, no en la API.
-- La publicación de imágenes y el despliegue solo se ejecutan en `master`, así que no se pueden probar desde una rama sin activar `workflow_dispatch`.
+- La publicación de imágenes y el despliegue solo se ejecutan en `master`, así que no se pueden probar desde una rama sin activar `workflow_dispatch`. La imagen del frontend sí se construye y se prueba en cada pull request (`frontend.yml`).
+- El frontend corre en una sola instancia sin problema. Con varias, la caché de Next queda en cada contenedor: no afecta, porque todas las páginas se generan por petición.
