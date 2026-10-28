@@ -31,6 +31,9 @@ namespace SIGENRD.Core.Domain.Entities
         public decimal ConditionedThresholdPct { get; set; } = 30m;
         public decimal DefaultPowerFactor { get; set; } = 0.9m; // valor provisional, por confirmar con Edesur
 
+        // IsActive (de AuditableEntity) en false = desactivada: no sale en los catálogos ni admite transformadores ni
+        // personal nuevos; lo existente se conserva.
+
         // Relaciones
         public ICollection<Transformer>? Transformers { get; set; }
         public ICollection<ConnectionRequest>? ConnectionRequests { get; set; }

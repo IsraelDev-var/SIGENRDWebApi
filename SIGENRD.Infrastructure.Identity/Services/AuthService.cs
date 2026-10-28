@@ -86,6 +86,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
                 UserType = request.UserType,
                 DistributorType = request.DistributorType,
                 InstallerCompanyId = request.InstallerCompanyId,
+                DistributorId = request.DistributorId,
                 // Importante: El usuario nace sin confirmar
                 IsEmailConfirmed = false,
                 MustChangePassword = mustChangePassword

@@ -6,6 +6,10 @@ namespace SIGENRD.Core.Application.Interfaces.Services
     /// </summary>
     public interface IStaffDirectory
     {
-        Task<IReadOnlyList<string>> GetUserIdsInRolesAsync(IEnumerable<string> roles, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Usuarios con alguno de los roles. Con distributorId, los de rol Admin siempre entran y el resto solo si
+        /// es personal de esa EDE.
+        /// </summary>
+        Task<IReadOnlyList<string>> GetUserIdsInRolesAsync(IEnumerable<string> roles, int? distributorId = null, CancellationToken cancellationToken = default);
     }
 }

@@ -1,4 +1,5 @@
 using SIGENRD.Core.Domain.Interfaces;
+using SIGENRD.Infrastructure.Identity.JWT;
 using System.Security.Claims;
 
 namespace SIGENRDWebApi.Services
@@ -15,5 +16,8 @@ namespace SIGENRDWebApi.Services
         public string? IpAddress => accessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 
         public string? FullName => accessor.HttpContext?.User.FindFirstValue("FullName");
+
+        public int? DistributorId =>
+            int.TryParse(accessor.HttpContext?.User.FindFirstValue(JwtTokenGenerator.DistributorClaim), out var id) ? id : null;
     }
 }

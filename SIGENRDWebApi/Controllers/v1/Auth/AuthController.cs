@@ -6,9 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using SIGENRD.Core.Application.Exceptions;
+using SIGENRD.Core.Application.Mediator;
 using SIGENRD.Core.Domain.Enums;
 using SIGENRD.Core.Domain.Settings;
 using SIGENRDWebApi.Constants;
+using SIGENRDWebApi.Services;
 using SIGENRD.Infrastructure.Identity.DTOs;
 using SIGENRD.Infrastructure.Identity.Interfaces;
 using SIGENRD.Infrastructure.Identity.Services;
@@ -21,7 +23,7 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
     // AuthController.cs - Versión final limpia
     [ApiVersion("1.0")]
     [EnableRateLimiting(RateLimitPolicies.Auth)]
-    public class AuthController(IAuthService authService) : BaseApiController
+    public class AuthController(IAuthService authService, IMediator mediator) : BaseApiController
     {
         private readonly IAuthService _authService = authService;
 
@@ -35,6 +37,9 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
         {
             if (request.UserType is not (UserType.Customer or UserType.InstallerCompany))
                 throw new ApiException("El registro público solo admite los roles Customer e InstallerCompany.");
+
+            // Pertenecer a una EDE solo lo decide un administrador.
+            request.DistributorId = null;
 
             // Misma respuesta exista o no la cuenta (SEC-08); solo fallan los datos inválidos.
             var result = await _authService.RegisterAsync(request, revealExistingAccount: false);
@@ -52,6 +57,18 @@ namespace SIGENRDWebApi.Controllers.v1.Auth
         {
             if (request.UserType is UserType.Customer or UserType.InstallerCompany)
                 throw new ApiException("Los clientes e instaladoras se registran por el registro público.");
+
+            // El ingeniero y la distribuidora trabajan para una EDE y solo ven lo de ella; el administrador, para todas.
+            if (UserAdministration.StaffTypes.Contains(request.UserType))
+            {
+                if (request.DistributorId is not int distributorId)
+                    throw new ApiException("Elige la distribuidora a la que pertenece.");
+                await StaffDistributors.EnsureAssignableAsync(mediator, distributorId, HttpContext.RequestAborted);
+            }
+            else
+            {
+                request.DistributorId = null;
+            }
 
             // La contraseña la eligió el administrador: la persona la cambia en su primer ingreso.
             var result = await _authService.RegisterAsync(request, revealExistingAccount: true, mustChangePassword: true);

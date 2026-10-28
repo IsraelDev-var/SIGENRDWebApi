@@ -35,8 +35,7 @@ namespace SIGENRD.Infrastructure.Persistences.Seeds
             if (count <= 0) return;
             if (await db.Transformers.AnyAsync(t => t.Code.StartsWith(CodePrefix), cancellationToken)) return;
 
-            var distributor = await db.Distributors.FirstOrDefaultAsync(d => d.Name == DistributorName, cancellationToken)
-                ?? db.Distributors.Add(new Distributor { Name = DistributorName, Type = DistributorType.EDESUR }).Entity;
+            var distributor = await EnsureDistributorAsync(db, cancellationToken);
 
             var zones = Cities
                 .Select(c => db.ServiceZones.Add(new ServiceZone { ZoneName = c.Zone, Municipality = c.Zone, Province = c.Province }).Entity)
@@ -49,6 +48,17 @@ namespace SIGENRD.Infrastructure.Persistences.Seeds
                 db.Transformers.AddRange(batch);
                 await db.SaveChangesAsync(cancellationToken);
             }
+        }
+
+        /// <summary>Edesur, la EDE de desarrollo: la usan los transformadores de demostración y el personal de prueba.</summary>
+        public static async Task<Distributor> EnsureDistributorAsync(AppContextSIGENRD db, CancellationToken cancellationToken = default)
+        {
+            var distributor = await db.Distributors.FirstOrDefaultAsync(d => d.Name == DistributorName, cancellationToken);
+            if (distributor is not null) return distributor;
+
+            distributor = db.Distributors.Add(new Distributor { Name = DistributorName, Type = DistributorType.EDESUR }).Entity;
+            await db.SaveChangesAsync(cancellationToken);
+            return distributor;
         }
 
         /// <summary>Genera los transformadores sin tocar la base (se prueba aparte).</summary>

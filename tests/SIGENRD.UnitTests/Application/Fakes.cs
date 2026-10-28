@@ -102,6 +102,9 @@ public class FakeTransformerRepository : ITransformerRepository
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<ZoneRiskSummary>> GetZoneRiskAsync(CancellationToken cancellationToken = default) =>
+    public Task<IReadOnlyList<ZoneRiskSummary>> GetZoneRiskAsync(int? distributorId = null, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<ZoneRiskSummary>>(Array.Empty<ZoneRiskSummary>());
+
+    public Task<IReadOnlyList<Transformer>> GetByDistributorForUpdateAsync(int distributorId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<Transformer>>(Items.Where(t => t.DistributorId == distributorId).ToList());
 }

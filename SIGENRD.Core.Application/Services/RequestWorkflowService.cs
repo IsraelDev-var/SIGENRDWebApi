@@ -28,13 +28,11 @@ namespace SIGENRD.Core.Application.Services
         ICertificateGenerator certificates,
         ILogger<RequestWorkflowService> logger)
     {
-        private static readonly RequestScope Staff = new(RequestScopeKind.All);
-
         // ---------------- personal de la distribuidora ----------------
 
         public async Task<ConnectionRequestResponseDto> StartReviewAsync(int id, CancellationToken ct)
         {
-            var request = await LoadAsync(id, Staff, ct);
+            var request = await LoadAsync(id, RequestScopeResolver.For(currentUser), ct);
             var from = request.Status;
             var (available, conditioned) = Thresholds(request);
 
@@ -46,7 +44,7 @@ namespace SIGENRD.Core.Application.Services
 
         public async Task<ConnectionRequestResponseDto> ObserveAsync(int id, string comment, ObservationType type, CancellationToken ct)
         {
-            var request = await LoadAsync(id, Staff, ct);
+            var request = await LoadAsync(id, RequestScopeResolver.For(currentUser), ct);
             var from = request.Status;
 
             request.Observe();
@@ -56,7 +54,7 @@ namespace SIGENRD.Core.Application.Services
 
         public async Task<ConnectionRequestResponseDto> ApproveAsync(int id, CancellationToken ct)
         {
-            var request = await LoadAsync(id, Staff, ct);
+            var request = await LoadAsync(id, RequestScopeResolver.For(currentUser), ct);
             var from = request.Status;
             var (available, conditioned) = Thresholds(request);
 
@@ -94,7 +92,7 @@ namespace SIGENRD.Core.Application.Services
 
         public async Task<ConnectionRequestResponseDto> RejectAsync(int id, string comment, CancellationToken ct)
         {
-            var request = await LoadAsync(id, Staff, ct);
+            var request = await LoadAsync(id, RequestScopeResolver.For(currentUser), ct);
             var from = request.Status;
             var (available, conditioned) = Thresholds(request);
 
@@ -125,7 +123,7 @@ namespace SIGENRD.Core.Application.Services
                 "Nueva solicitud " + request.RequestCode,
                 "Llegó una solicitud de " + (request.RequestType == RequestType.NetMetering ? "medición neta" : "conexión") +
                 " por " + request.RequestedCapacityKva.ToString("0.##") + " kVA en el transformador " + request.Transformer!.Code + ".",
-                NotificationType.NewRequestForReview, ct);
+                NotificationType.NewRequestForReview, request.DistributorId, ct);
 
             return await SaveAsync(request, from, "Solicitud enviada", null, ct);
         }
@@ -153,7 +151,7 @@ namespace SIGENRD.Core.Application.Services
             await staffNotifier.NotifyAsync(
                 "Solicitud " + request.RequestCode + " reenviada",
                 "El solicitante atendió las observaciones de la solicitud " + request.RequestCode + " y espera nueva revisión.",
-                NotificationType.NewRequestForReview, ct);
+                NotificationType.NewRequestForReview, request.DistributorId, ct);
 
             return await SaveAsync(request, from, null, null, ct);
         }

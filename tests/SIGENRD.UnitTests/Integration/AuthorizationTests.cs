@@ -77,7 +77,8 @@ public class AuthorizationTests(ApiFactory api)
         if (endpoint.Name == "alta de usuario interno")
         {
             var email = "interno-" + role + "-" + Guid.NewGuid().ToString("N")[..8] + "@test.energymap.local";
-            request.Content = Json("{\"fullName\":\"Interno\",\"email\":\"" + email + "\",\"password\":\"" + ApiFactory.TestPassword + "\",\"userType\":2}");
+            request.Content = Json("{\"fullName\":\"Interno\",\"email\":\"" + email + "\",\"password\":\"" + ApiFactory.TestPassword +
+                                   "\",\"userType\":2,\"distributorId\":" + await api.EdesurIdAsync() + "}");
         }
 
         var response = await client.SendAsync(request);

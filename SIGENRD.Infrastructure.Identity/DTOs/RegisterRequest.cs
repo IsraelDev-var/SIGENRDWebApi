@@ -1,4 +1,4 @@
-﻿using SIGENRD.Core.Domain.Enums;
+using SIGENRD.Core.Domain.Enums;
 
 using System.ComponentModel.DataAnnotations;
 
@@ -22,5 +22,8 @@ namespace SIGENRD.Infrastructure.Identity.DTOs
         public DistributorType? DistributorType { get; set; }
 
         public int? InstallerCompanyId { get; set; }
+
+        /// <summary>EDE del personal; obligatoria para Ingeniero y Distribuidora en el alta interna.</summary>
+        public int? DistributorId { get; set; }
     }
 }

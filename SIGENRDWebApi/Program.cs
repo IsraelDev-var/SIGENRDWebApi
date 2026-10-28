@@ -71,7 +71,10 @@ using (var scope = app.Services.CreateScope())
 
         // Usuarios de prueba por rol: solo en desarrollo
         if (app.Environment.IsDevelopment())
-            await DevelopmentTestUsers.SeedAsync(userManager, configuration["Seed:TestUsersPassword"]);
+        {
+            var edesur = await DevelopmentDemoData.EnsureDistributorAsync(services.GetRequiredService<AppContextSIGENRD>());
+            await DevelopmentTestUsers.SeedAsync(userManager, configuration["Seed:TestUsersPassword"], edesur.Id);
+        }
 
         // Transformadores de demostración para ver el mapa en desarrollo y en las pruebas E2E (Seed:DemoTransformers).
         if (app.Environment.IsDevelopment())

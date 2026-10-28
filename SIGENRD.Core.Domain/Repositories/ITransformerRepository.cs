@@ -26,7 +26,8 @@ namespace SIGENRD.Core.Domain.Repositories
         string? Code = null,
         int? ServiceZoneId = null,
         TransformerStatus? Status = null,
-        TransformerSort Sort = TransformerSort.Code);
+        TransformerSort Sort = TransformerSort.Code,
+        int? DistributorId = null);
 
     /// <summary>Resumen de riesgo por zona (RF-29).</summary>
     public record ZoneRiskSummary(int ServiceZoneId, string ZoneName, int Total, int Critical, int Saturated);
@@ -61,6 +62,10 @@ namespace SIGENRD.Core.Domain.Repositories
 
         Task AddRangeAsync(IEnumerable<Transformer> transformers, CancellationToken cancellationToken = default);
 
-        Task<IReadOnlyList<ZoneRiskSummary>> GetZoneRiskAsync(CancellationToken cancellationToken = default);
+        /// <summary>Zonas con riesgo; con distributorId, solo los transformadores de esa EDE.</summary>
+        Task<IReadOnlyList<ZoneRiskSummary>> GetZoneRiskAsync(int? distributorId = null, CancellationToken cancellationToken = default);
+
+        /// <summary>Todos los transformadores de una EDE, rastreados: para reclasificarlos si cambian sus umbrales.</summary>
+        Task<IReadOnlyList<Transformer>> GetByDistributorForUpdateAsync(int distributorId, CancellationToken cancellationToken = default);
     }
 }

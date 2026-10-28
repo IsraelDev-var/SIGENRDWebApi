@@ -15,6 +15,9 @@ namespace SIGENRD.Infrastructure.Identity.Services
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
+
+        /// <summary>EDE del ingeniero o la distribuidora; null para el administrador.</summary>
+        public int? DistributorId { get; set; }
         public bool EmailConfirmed { get; set; }
         public bool IsActive { get; set; }
         public DateTime? DeactivatedAt { get; set; }
@@ -26,6 +29,9 @@ namespace SIGENRD.Infrastructure.Identity.Services
     {
         Task<PagedDto<InternalUserDto>> ListInternalAsync(string? text, UserType? role, int page, int pageSize, CancellationToken cancellationToken = default);
         Task<InternalUserDto> SetActiveAsync(string userId, bool active, CancellationToken cancellationToken = default);
+
+        /// <summary>Cambia la EDE de un ingeniero o una distribuidora. Su token vigente deja de servir (lleva la EDE anterior).</summary>
+        Task<InternalUserDto> SetDistributorAsync(string userId, int distributorId, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -106,12 +112,39 @@ namespace SIGENRD.Infrastructure.Identity.Services
             return ToDto(user);
         }
 
+        public async Task<InternalUserDto> SetDistributorAsync(string userId, int distributorId, CancellationToken cancellationToken = default)
+        {
+            var user = await Internal.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+                ?? throw new KeyNotFoundException("Usuario interno no encontrado.");
+
+            if (!StaffTypes.Contains(user.UserType))
+                throw new ApiException("El administrador no pertenece a ninguna distribuidora.");
+
+            if (user.DistributorId != distributorId)
+            {
+                user.DistributorId = distributorId;
+                var result = await userManager.UpdateAsync(user);
+                if (!result.Succeeded)
+                    throw new ApiException(string.Join(" ", result.Errors.Select(e => e.Description)));
+
+                // El token vigente lleva la EDE anterior: cambiar el sello lo invalida (A28-08).
+                await userManager.UpdateSecurityStampAsync(user);
+                accountSessions.Forget(user.Id);
+            }
+
+            return ToDto(user);
+        }
+
+        /// <summary>Roles internos que pertenecen a una EDE.</summary>
+        public static readonly UserType[] StaffTypes = { UserType.Engineer, UserType.Distributor };
+
         private static InternalUserDto ToDto(ApplicationUser u) => new()
         {
             Id = u.Id,
             FullName = u.FullName,
             Email = u.Email ?? string.Empty,
             Role = u.UserType.ToString(),
+            DistributorId = u.DistributorId,
             EmailConfirmed = u.EmailConfirmed,
             IsActive = u.DeactivatedAt is null,
             DeactivatedAt = u.DeactivatedAt,
