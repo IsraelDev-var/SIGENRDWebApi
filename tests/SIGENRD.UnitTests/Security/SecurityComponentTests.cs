@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using SIGENRD.Infrastructure.Identity.Configurations;
 using SIGENRD.Infrastructure.Identity.Entities;
 using SIGENRD.Infrastructure.Identity.JWT;
+using SIGENRD.Infrastructure.Identity.Services;
 using SIGENRD.Infrastructure.Identity.Validators;
 using SIGENRD.Infrastructure.Persistences.Contexts;
 using SIGENRDWebApi.HealthChecks;
@@ -55,6 +56,32 @@ public class SecurityComponentTests
     public void Rechaza_una_llave_ausente_o_invalida(string value)
     {
         Assert.Throws<InvalidOperationException>(() => JwtSigningKeys.FromPrivateKey(value));
+    }
+
+    // ---------------- huella del sello de seguridad (A28-08) ----------------
+
+    [Fact]
+    public void La_huella_del_sello_es_estable_distinta_por_sello_y_no_contiene_el_sello()
+    {
+        const string stamp = "Q3ZJ7HMBK2XG5YNW4LTEPAUF6VSCDRO";
+
+        Assert.Equal(AccountSessions.StampHash(stamp), AccountSessions.StampHash(stamp));
+        Assert.NotEqual(AccountSessions.StampHash(stamp), AccountSessions.StampHash(stamp + "X"));
+        Assert.DoesNotContain(stamp, AccountSessions.StampHash(stamp));
+        Assert.Equal(22, AccountSessions.StampHash(stamp).Length);
+    }
+
+    [Fact]
+    public void El_token_lleva_la_huella_del_sello_del_usuario()
+    {
+        using var rsa = RSA.Create(2048);
+        var keys = JwtSigningKeys.FromPrivateKey(Convert.ToBase64String(rsa.ExportPkcs8PrivateKey()));
+        var generator = new JwtTokenGenerator(new JwtSettings { Issuer = "i", Audience = "a", DurationInMinutes = 5 }, keys);
+        var user = new ApplicationUser { Id = "u1", Email = "u@test", FullName = "U", SecurityStamp = "SELLO-1" };
+
+        var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(generator.GenerateToken(user, ["Customer"]));
+
+        Assert.Equal(AccountSessions.StampHash("SELLO-1"), token.Claims.Single(c => c.Type == JwtTokenGenerator.SecurityStampClaim).Value);
     }
 
     // ---------------- contraseñas comunes ----------------

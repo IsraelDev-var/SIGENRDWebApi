@@ -31,6 +31,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
         private readonly ISecurityAuditLog _securityAudit;
+        private readonly AccountSessions _accountSessions;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
@@ -39,7 +40,8 @@ namespace SIGENRD.Infrastructure.Identity.Services
             JwtTokenGenerator jwtTokenGenerator,
             IEmailService emailService,
             IConfiguration configuration,
-            ISecurityAuditLog securityAudit)
+            ISecurityAuditLog securityAudit,
+            AccountSessions accountSessions)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -48,6 +50,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
             _emailService = emailService;
             _configuration = configuration;
             _securityAudit = securityAudit;
+            _accountSessions = accountSessions;
         }
 
         private string PublicBaseUrl => (_configuration["App:PublicBaseUrl"] ?? "https://localhost:7135").TrimEnd('/');
@@ -386,6 +389,8 @@ namespace SIGENRD.Infrastructure.Identity.Services
                 user.MustChangePassword = false;
                 await _userManager.UpdateAsync(user);
             }
+            // Identity cambió el sello de seguridad: los tokens emitidos antes dejan de servir (A28-08).
+            _accountSessions.Forget(user.Id);
             await _userManager.SetLockoutEndDateAsync(user, null);
             await _userManager.ResetAccessFailedCountAsync(user);
             await _securityAudit.RecordAsync(SecurityEvents.PasswordResetCompleted, user.Id, request.Email);
@@ -415,6 +420,8 @@ namespace SIGENRD.Infrastructure.Identity.Services
 
             user.MustChangePassword = false;
             await _userManager.UpdateAsync(user);
+            // Identity cambió el sello de seguridad: los demás tokens dejan de servir; el que se devuelve ya lleva el nuevo (A28-08).
+            _accountSessions.Forget(user.Id);
             await _securityAudit.RecordAsync(SecurityEvents.PasswordChanged, user.Id, user.Email ?? string.Empty);
 
             var roles = await _userManager.GetRolesAsync(user);

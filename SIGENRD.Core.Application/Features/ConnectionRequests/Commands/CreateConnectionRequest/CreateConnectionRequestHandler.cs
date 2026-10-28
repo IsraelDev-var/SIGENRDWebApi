@@ -89,6 +89,13 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
                     throw new ApiException("Indica los datos del titular del servicio.");
 
                 var holder = await customers.GetByNationalIdAsync(request.Holder.NationalIdOrRnc, cancellationToken);
+
+                // A28-05: con una cédula ya registrada, la instaladora tiene que conocer el nombre del titular. Si no
+                // coincide, el rechazo no lo revela: de lo contrario, cualquier cédula serviría para averiguar un nombre
+                // y para colgarle solicitudes a un cliente que no las pidió.
+                if (holder is not null && !HolderNames.Match(holder.FullName, request.Holder.FullName))
+                    throw new ApiException(HolderNames.MismatchMessage);
+
                 if (holder is null)
                 {
                     holder = new Customer
@@ -108,6 +115,25 @@ namespace SIGENRD.Core.Application.Features.ConnectionRequests.Commands.CreateCo
             }
 
             throw new ForbiddenException();
+        }
+    }
+
+    /// <summary>Compara el nombre del titular sin distinguir mayúsculas, tildes ni espacios repetidos.</summary>
+    public static class HolderNames
+    {
+        public const string MismatchMessage =
+            "Los datos del titular no coinciden con los registrados para esa cédula o RNC. " +
+            "Escribe el nombre tal como aparece en su documento de identidad o en el registro mercantil.";
+
+        public static bool Match(string registered, string typed) => Normalize(registered) == Normalize(typed);
+
+        private static string Normalize(string name)
+        {
+            var decomposed = name.Normalize(System.Text.NormalizationForm.FormD);
+            var letters = decomposed.Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c)
+                                                != System.Globalization.UnicodeCategory.NonSpacingMark);
+            var words = new string(letters.ToArray()).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            return string.Join(' ', words).ToUpperInvariant();
         }
     }
 
