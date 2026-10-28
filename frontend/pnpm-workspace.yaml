@@ -1,3 +1,14 @@
 allowBuilds:
   sharp: false
   unrs-resolver: false
+
+# F9-05: avisos de seguridad en dependencias que solo usan las herramientas de desarrollo
+# (eslint-plugin-boundaries, la CLI de shadcn y jsdom). Producción no las incluye.
+overrides:
+  handlebars: ">=4.7.10"
+  "undici@7": ">=7.30.1 <8"
+  "undici@8": ">=8.12.2 <9"
+  "fast-uri@3": ">=3.1.9 <4"
+  "qs@6": ">=6.16.1 <7"
+  "body-parser@2": ">=2.4.0 <3"
+  "ip-address@10": ">=10.7.4 <11"

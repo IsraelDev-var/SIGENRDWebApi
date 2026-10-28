@@ -1,6 +1,6 @@
 # Pendientes
 
-Lo que falta para terminar EnergyMap, actualizado el 2026-10-17. Al cerrar un punto, se borra de aquí y queda en el historial de git. Cada punto lleva la recomendación acordada para resolverlo.
+Lo que falta para terminar EnergyMap, actualizado el 2026-10-27. Al cerrar un punto, se borra de aquí y queda en el historial de git. Cada punto lleva la recomendación acordada para resolverlo.
 
 ## Desarrollo
 
@@ -15,11 +15,10 @@ Lo que falta para terminar EnergyMap, actualizado el 2026-10-17. Al cerrar un pu
 | Cédulas con formatos distintos para el mismo titular | B-11 | Columna `DocumentNumberNormalized` (solo dígitos) con el índice único sobre ella, llenada por la migración; revisar antes si ya hay duplicados |
 | Vincular a una cuenta el cliente que registró una instaladora | B-11 | `POST /customers/{id}/link-account` para Distribuidora y Admin, con pantalla en gestión; solo si la cédula del perfil coincide con la de la cuenta, y queda en la auditoría |
 | Repetir las pruebas de carga en Azure | Fase 7 | Los mismos scripts de k6 de [carga.md](carga.md) contra un ambiente de prueba con la base en su plan real; lo que importa es el p95 < 2 s con la red real |
-| Frontend (Next.js) | Todas las pantallas | F0 a F8 fusionadas; F9 (cierre) terminada en la rama `f9-cierre`, con F9-02 corregido; falta fusionarla a master |
+| Frontend (Next.js) | Todas las pantallas | F0 a F8 fusionadas; F9 (cierre) terminada en la rama `f9-cierre`, PR #21 abierto hacia master |
 | Desplegar el frontend (F9-01) | Despliegue | `output: "standalone"`, Dockerfile de varias etapas con usuario sin privilegios, job en `cd.yml` hacia App Service y tabla de variables `ENERGYMAP_*` en [despliegue.md](despliegue.md) |
 | Reducir el JavaScript inicial (F9-03) | Rendimiento | Hoy 282 KB comprimidos en `/ingresar` (meta 170 KB). Analizar los fragmentos y cargar de forma diferida lo que no usan todas las páginas; Lighthouse CI con presupuesto por ruta |
-| Esperar 250 ms antes de pedir datos del mapa (F9-04) | Rendimiento | `viewport-watcher.tsx` emite en cada `moveend`; al redimensionar salen varias peticiones seguidas |
-| `pnpm.overrides` de `handlebars >=4.7.10` (F9-05) | Seguridad | Solo herramientas de desarrollo (plugins de ESLint); producción sin vulnerabilidades |
+| Dos avisos en la CLI de shadcn (zod 3 y `deepmerge`) | Seguridad | Solo desarrollo y sin versión corregida de `deepmerge`; revisar `pnpm audit` al actualizar shadcn. Producción sin vulnerabilidades (2026-10-27, Next 16.4.2) |
 | Prueba con lector de pantalla (NVDA) y proyecto de Playwright con WebKit (F9-10) | Accesibilidad | Pedido en la propuesta de la F9; hoy solo axe, Lighthouse y Chromium |
 | Actualizar RN-12 en el documento de análisis con el estado Borrador | D-4 | Solo documentación: Borrador → Recibida (enviar) y Borrador → Cancelada (descartar) en el análisis v1.2 |
 
