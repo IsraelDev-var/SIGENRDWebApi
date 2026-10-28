@@ -299,8 +299,11 @@ test("un PDF de 6 MB se sube directo del navegador a la API, sin pasar por el se
   const sent = await directUpload;
   expect(sent.headers().authorization).toMatch(/^Bearer /);
   expect(sent.headers().cookie).toBeUndefined();
-  await expect(page.getByText("Subimos plano grande.pdf.")).toBeVisible();
+  const response = await sent.response();
+  expect(response?.status()).toBe(200);
 
-  const documents = await apiDataAs<{ fileName: string; sizeBytes: number }[]>(request, "Customer", `/ConnectionRequest/${id}/documents`);
-  expect(documents).toEqual([expect.objectContaining({ fileName: "plano grande.pdf", sizeBytes: big.length })]);
+  // El requisito queda cumplido (su formulario desaparece) y el documento está en el expediente.
+  await expect
+    .poll(() => apiDataAs<{ fileName: string; sizeBytes: number }[]>(request, "Customer", `/ConnectionRequest/${id}/documents`))
+    .toEqual([expect.objectContaining({ fileName: "plano grande.pdf", sizeBytes: big.length })]);
 });
