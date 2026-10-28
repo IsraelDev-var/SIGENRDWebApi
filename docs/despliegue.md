@@ -120,6 +120,8 @@ Además, en la API:
 
 **Mapa base.** La CSP permite el origen de CARTO y el de los estilos configurados en `NEXT_PUBLIC_MAP_STYLE_*`. Si el proveedor sirve las teselas, las fuentes o los sprites desde otro dominio distinto al del estilo, hay que agregarlo en `frontend/src/config/security.ts`.
 
+**En Vercel (demo).** También se puede publicar en Vercel sin la imagen: proyecto con *Root Directory* `frontend` y las mismas variables `ENERGYMAP_*` (sin `WEBSITES_PORT`). `frontend/vercel.json` fija pnpm 12.9.1, porque el pnpm que trae Vercel no lee el lockfile del proyecto. Vercel reemplaza `X-Forwarded-For` por la IP del usuario, así que `ENERGYMAP_TRUSTED_PROXIES=1`. Límite de Vercel: las peticiones de más de 4,5 MB fallan, así que un documento de más de ese tamaño no se puede subir con la Server Action actual.
+
 **Probar la imagen en local:**
 
 ```bash
