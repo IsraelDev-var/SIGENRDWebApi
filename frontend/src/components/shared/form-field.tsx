@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
+import { PasswordInput } from "./password-input";
+
 type FieldProps = Omit<ComponentProps<typeof Input>, "id" | "name"> & {
   name: string;
   label: string;
@@ -15,23 +17,22 @@ type FieldProps = Omit<ComponentProps<typeof Input>, "id" | "name"> & {
   idPrefix?: string;
 };
 
-/** Campo con etiqueta, ayuda y error asociados (WCAG 1.3.1, 3.3.1, 3.3.2). */
-export function FormField({ name, label, description, errors, idPrefix = "campo", className, ...input }: FieldProps) {
+/** Campo con etiqueta, ayuda y error asociados (WCAG 1.3.1, 3.3.1, 3.3.2). Las contraseñas llevan el botón para verlas. */
+export function FormField({ name, label, description, errors, idPrefix = "campo", className, type, ...input }: FieldProps) {
   const id = `${idPrefix}-${name}`;
   const descriptionId = description ? `${id}-ayuda` : undefined;
   const errorId = errors?.length ? `${id}-error` : undefined;
+  const describedBy = [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className={cn("grid gap-2", className)}>
       {/* "required" ya lo anuncian los lectores de pantalla: no se repite en la etiqueta. */}
       <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        name={name}
-        aria-invalid={errorId ? true : undefined}
-        aria-describedby={[descriptionId, errorId].filter(Boolean).join(" ") || undefined}
-        {...input}
-      />
+      {type === "password" ? (
+        <PasswordInput id={id} name={name} aria-invalid={errorId ? true : undefined} aria-describedby={describedBy} {...input} />
+      ) : (
+        <Input id={id} name={name} type={type} aria-invalid={errorId ? true : undefined} aria-describedby={describedBy} {...input} />
+      )}
       {description && (
         <p id={descriptionId} className="text-sm text-muted-foreground">
           {description}

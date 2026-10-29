@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { AvailabilityValue } from "./availability-value";
 import { CapacityMeter } from "./capacity-meter";
+import { FormField } from "./form-field";
 import { KvaValue } from "./kva-value";
 import { LastUpdated } from "./last-updated";
 import { RequestStatusBadge } from "./request-status-badge";
@@ -115,5 +116,32 @@ describe("RouteError", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
     expect(retry).toHaveBeenCalledOnce();
+  });
+});
+
+describe("FormField de contraseña", () => {
+  it("muestra y oculta la contraseña sin enviar el formulario", () => {
+    const onSubmit = vi.fn((e: { preventDefault: () => void }) => e.preventDefault());
+    render(
+      <form onSubmit={onSubmit}>
+        <FormField name="password" label="Contraseña" type="password" defaultValue="Secreta-2026" />
+      </form>,
+    );
+    const input = screen.getByLabelText("Contraseña");
+    expect(input).toHaveAttribute("type", "password");
+
+    fireEvent.click(screen.getByRole("button", { name: "Mostrar contraseña" }));
+    expect(input).toHaveAttribute("type", "text");
+    expect(screen.getByRole("button", { name: "Ocultar contraseña" })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Ocultar contraseña" }));
+    expect(input).toHaveAttribute("type", "password");
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("los demás campos no llevan el botón", () => {
+    render(<FormField name="email" label="Correo" type="email" />);
+    expect(screen.getByLabelText("Correo")).toHaveAttribute("type", "email");
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 });

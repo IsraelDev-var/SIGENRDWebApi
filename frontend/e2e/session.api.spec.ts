@@ -87,7 +87,7 @@ test("después de ingresar vuelve a la página que pidió", async ({ page }) => 
   await expect(page).toHaveURL("/ingresar?next=%2Fportal%2Fperfil");
 
   await page.getByLabel("Correo").fill(TEST_USERS.Customer);
-  await page.getByLabel("Contraseña").fill(E2E_TEST_PASSWORD);
+  await page.getByLabel("Contraseña", { exact: true }).fill(E2E_TEST_PASSWORD);
   await page.getByRole("button", { name: "Ingresar" }).click();
   await expect(page).toHaveURL("/portal/perfil");
 });
@@ -108,7 +108,7 @@ test("con sesión, ingresar y registro llevan al inicio del rol", async ({ page 
 test("credenciales incorrectas: mensaje sin revelar si la cuenta existe", async ({ page }) => {
   await page.goto("/ingresar");
   await page.getByLabel("Correo").fill("nadie@test.energymap.local");
-  await page.getByLabel("Contraseña").fill("NoEsLaClave123");
+  await page.getByLabel("Contraseña", { exact: true }).fill("NoEsLaClave123");
   await page.getByRole("button", { name: "Ingresar" }).click();
 
   await expect(formAlert(page, "El correo o la contraseña no son correctos")).toBeVisible();
@@ -208,7 +208,7 @@ test("registro de una cuenta nueva", async ({ page }) => {
   // Sin confirmar el correo no puede ingresar.
   await page.goto("/ingresar");
   await page.getByLabel("Correo").fill(email);
-  await page.getByLabel("Contraseña").fill("ClaveSegura2026");
+  await page.getByLabel("Contraseña", { exact: true }).fill("ClaveSegura2026");
   await page.getByRole("button", { name: "Ingresar" }).click();
   await expect(formAlert(page, "todavía no está confirmada")).toBeVisible();
 });
