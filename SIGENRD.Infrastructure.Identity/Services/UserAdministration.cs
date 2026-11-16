@@ -33,7 +33,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
     /// Los clientes y las instaladoras no se gestionan aquí: se registran solos.
     /// </summary>
     public class UserAdministration(
-        UserManager<ApplicationUser> userManager, ICurrentUserService currentUser, ISecurityAuditLog securityAudit, DeactivatedAccounts deactivated)
+        UserManager<ApplicationUser> userManager, ICurrentUserService currentUser, ISecurityAuditLog securityAudit, AccountSessions accountSessions)
         : IUserAdministration
     {
         public static readonly UserType[] InternalTypes = { UserType.Engineer, UserType.Distributor, UserType.Admin };
@@ -98,7 +98,7 @@ namespace SIGENRD.Infrastructure.Identity.Services
 
                 // Cambia el sello de seguridad: invalida lo que dependa de él (enlaces de restablecimiento pendientes).
                 await userManager.UpdateSecurityStampAsync(user);
-                deactivated.Forget(user.Id);
+                accountSessions.Forget(user.Id);
                 await securityAudit.RecordAsync(
                     active ? SecurityEvents.AccountReactivated : SecurityEvents.AccountDeactivated, user.Id, user.Email ?? string.Empty, cancellationToken);
             }

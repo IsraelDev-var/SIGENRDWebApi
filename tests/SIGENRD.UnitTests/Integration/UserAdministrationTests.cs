@@ -183,7 +183,11 @@ public class UserAdministrationTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.OK, (await admin.PostAsync("/api/v1/Users/" + otherAdmin + "/deactivate", null)).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await other.GetAsync("/api/v1/Users")).StatusCode);
 
+        // Desactivar cambia el sello de seguridad (A28-08): al reactivar, el token viejo sigue sin servir y hay que entrar de nuevo.
         Assert.Equal(HttpStatusCode.OK, (await admin.PostAsync("/api/v1/Users/" + otherAdmin + "/reactivate", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await other.GetAsync("/api/v1/Users")).StatusCode);
+
+        other.DefaultRequestHeaders.Authorization = new("Bearer", await TokenAsync(email, ApiFactory.TestPassword));
         Assert.Equal(HttpStatusCode.OK, (await other.GetAsync("/api/v1/Users")).StatusCode);
     }
 

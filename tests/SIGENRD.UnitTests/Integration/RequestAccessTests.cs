@@ -271,12 +271,10 @@ public class RequestAccessTests(ApiFactory api)
     public async Task B11_el_titular_con_cuenta_ve_la_solicitud_de_la_instaladora_solo_cuando_se_envia()
     {
         var seeded = await SeedAsync(withInstaller: true);
-        string nationalId;
-        await using (var context = api.NewAppContext())
-            nationalId = (await context.Customers.AsNoTracking().SingleAsync(c => c.Id == seeded.CustomerId)).NationalIdOrRnc;
+        var (nationalId, name) = await HolderOf(seeded.CustomerId);
 
         var installer = await api.ClientFor(TestRole.InstallerCompany);
-        var created = await installer.PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, 0, null, Holder(nationalId))));
+        var created = await installer.PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, 0, null, Holder(nationalId, name))));
         Assert.Equal(HttpStatusCode.OK, created.StatusCode);
         var id = JsonDocument.Parse(await created.Content.ReadAsStringAsync()).RootElement.GetProperty("data").GetInt32();
 
@@ -301,6 +299,47 @@ public class RequestAccessTests(ApiFactory api)
 
         Assert.Equal(HttpStatusCode.OK, (await installer.PostAsync("/api/v1/ConnectionRequest/" + id + "/submit", null)).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await customer.GetAsync("/api/v1/ConnectionRequest/" + id)).StatusCode);
+    }
+
+    private async Task<(string NationalId, string FullName)> HolderOf(int customerId)
+    {
+        await using var context = api.NewAppContext();
+        var customer = await context.Customers.AsNoTracking().SingleAsync(c => c.Id == customerId);
+        return (customer.NationalIdOrRnc, customer.FullName);
+    }
+
+    [FactIfDatabase]
+    public async Task A28_05_con_una_cedula_registrada_y_otro_nombre_no_se_crea_ni_se_revela_el_nombre()
+    {
+        var seeded = await SeedAsync(withInstaller: true);
+        var (nationalId, name) = await HolderOf(seeded.CustomerId);
+        int before;
+        await using (var context = api.NewAppContext())
+            before = await context.ConnectionRequests.CountAsync(r => r.CustomerId == seeded.CustomerId);
+
+        var response = await (await api.ClientFor(TestRole.InstallerCompany))
+            .PostAsync("/api/v1/ConnectionRequest", Json(CreateBody(seeded, 0, null, Holder(nationalId, "Nombre Inventado"))));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain(name, body);
+        await using (var context = api.NewAppContext())
+            Assert.Equal(before, await context.ConnectionRequests.CountAsync(r => r.CustomerId == seeded.CustomerId));
+    }
+
+    [FactIfDatabase]
+    public async Task A28_05_el_nombre_coincide_sin_distinguir_mayusculas_tildes_ni_espacios()
+    {
+        var seeded = await SeedAsync(withInstaller: true);
+        var installer = await api.ClientFor(TestRole.InstallerCompany);
+        var digits = "402" + Random.Shared.Next(10000000, 99999999);
+
+        Assert.Equal(HttpStatusCode.OK, (await installer.PostAsync("/api/v1/ConnectionRequest",
+            Json(CreateBody(seeded, 0, null, Holder(digits, "José Núñez Peña"))))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await installer.PostAsync("/api/v1/ConnectionRequest",
+            Json(CreateBody(seeded, 0, null, Holder(digits, "  jose   NUNEZ pena "))))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await installer.PostAsync("/api/v1/ConnectionRequest",
+            Json(CreateBody(seeded, 0, null, Holder(digits, "José Núñez"))))).StatusCode);
     }
 
     [FactIfDatabase]
