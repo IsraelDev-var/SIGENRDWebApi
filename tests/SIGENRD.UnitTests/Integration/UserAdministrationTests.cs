@@ -39,8 +39,10 @@ public class UserAdministrationTests(ApiFactory api)
     {
         var admin = await api.ClientFor(TestRole.Admin);
         var email = "int-" + Guid.NewGuid().ToString("N")[..8] + "@test.energymap.local";
+        // El ingeniero y la distribuidora pertenecen a una EDE: la sembrada, como el personal de prueba.
+        int? distributorId = role is "Engineer" or "Distributor" ? await api.EdesurIdAsync() : null;
         var created = await admin.PostAsJsonAsync("/api/v1/Auth/register-internal",
-            new { fullName = "Interno " + email[..12], email, password = TemporaryPassword, userType = role });
+            new { fullName = "Interno " + email[..12], email, password = TemporaryPassword, userType = role, distributorId });
         Assert.Equal(HttpStatusCode.OK, created.StatusCode);
 
         var mail = api.Emails.Sent.Single(e => e.To == email);

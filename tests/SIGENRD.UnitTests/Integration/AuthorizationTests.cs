@@ -46,7 +46,8 @@ public class AuthorizationTests(ApiFactory api)
         new("importar CSV", HttpMethod.Post, "/api/v1/Transformers/import", () =>
         {
             var form = new MultipartFormDataContent { { new StringContent("999999"), "distributorId" } };
-            var file = new ByteArrayContent(Encoding.UTF8.GetBytes("code,serviceZoneId,totalCapacityKva,availableCapacityKva,latitude,longitude\n"));
+            // Una fila inválida: el personal de una EDE importa siempre en la suya, así que el 400 no puede depender del distributorId.
+            var file = new ByteArrayContent(Encoding.UTF8.GetBytes("code,serviceZoneId,totalCapacityKva,availableCapacityKva,latitude,longitude\nTR-AUTH,1,-1,0,18.5,-69.9\n"));
             file.Headers.ContentType = new("text/csv");
             form.Add(file, "file", "transformadores.csv");
             return form;
@@ -77,7 +78,8 @@ public class AuthorizationTests(ApiFactory api)
         if (endpoint.Name == "alta de usuario interno")
         {
             var email = "interno-" + role + "-" + Guid.NewGuid().ToString("N")[..8] + "@test.energymap.local";
-            request.Content = Json("{\"fullName\":\"Interno\",\"email\":\"" + email + "\",\"password\":\"" + ApiFactory.TestPassword + "\",\"userType\":2}");
+            request.Content = Json("{\"fullName\":\"Interno\",\"email\":\"" + email + "\",\"password\":\"" + ApiFactory.TestPassword +
+                                   "\",\"userType\":2,\"distributorId\":" + await api.EdesurIdAsync() + "}");
         }
 
         var response = await client.SendAsync(request);

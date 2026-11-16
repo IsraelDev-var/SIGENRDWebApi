@@ -51,6 +51,12 @@ describe("verificación del token de la API", () => {
     expect(user?.role).toBe("Distributor");
   });
 
+  it("lee la EDE del personal (distributor_id) y por defecto no tiene", async () => {
+    expect((await verifyAccessToken(await token(), settings))?.distributorId).toBeNull();
+    expect((await verifyAccessToken(await token({ claims: { role: "Engineer", distributor_id: "3" } }), settings))?.distributorId).toBe(3);
+    expect((await verifyAccessToken(await token({ claims: { role: "Engineer", distributor_id: "x" } }), settings))?.distributorId).toBeNull();
+  });
+
   it("lee la marca de contraseña temporal (pwd_change) y por defecto no la tiene", async () => {
     expect((await verifyAccessToken(await token(), settings))?.mustChangePassword).toBe(false);
     expect((await verifyAccessToken(await token({ claims: { role: "Engineer", pwd_change: "true" } }), settings))?.mustChangePassword).toBe(true);

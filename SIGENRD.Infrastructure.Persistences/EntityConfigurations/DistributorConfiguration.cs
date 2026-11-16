@@ -17,6 +17,8 @@ namespace SIGENRD.Infrastructure.Persistences.EntityConfigurations
                    .HasMaxLength(100)
                    .IsRequired();
 
+            builder.HasIndex(d => d.Name).IsUnique();
+
             builder.Property(d => d.Type)
                    .HasConversion<int>()
                    .IsRequired();

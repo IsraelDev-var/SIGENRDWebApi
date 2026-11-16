@@ -21,15 +21,26 @@ namespace SIGENRD.Infrastructure.Identity.Seeds
             ("distributor@" + Domain, "Distribuidora de prueba", UserType.Distributor),
         };
 
-        public static async Task SeedAsync(UserManager<ApplicationUser> userManager, string? password)
+        /// <param name="distributorId">EDE del ingeniero y la distribuidora de prueba.</param>
+        public static async Task SeedAsync(UserManager<ApplicationUser> userManager, string? password, int distributorId)
         {
             if (string.IsNullOrWhiteSpace(password))
                 return;
 
             foreach (var (email, fullName, userType) in Users)
             {
-                if (await userManager.FindByEmailAsync(email) is not null)
+                var staff = userType is UserType.Engineer or UserType.Distributor;
+
+                if (await userManager.FindByEmailAsync(email) is { } existing)
+                {
+                    // Bases sembradas antes de que el personal perteneciera a una EDE.
+                    if (staff && existing.DistributorId is null)
+                    {
+                        existing.DistributorId = distributorId;
+                        await userManager.UpdateAsync(existing);
+                    }
                     continue;
+                }
 
                 var user = new ApplicationUser
                 {
@@ -38,7 +49,8 @@ namespace SIGENRD.Infrastructure.Identity.Seeds
                     FullName = fullName,
                     EmailConfirmed = true,
                     IsEmailConfirmed = true,
-                    UserType = userType
+                    UserType = userType,
+                    DistributorId = staff ? distributorId : null
                 };
 
                 var result = await userManager.CreateAsync(user, password);

@@ -1,5 +1,6 @@
 import {
   Bell,
+  Building2,
   ChartColumn,
   ClipboardList,
   FileText,
@@ -21,6 +22,7 @@ import type { NavIcon } from "@/config/navigation";
 export const NAV_ICONS: Record<NavIcon, LucideIcon> = {
   alert: TriangleAlert,
   bell: Bell,
+  building: Building2,
   chart: ChartColumn,
   "clipboard-list": ClipboardList,
   "file-text": FileText,

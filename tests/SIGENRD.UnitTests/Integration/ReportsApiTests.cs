@@ -90,7 +90,8 @@ public class ReportsApiTests(ApiFactory api)
     public async Task Las_estadisticas_resumen_el_periodo()
     {
         var seeded = await SeedAsync();
-        var client = await api.ClientFor(TestRole.Distributor);
+        // Las solicitudes son de una EDE nueva: solo el administrador elige la EDE del reporte.
+        var client = await api.ClientFor(TestRole.Admin);
 
         var s = await Data(await client.GetAsync("/api/v1/Reports/requests/statistics?" + Period(seeded)));
 
@@ -131,7 +132,7 @@ public class ReportsApiTests(ApiFactory api)
     public async Task Exporta_a_Excel_y_PDF()
     {
         var seeded = await SeedAsync();
-        var client = await api.ClientFor(TestRole.Distributor);
+        var client = await api.ClientFor(TestRole.Admin);
 
         var xlsx = await client.GetAsync("/api/v1/Reports/requests/export?format=Xlsx&" + Period(seeded));
         Assert.Equal(HttpStatusCode.OK, xlsx.StatusCode);
@@ -141,6 +142,20 @@ public class ReportsApiTests(ApiFactory api)
 
         var pdf = await client.GetAsync("/api/v1/Reports/requests/export?format=Pdf&" + Period(seeded));
         Assert.Equal("application/pdf", pdf.Content.Headers.ContentType!.MediaType);
+    }
+
+    [FactIfDatabase]
+    public async Task La_distribuidora_solo_ve_los_reportes_de_su_EDE_aunque_pida_otra()
+    {
+        var seeded = await SeedAsync();
+        var client = await api.ClientFor(TestRole.Distributor);
+
+        var s = await Data(await client.GetAsync("/api/v1/Reports/requests/statistics?" + Period(seeded)));
+        Assert.Equal(0, s.GetProperty("total").GetInt32());
+
+        var xlsx = await client.GetAsync("/api/v1/Reports/requests/export?format=Xlsx&" + Period(seeded));
+        using var workbook = new XLWorkbook(new MemoryStream(await xlsx.Content.ReadAsByteArrayAsync()));
+        Assert.Equal(1, workbook.Worksheet("Detalle").LastRowUsed()!.RowNumber()); // solo el encabezado
     }
 
     [FactIfDatabase]

@@ -16,6 +16,8 @@ export type SessionUser = {
   expiresAt: number;
   /** Contraseña temporal puesta por un administrador: la API solo deja cambiarla (claim pwd_change). */
   mustChangePassword: boolean;
+  /** EDE del ingeniero o la distribuidora (claim distributor_id): la API limita lo que ven a esa EDE. null para el resto. */
+  distributorId: number | null;
 };
 
 export type TokenSettings = {
@@ -48,6 +50,11 @@ function roleFrom(payload: JWTPayload): Role | null {
   return null;
 }
 
+function distributorFrom(payload: JWTPayload): number | null {
+  const value = Number(payload.distributor_id);
+  return Number.isInteger(value) && value > 0 ? value : null;
+}
+
 /** El usuario del token, o null si la firma, el emisor, la audiencia, la vigencia o el rol no son válidos. */
 export async function verifyAccessToken(token: string | undefined, settings: TokenSettings): Promise<SessionUser | null> {
   if (!token) return null;
@@ -69,6 +76,7 @@ export async function verifyAccessToken(token: string | undefined, settings: Tok
       role,
       expiresAt: payload.exp * 1000,
       mustChangePassword: payload.pwd_change === "true",
+      distributorId: distributorFrom(payload),
     };
   } catch {
     return null;

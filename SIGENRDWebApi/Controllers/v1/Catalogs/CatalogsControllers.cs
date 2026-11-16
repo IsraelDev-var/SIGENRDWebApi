@@ -19,7 +19,7 @@ namespace SIGENRDWebApi.Controllers.v1.Catalogs
         public async Task<IActionResult> List() => Ok(await mediator.Send(new ListServiceZonesQuery()));
     }
 
-    /// <summary>Distribuidoras (en la Fase I solo Edesur), para filtrar el mapa (B-1).</summary>
+    /// <summary>Distribuidoras activas, para filtrar el mapa (B-1). La gestión está en DistributorManagementController.</summary>
     [ApiVersion("1.0")]
     [AllowAnonymous]
     public class DistributorsController(IMediator mediator) : BaseApiController

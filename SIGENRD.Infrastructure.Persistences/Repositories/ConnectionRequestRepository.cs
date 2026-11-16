@@ -92,7 +92,7 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
         }
 
         /// <summary>
-        /// RN-22: cada solicitante solo ve lo suyo; el personal de la distribuidora ve todo menos los borradores,
+        /// RN-22: cada solicitante solo ve lo suyo; el personal de una EDE ve lo de su EDE menos los borradores,
         /// que son del solicitante hasta que los envía (D-4).
         /// </summary>
         private IQueryable<ConnectionRequest> Visible(RequestScope scope, bool tracking = false)
@@ -103,6 +103,8 @@ namespace SIGENRD.Infrastructure.Persistences.Repositories
 
             return scope.Kind switch
             {
+                RequestScopeKind.All when scope.DistributorId is int distributorId =>
+                    query.Where(r => r.Status != RequestStatus.Draft && r.DistributorId == distributorId),
                 RequestScopeKind.All => query.Where(r => r.Status != RequestStatus.Draft),
                 // El titular ve las solicitudes a su nombre, pero el borrador de una instaladora es solo de ella.
                 RequestScopeKind.Customer when scope.UserId is not null =>

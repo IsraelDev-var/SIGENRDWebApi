@@ -4,6 +4,7 @@ import { can, type Action, type Role } from "@/config/permissions";
 export type NavIcon =
   | "alert"
   | "bell"
+  | "building"
   | "chart"
   | "clipboard-list"
   | "file-text"
@@ -50,6 +51,8 @@ export const INTERNAL_NAV: NavItem[] = [
   { href: "/gestion/reportes", label: "Reportes", icon: "chart", requires: "viewReports" },
   { href: "/gestion/zonas-criticas", label: "Zonas críticas", icon: "alert", requires: "viewReports" },
   { href: "/gestion/usuarios", label: "Usuarios", icon: "user-cog", requires: "manageInternalUsers" },
+  // Las EDE y su personal los gestiona el administrador (misma fila de la matriz que los usuarios internos).
+  { href: "/gestion/distribuidoras", label: "Distribuidoras", icon: "building", requires: "manageInternalUsers" },
   { href: "/gestion/auditoria", label: "Auditoría", icon: "scroll-text", requires: "viewAudit" },
 ];
 

@@ -188,8 +188,11 @@ namespace SIGENRD.Infrastructure.Persistences.Caching
         public Task AddRangeAsync(IEnumerable<Transformer> transformers, CancellationToken cancellationToken = default)
             => inner.AddRangeAsync(transformers, cancellationToken);
 
-        public Task<IReadOnlyList<ZoneRiskSummary>> GetZoneRiskAsync(CancellationToken cancellationToken = default)
-            => inner.GetZoneRiskAsync(cancellationToken);
+        public Task<IReadOnlyList<ZoneRiskSummary>> GetZoneRiskAsync(int? distributorId = null, CancellationToken cancellationToken = default)
+            => inner.GetZoneRiskAsync(distributorId, cancellationToken);
+
+        public Task<IReadOnlyList<Transformer>> GetByDistributorForUpdateAsync(int distributorId, CancellationToken cancellationToken = default)
+            => inner.GetByDistributorForUpdateAsync(distributorId, cancellationToken);
     }
 
     /// <summary>

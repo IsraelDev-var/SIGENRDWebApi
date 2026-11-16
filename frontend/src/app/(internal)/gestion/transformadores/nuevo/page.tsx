@@ -7,8 +7,10 @@ import { requireAction } from "@/server/session";
 export const metadata: Metadata = { title: "Nuevo transformador" };
 
 export default async function NewTransformerPage() {
-  await requireAction("gestion", "/gestion/transformadores/nuevo", "manageCatalogs");
-  const [zones, distributors] = await Promise.all([listZones(), listDistributors()]);
+  const session = await requireAction("gestion", "/gestion/transformadores/nuevo", "manageCatalogs");
+  const [zones, all] = await Promise.all([listZones(), listDistributors()]);
+  // El personal de una EDE solo carga en la suya (la API lo impone igual); el administrador elige.
+  const distributors = session.distributorId ? all.filter((d) => d.id === session.distributorId) : all;
 
   return (
     <div className="grid max-w-2xl gap-6">

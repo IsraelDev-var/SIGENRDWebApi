@@ -1,3 +1,4 @@
+using SIGENRD.Infrastructure.Persistences.Seeds;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -28,7 +29,7 @@ public class DocumentsTests(ApiFactory api)
         var customerUser = await api.LoginAsync(TestRole.Customer);
         await using var context = api.NewAppContext();
 
-        var distributor = await context.Distributors.FirstOrDefaultAsync();
+        var distributor = await context.Distributors.FirstOrDefaultAsync(d => d.Name == DevelopmentDemoData.DistributorName);
         if (distributor is null)
         {
             distributor = new Distributor { Name = "Edesur" };

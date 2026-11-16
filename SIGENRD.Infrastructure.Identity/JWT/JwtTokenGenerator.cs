@@ -23,6 +23,9 @@ namespace SIGENRD.Infrastructure.Identity.JWT
         /// <summary>Huella del sello de seguridad (A28-08): si la contraseña cambia, el token deja de servir.</summary>
         public const string SecurityStampClaim = "sstamp";
 
+        /// <summary>EDE del personal (Ingeniero o Distribuidora): limita lo que ve y gestiona.</summary>
+        public const string DistributorClaim = "distributor_id";
+
         public string GenerateToken(ApplicationUser user, IList<string> roles)
         {
             var claims = new List<Claim>
@@ -36,6 +39,9 @@ namespace SIGENRD.Infrastructure.Identity.JWT
             };
 
             // Contraseña temporal: la API solo deja cambiarla (MustChangePasswordMiddleware) y el frontend lleva a ese formulario.
+            if (user.DistributorId is int distributorId)
+                claims.Add(new Claim(DistributorClaim, distributorId.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+
             if (user.MustChangePassword)
                 claims.Add(new Claim(MustChangePasswordClaim, "true"));
 

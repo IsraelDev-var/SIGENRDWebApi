@@ -1,3 +1,4 @@
+using SIGENRD.Infrastructure.Persistences.Seeds;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -98,6 +99,13 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             .AddInterceptors(Services.GetRequiredService<TransformerChangeInterceptor>())
             .Options;
         return new AppContextSIGENRD(options);
+    }
+
+    /// <summary>Id de la EDE sembrada (Edesur de demostración): la del ingeniero y la distribuidora de prueba.</summary>
+    public async Task<int> EdesurIdAsync()
+    {
+        await using var context = NewAppContext();
+        return await context.Distributors.Where(d => d.Name == DevelopmentDemoData.DistributorName).Select(d => d.Id).SingleAsync();
     }
 
     /// <summary>Sin la API levantada: para crear y borrar la base de la ejecución.</summary>

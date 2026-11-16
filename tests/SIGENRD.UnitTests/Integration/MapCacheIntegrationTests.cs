@@ -1,3 +1,4 @@
+using SIGENRD.Infrastructure.Persistences.Seeds;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -154,7 +155,7 @@ public class MapCacheApiTests(ApiFactory api)
         int distributorId, zoneId;
         await using (var context = api.NewAppContext())
         {
-            var distributor = await context.Distributors.FirstOrDefaultAsync() ?? context.Distributors.Add(new Distributor { Name = "Edesur" }).Entity;
+            var distributor = await context.Distributors.FirstOrDefaultAsync(d => d.Name == DevelopmentDemoData.DistributorName) ?? context.Distributors.Add(new Distributor { Name = "Edesur" }).Entity;
             var zone = context.ServiceZones.Add(new ServiceZone { ZoneName = "Zona caché " + code }).Entity;
             await context.SaveChangesAsync();
             distributorId = distributor.Id;

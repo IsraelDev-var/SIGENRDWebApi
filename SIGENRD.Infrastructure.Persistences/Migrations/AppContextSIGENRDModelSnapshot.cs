@@ -365,6 +365,9 @@ namespace SIGENRD.Infrastructure.Persistences.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("Distributors", (string)null);
                 });
 

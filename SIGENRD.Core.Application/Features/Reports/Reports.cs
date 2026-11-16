@@ -1,8 +1,10 @@
 using FluentValidation;
 using SIGENRD.Core.Application.Features.Documents;
 using SIGENRD.Core.Application.Mediator;
+using SIGENRD.Core.Application.Services;
 using SIGENRD.Core.Application.Wrappers;
 using SIGENRD.Core.Domain.Enums;
+using SIGENRD.Core.Domain.Interfaces;
 using SIGENRD.Core.Domain.Repositories;
 
 namespace SIGENRD.Core.Application.Features.Reports
@@ -18,6 +20,7 @@ namespace SIGENRD.Core.Application.Features.Reports
 
         public DateTime? From { get; set; }
         public DateTime? To { get; set; }
+        /// <summary>Solo lo usa el administrador; el personal de una EDE siempre ve la suya.</summary>
         public int? DistributorId { get; set; }
 
         public (DateTime From, DateTime To) Period()
@@ -204,13 +207,13 @@ namespace SIGENRD.Core.Application.Features.Reports
 
     public class GetRequestStatisticsValidator : ReportPeriodValidator<GetRequestStatisticsQuery> { }
 
-    public class GetRequestStatisticsHandler(IReportRepository reports)
+    public class GetRequestStatisticsHandler(IReportRepository reports, ICurrentUserService currentUser)
         : IRequestHandler<GetRequestStatisticsQuery, Response<RequestStatisticsDto>>
     {
         public async Task<Response<RequestStatisticsDto>> Handle(GetRequestStatisticsQuery query, CancellationToken cancellationToken)
         {
             var (from, to) = query.Period();
-            var rows = await reports.GetRequestRowsAsync(from, to, query.DistributorId, cancellationToken);
+            var rows = await reports.GetRequestRowsAsync(from, to, DistributorScope.Filter(currentUser, query.DistributorId), cancellationToken);
             return new Response<RequestStatisticsDto>(ReportCalculator.Statistics(rows, from, to));
         }
     }
@@ -230,13 +233,13 @@ namespace SIGENRD.Core.Application.Features.Reports
         }
     }
 
-    public class GetInstallerRankingHandler(IReportRepository reports)
+    public class GetInstallerRankingHandler(IReportRepository reports, ICurrentUserService currentUser)
         : IRequestHandler<GetInstallerRankingQuery, Response<List<InstallerRankingItem>>>
     {
         public async Task<Response<List<InstallerRankingItem>>> Handle(GetInstallerRankingQuery query, CancellationToken cancellationToken)
         {
             var (from, to) = query.Period();
-            var rows = await reports.GetRequestRowsAsync(from, to, query.DistributorId, cancellationToken);
+            var rows = await reports.GetRequestRowsAsync(from, to, DistributorScope.Filter(currentUser, query.DistributorId), cancellationToken);
             return new Response<List<InstallerRankingItem>>(ReportCalculator.Ranking(rows, query.Top));
         }
     }
@@ -256,13 +259,13 @@ namespace SIGENRD.Core.Application.Features.Reports
         }
     }
 
-    public class ExportRequestReportHandler(IReportRepository reports, IEnumerable<IReportExporter> exporters)
+    public class ExportRequestReportHandler(IReportRepository reports, IEnumerable<IReportExporter> exporters, ICurrentUserService currentUser)
         : IRequestHandler<ExportRequestReportQuery, DocumentFile>
     {
         public async Task<DocumentFile> Handle(ExportRequestReportQuery query, CancellationToken cancellationToken)
         {
             var (from, to) = query.Period();
-            var rows = await reports.GetRequestRowsAsync(from, to, query.DistributorId, cancellationToken);
+            var rows = await reports.GetRequestRowsAsync(from, to, DistributorScope.Filter(currentUser, query.DistributorId), cancellationToken);
             var report = new RequestReport(ReportCalculator.Statistics(rows, from, to), ReportCalculator.Ranking(rows, 20), rows, DateTime.UtcNow);
 
             var exporter = exporters.Single(e => e.Format == query.Format);

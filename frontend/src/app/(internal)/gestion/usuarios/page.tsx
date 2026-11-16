@@ -9,7 +9,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TONE_BADGE_CLASS } from "@/config/status";
-import { CreateUserForm, INTERNAL_ROLES, listUsers, roleLabel, UserStatusForm } from "@/features/administration";
+import {
+  CreateUserForm,
+  INTERNAL_ROLES,
+  listManagedDistributors,
+  listUsers,
+  roleLabel,
+  STAFF_ROLES,
+  UserDistributorForm,
+  UserStatusForm,
+  type InternalRole,
+  type ManagedDistributor,
+} from "@/features/administration";
 import { formatCount, formatDate } from "@/lib/format";
 import { ApiError } from "@/server/api-client";
 import { requireAction } from "@/server/session";
@@ -30,11 +41,15 @@ export default async function UsersPage({ searchParams }: PageProps<"/gestion/us
   const page = Math.max(1, Math.min(10_000, Number(one(params.pagina)) || 1));
 
   let result: Awaited<ReturnType<typeof listUsers>> | null = null;
+  let distributors: ManagedDistributor[] = [];
   try {
-    result = await listUsers(session, { text, role, page });
+    [result, distributors] = await Promise.all([listUsers(session, { text, role, page }), listManagedDistributors(session)]);
   } catch (error) {
     if (!(error instanceof ApiError)) throw error;
   }
+  // Al personal solo se le asigna una EDE activa; las desactivadas se siguen mostrando por su nombre.
+  const assignable = distributors.filter((d) => d.isActive).map((d) => ({ value: String(d.id), label: d.name }));
+  const distributorName = (id: number | null | undefined) => distributors.find((d) => d.id === id)?.name;
 
   const pageHref = (n: number) => {
     const next = new URLSearchParams();
@@ -46,12 +61,15 @@ export default async function UsersPage({ searchParams }: PageProps<"/gestion/us
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      <PageHeader title="Usuarios internos" description="Personal de la distribuidora: ingenieros, distribuidora y administradores. Los clientes y las instaladoras se registran solos." />
+      <PageHeader
+        title="Usuarios internos"
+        description="Ingenieros y distribuidora, cada uno de una EDE, y administradores. Los clientes y las instaladoras se registran solos."
+      />
 
       <details className="rounded-lg border bg-card p-4">
         <summary className="cursor-pointer font-medium">Nuevo usuario interno</summary>
         <div className="mt-4">
-          <CreateUserForm />
+          <CreateUserForm distributors={assignable} />
         </div>
       </details>
 
@@ -92,6 +110,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/gestion/us
                   <TableHead scope="col">Nombre</TableHead>
                   <TableHead scope="col">Correo</TableHead>
                   <TableHead scope="col">Rol</TableHead>
+                  <TableHead scope="col">Distribuidora</TableHead>
                   <TableHead scope="col">Estado</TableHead>
                   <TableHead scope="col">
                     <span className="sr-only">Acciones</span>
@@ -104,6 +123,23 @@ export default async function UsersPage({ searchParams }: PageProps<"/gestion/us
                     <TableCell className="font-medium">{u.fullName || "Sin nombre"}</TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{roleLabel(u.role)}</TableCell>
+                    <TableCell>
+                      {STAFF_ROLES.includes(u.role as InternalRole) ? (
+                        <UserDistributorForm
+                          key={`${u.id}-${u.distributorId}`}
+                          id={u.id}
+                          name={u.fullName || u.email}
+                          current={u.distributorId ?? null}
+                          distributors={
+                            u.distributorId && !assignable.some((d) => d.value === String(u.distributorId))
+                              ? [{ value: String(u.distributorId), label: `${distributorName(u.distributorId) ?? "EDE " + u.distributorId} (desactivada)` }, ...assignable]
+                              : assignable
+                          }
+                        />
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Todas</span>
+                      )}
+                    </TableCell>
                     <TableCell className="whitespace-normal">
                       <div className="flex flex-wrap gap-1">
                         <Badge className={TONE_BADGE_CLASS[u.isActive ? "success" : "neutral"]}>

@@ -1,3 +1,4 @@
+using SIGENRD.Infrastructure.Persistences.Seeds;
 using System.Net;
 using System.Text.Json;
 using SIGENRD.Core.Domain.Entities;
@@ -21,7 +22,7 @@ public class TransformerManagementTests(ApiFactory api)
     {
         var prefix = "TR-MG-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant() + "-";
         await using var context = api.NewAppContext();
-        var distributor = context.Distributors.FirstOrDefault() ?? context.Distributors.Add(new Distributor { Name = "Edesur" }).Entity;
+        var distributor = context.Distributors.FirstOrDefault(d => d.Name == DevelopmentDemoData.DistributorName) ?? context.Distributors.Add(new Distributor { Name = "Edesur" }).Entity;
         var zone = context.ServiceZones.Add(new ServiceZone { ZoneName = "Zona " + prefix }).Entity;
         await context.SaveChangesAsync();
 

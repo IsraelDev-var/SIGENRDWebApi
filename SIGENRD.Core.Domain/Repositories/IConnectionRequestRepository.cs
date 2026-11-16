@@ -8,7 +8,7 @@ namespace SIGENRD.Core.Domain.Repositories
         /// <summary>Sin acceso a ninguna solicitud.</summary>
         None = 0,
 
-        /// <summary>Todas: personal de la distribuidora y administración.</summary>
+        /// <summary>Todas (administración) o todas las de una EDE (su personal, ver RequestScope.DistributorId).</summary>
         All = 1,
 
         /// <summary>Las solicitudes de los clientes ligados al usuario (RN-22).</summary>
@@ -18,8 +18,11 @@ namespace SIGENRD.Core.Domain.Repositories
         InstallerCompany = 3
     }
 
-    /// <summary>Qué solicitudes puede ver el usuario actual.</summary>
-    public record RequestScope(RequestScopeKind Kind, string? UserId = null);
+    /// <summary>
+    /// Qué solicitudes puede ver el usuario actual. Con <see cref="RequestScopeKind.All"/>, DistributorId limita al
+    /// personal a las solicitudes de su EDE; null (administrador) son todas.
+    /// </summary>
+    public record RequestScope(RequestScopeKind Kind, string? UserId = null, int? DistributorId = null);
 
     /// <summary>Filtros de la lista de solicitudes. Todos son opcionales.</summary>
     public record RequestSearchFilter(
