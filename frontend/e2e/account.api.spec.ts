@@ -100,7 +100,7 @@ test("B-5: si un administrador desactiva la cuenta, la sesión abierta se cierra
 
     // Al intentar entrar, el motivo.
     await page.getByLabel("Correo").fill(TEST_USERS.Engineer);
-    await page.getByLabel("Contraseña").fill(E2E_TEST_PASSWORD);
+    await page.getByLabel("Contraseña", { exact: true }).fill(E2E_TEST_PASSWORD);
     await page.getByRole("button", { name: "Ingresar" }).click();
     await expect(formAlert(page, "desactivada")).toBeVisible();
   } finally {
