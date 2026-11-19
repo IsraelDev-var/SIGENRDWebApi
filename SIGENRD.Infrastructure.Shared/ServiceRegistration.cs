@@ -33,13 +33,34 @@ namespace SIGENRD.Infrastructure.Shared
             services.AddSingleton<SIGENRD.Core.Application.Features.Reports.IReportExporter, XlsxReportExporter>();
             services.AddSingleton<SIGENRD.Core.Application.Features.Reports.IReportExporter, PdfReportExporter>();
 
-            services.AddTransient<SmtpEmailSender>();
-            services.AddTransient<IEmailSender>(sp => sp.GetRequiredService<SmtpEmailSender>());
+            // Proveedor de correo: SMTP (por defecto) o la API HTTPS de Brevo.
+            var mailProvider = configuration["MailSettings:Provider"] ?? "Smtp";
+            Func<IServiceProvider, IEmailSender> sender;
+            if (string.Equals(mailProvider, "Brevo", StringComparison.OrdinalIgnoreCase))
+            {
+                // Un solo HttpClient para toda la app; se renuevan las conexiones para respetar cambios de DNS.
+                services.AddSingleton(sp => new BrevoEmailSender(
+                    new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) })
+                    {
+                        Timeout = TimeSpan.FromSeconds(30)
+                    },
+                    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MailSettings>>()));
+                sender = sp => sp.GetRequiredService<BrevoEmailSender>();
+            }
+            else if (string.Equals(mailProvider, "Smtp", StringComparison.OrdinalIgnoreCase))
+            {
+                services.AddTransient<SmtpEmailSender>();
+                sender = sp => sp.GetRequiredService<SmtpEmailSender>();
+            }
+            else
+                throw new InvalidOperationException("MailSettings:Provider debe ser Smtp o Brevo, no '" + mailProvider + "'.");
+
+            services.AddTransient(sender);
 
             if (configuration.GetValue<bool>("UseInMemoryDatabase"))
             {
                 // Sin base relacional no hay bandeja de salida: envío directo, como antes.
-                services.AddTransient<IEmailService>(sp => sp.GetRequiredService<SmtpEmailSender>());
+                services.AddTransient<IEmailService>(sp => (IEmailService)sender(sp));
                 return services;
             }
 

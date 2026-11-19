@@ -13,5 +13,12 @@ namespace SIGENRD.Core.Domain.Settings
 
         // true para servidores reales (STARTTLS). false para un servidor local de desarrollo sin cifrado.
         public bool UseStartTls { get; set; } = true;
+
+        // "Smtp" (por defecto) o "Brevo": la API HTTPS de Brevo, para hostings que bloquean el SMTP saliente
+        // (por ejemplo, Railway fuera del plan Pro).
+        public string Provider { get; set; } = "Smtp";
+
+        // Clave de la API de Brevo (secreto). Solo con Provider = Brevo. EmailFrom debe ser un remitente verificado en Brevo.
+        public string BrevoApiKey { get; set; } = string.Empty;
     }
 }

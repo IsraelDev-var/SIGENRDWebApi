@@ -61,6 +61,7 @@ La imagen no lleva secretos. Se definen como *Application settings* de la Web Ap
 | `JwtSettings__Issuer`, `JwtSettings__Audience`, `JwtSettings__DurationInMinutes` | Ya vienen en `appsettings.json` (60 minutos); solo se cambian si hace falta |
 | `Seed__AdminPassword` | Contraseña del administrador inicial (10 caracteres o más, con mayúscula, minúscula y número). Sin ella no se crea |
 | `MailSettings__SmtpHost`, `__SmtpPort`, `__SmtpUser`, `__SmtpPass`, `__EmailFrom` | Servidor de correo real |
+| `MailSettings__Provider`, `MailSettings__BrevoApiKey` | `Smtp` (por defecto) o `Brevo`. Con `Brevo` el correo sale por la API HTTPS de Brevo, para hostings que bloquean el SMTP saliente (Railway fuera del plan Pro); `MailSettings__EmailFrom` debe ser un remitente verificado en Brevo y la clave es un secreto |
 | `App__PublicBaseUrl` | URL pública para los enlaces de confirmación de correo |
 | `App__EmailConfirmationUrl` | Página del frontend que confirma el correo (`https://…/confirmar-correo`); recibe `?userId=...&code=...`. Sin ella, el enlace del correo apunta a la API |
 | `TrustedProxy__Key` | Clave compartida con el servidor del frontend (`ENERGYMAP_PROXY_KEY`, 16 caracteres o más). Con ella la API acepta la IP del usuario que reenvía el frontend y el límite por IP se aplica a cada persona. Sin ella, todo lo que llega por el frontend comparte un mismo límite. Es un secreto (Key Vault) |

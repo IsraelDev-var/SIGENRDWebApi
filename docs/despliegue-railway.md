@@ -41,7 +41,10 @@ Los valores secretos son los mismos de la demo de Render (`C:\Users\israe\.energ
 | `Storage__Provider` | `Local` |
 | `Storage__LocalPath` | `/data/expedientes` (en el volumen) |
 | `RAILWAY_RUN_UID` | `0`: Railway monta el volumen como root y la imagen corre con un usuario sin privilegios, que no podría escribir en él. Es una concesión de la demo; para producción, Azure Blob |
-| `EmailOutbox__DispatcherEnabled` | `false` mientras no haya correo real |
+| `EmailOutbox__DispatcherEnabled` | `true` para enviar correos (con `false` quedan en la bandeja sin salir) |
+| `MailSettings__Provider` | `Brevo`: el plan Hobby de Railway bloquea el SMTP saliente, así que el correo sale por la API HTTPS de Brevo |
+| `MailSettings__BrevoApiKey` | Clave de la API de Brevo (*SMTP & API → API keys*). Secreto |
+| `MailSettings__EmailFrom` | Remitente verificado en Brevo (*Senders, domains & dedicated IPs*) |
 | `Cors__AllowedOrigins__0` | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}` |
 | `App__EmailConfirmationUrl` | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}/confirmar-correo` |
 | `App__PasswordResetUrl` | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}/restablecer` |
