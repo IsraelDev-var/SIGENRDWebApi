@@ -216,8 +216,14 @@ namespace SIGENRD.Core.Application.Features.InstallerCompanies
                     {
                         To = company.ContactEmail,
                         Subject = "Empresa instaladora validada",
-                        Body = "<p>La distribuidora validó a " + System.Net.WebUtility.HtmlEncode(company.TradeName) +
-                               ". Ya puede crear solicitudes en la plataforma.</p>"
+                        Body = SIGENRD.Core.Application.Services.EmailTemplate.Render(
+                            "Tu empresa fue validada",
+                            null,
+                            new[]
+                            {
+                                "La distribuidora validó a " + company.TradeName + " como empresa instaladora.",
+                                "Desde ahora puedes crear solicitudes de conexión y de medición neta a nombre de tus clientes."
+                            })
                     });
                 }
                 catch (Exception ex)

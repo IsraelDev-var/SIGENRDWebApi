@@ -10,7 +10,6 @@ namespace SIGENRD.UnitTests.Integration;
 [Collection(ApiCollection.Name)]
 public class EmailConfirmationTests(ApiFactory api)
 {
-    private static readonly Regex Link = new("href='([^']+)'", RegexOptions.Compiled);
 
     [FactIfDatabase]
     public async Task Flujo_de_registro_confirmacion_e_inicio_de_sesion()
@@ -36,7 +35,7 @@ public class EmailConfirmationTests(ApiFactory api)
 
         // 3. El enlace del correo confirma la cuenta.
         var mail = Assert.Single(api.Emails.Sent, e => e.To == email);
-        var href = Link.Match(mail.Body).Groups[1].Value;
+        var href = EmailLinks.First(mail.Body);
         Assert.False(string.IsNullOrEmpty(href), "el correo debe incluir el enlace de confirmación");
 
         var confirm = await client.GetAsync(new Uri(href).PathAndQuery);
@@ -61,7 +60,7 @@ public class EmailConfirmationTests(ApiFactory api)
             new { fullName = "Manipulado", email, password = ApiFactory.TestPassword, userType = 1 });
 
         var mail = Assert.Single(api.Emails.Sent, e => e.To == email);
-        var uri = new Uri(Link.Match(mail.Body).Groups[1].Value);
+        var uri = new Uri(EmailLinks.First(mail.Body));
         var tampered = uri.PathAndQuery.Substring(0, uri.PathAndQuery.Length - 4) + "AAAA";
 
         var confirm = await client.GetAsync(tampered);

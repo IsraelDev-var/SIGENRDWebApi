@@ -204,7 +204,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         register.EnsureSuccessStatusCode();
 
         var mail = Emails.Sent.Single(e => e.To == email);
-        var href = System.Text.RegularExpressions.Regex.Match(mail.Body, "href='([^']+)'").Groups[1].Value;
+        var href = EmailLinks.First(mail.Body);
         (await client.GetAsync(new Uri(href).PathAndQuery)).EnsureSuccessStatusCode();
 
         var login = await client.PostAsJsonAsync("/api/v1/Auth/login", new { email, password = TestPassword });

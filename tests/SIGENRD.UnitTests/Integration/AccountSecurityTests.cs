@@ -28,7 +28,6 @@ public class AccountSecurityTests(ApiFactory api)
     private const string Audience = "SIGENRD.Client";
     private const string StaffOnlyUrl = "/api/v1/Transformers/critical-zones";
 
-    private static readonly Regex Link = new("href='([^']+)'", RegexOptions.Compiled);
 
     private static string NewEmail(string prefix) => prefix + "-" + Guid.NewGuid().ToString("N")[..8] + "@test.energymap.local";
 
@@ -193,7 +192,7 @@ public class AccountSecurityTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.OK, forgot.StatusCode);
 
         var mail = api.Emails.Sent.Last(e => e.To == email && e.Subject.Contains("Restablecer"));
-        var href = Link.Match(mail.Body).Groups[1].Value;
+        var href = EmailLinks.First(mail.Body);
         var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(href).Query);
         return query["code"].ToString();
     }
