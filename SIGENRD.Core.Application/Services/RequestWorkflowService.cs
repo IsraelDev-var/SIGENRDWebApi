@@ -275,7 +275,8 @@ namespace SIGENRD.Core.Application.Services
                     {
                         To = email!,
                         Subject = title,
-                        Body = "<p>" + System.Net.WebUtility.HtmlEncode(message) + "</p>"
+                        Body = EmailTemplate.Render(title, null, new[] { message },
+                            note: "Puedes ver el detalle y el historial completo de la solicitud en tu portal de EnergyMap.")
                     });
                 }
                 catch (Exception ex)

@@ -46,7 +46,7 @@ public class UserAdministrationTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.OK, created.StatusCode);
 
         var mail = api.Emails.Sent.Single(e => e.To == email);
-        var href = Regex.Match(mail.Body, "href='([^']+)'").Groups[1].Value;
+        var href = EmailLinks.First(mail.Body);
         (await api.CreateClient().GetAsync(new Uri(href).PathAndQuery)).EnsureSuccessStatusCode();
 
         var userId = JsonDocument.Parse(await created.Content.ReadAsStringAsync()).RootElement.GetProperty("userId").GetString()!;

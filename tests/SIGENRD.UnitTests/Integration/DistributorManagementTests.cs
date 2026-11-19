@@ -52,7 +52,7 @@ public class DistributorManagementTests(ApiFactory api)
         var userId = JsonDocument.Parse(await created.Content.ReadAsStringAsync()).RootElement.GetProperty("userId").GetString()!;
 
         var mail = api.Emails.Sent.Single(e => e.To == email);
-        var href = Regex.Match(mail.Body, "href='([^']+)'").Groups[1].Value;
+        var href = EmailLinks.First(mail.Body);
         (await api.CreateClient().GetAsync(new Uri(href).PathAndQuery)).EnsureSuccessStatusCode();
 
         var client = api.CreateClient();

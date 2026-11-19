@@ -1,3 +1,4 @@
+using SIGENRD.Core.Application.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
@@ -127,13 +128,18 @@ namespace SIGENRD.Infrastructure.Identity.Services
             await _emailService.SendAsync(new EmailRequest
             {
                 To = user.Email,
-                Subject = "Bienvenido a SIGENRD - Confirma tu correo",
-                Body = $@"
-            <h3>¡Registro Exitoso!</h3>
-            <p>Hola {HtmlEncoder.Default.Encode(user.FullName)}, gracias por registrarte.</p>
-            <p>Por favor confirma tu cuenta haciendo clic en el siguiente enlace:</p>
-            <a href='{verificationUri}' style='background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none;'>Confirmar Correo</a>
-        "
+                Subject = "Confirma tu correo en EnergyMap",
+                Body = EmailTemplate.Render(
+                    "Confirma tu correo",
+                    user.FullName,
+                    new[]
+                    {
+                        "Gracias por registrarte en EnergyMap, la plataforma para consultar la capacidad de la red y tramitar tus solicitudes de conexión y de medición neta.",
+                        "Para activar tu cuenta, confirma que este correo es tuyo:"
+                    },
+                    "Confirmar mi correo",
+                    verificationUri,
+                    "Si no creaste una cuenta en EnergyMap, puedes ignorar este mensaje.")
             });
 
             // =========================================================================
@@ -180,13 +186,16 @@ namespace SIGENRD.Infrastructure.Identity.Services
         private Task SendAccountAlreadyExistsEmailAsync(ApplicationUser user) => _emailService.SendAsync(new EmailRequest
         {
             To = user.Email!,
-            Subject = "SIGENRD - Ya tienes una cuenta",
-            Body = $@"
-            <p>Hola {HtmlEncoder.Default.Encode(user.FullName)}:</p>
-            <p>Alguien intentó registrarse con este correo, pero ya tienes una cuenta.</p>
-            <p>Si olvidaste tu contraseña, puedes restablecerla desde la opción ""Olvidé mi contraseña"".
-            Si no fuiste tú, puedes ignorar este mensaje.</p>
-        "
+            Subject = "Ya tienes una cuenta en EnergyMap",
+            Body = EmailTemplate.Render(
+                "Ya tienes una cuenta",
+                user.FullName,
+                new[]
+                {
+                    "Alguien intentó registrarse en EnergyMap con este correo, pero ya existe una cuenta asociada a él.",
+                    "Si olvidaste tu contraseña, puedes restablecerla desde la opción \"Olvidé mi contraseña\" en la página de ingreso."
+                },
+                note: "Si no fuiste tú, puedes ignorar este mensaje: tu cuenta no ha cambiado.")
         });
 
         // -------------------------
@@ -343,13 +352,18 @@ namespace SIGENRD.Infrastructure.Identity.Services
             await _emailService.SendAsync(new EmailRequest
             {
                 To = user.Email!,
-                Subject = "SIGENRD - Restablecer contraseña",
-                Body = $@"
-            <p>Hola {HtmlEncoder.Default.Encode(user.FullName)}:</p>
-            <p>Recibimos una solicitud para restablecer tu contraseña. El enlace vence en 24 horas y sirve una sola vez.</p>
-            <a href='{link}'>Restablecer contraseña</a>
-            <p>Si no lo pediste tú, ignora este mensaje: tu contraseña no cambia.</p>
-        "
+                Subject = "Restablece tu contraseña de EnergyMap",
+                Body = EmailTemplate.Render(
+                    "Restablece tu contraseña",
+                    user.FullName,
+                    new[]
+                    {
+                        "Recibimos una solicitud para restablecer la contraseña de tu cuenta.",
+                        "El enlace vence en 24 horas y sirve una sola vez."
+                    },
+                    "Crear una nueva contraseña",
+                    link,
+                    "Si no lo pediste tú, ignora este mensaje: tu contraseña no cambia.")
             });
         }
 
