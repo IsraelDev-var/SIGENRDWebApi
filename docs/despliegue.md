@@ -1,5 +1,7 @@
 # Integración y despliegue continuos
 
+> Demo en Railway (API + frontend, base en Neon): ver [despliegue-railway.md](despliegue-railway.md).
+
 ## Qué hace cada flujo
 
 | Flujo | Cuándo corre | Qué hace |
