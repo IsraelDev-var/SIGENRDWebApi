@@ -191,7 +191,7 @@ public class AccountSecurityTests(ApiFactory api)
         var forgot = await client.PostAsJsonAsync("/api/v1/Auth/forgot-password", new { email });
         Assert.Equal(HttpStatusCode.OK, forgot.StatusCode);
 
-        var mail = api.Emails.Sent.Last(e => e.To == email && e.Subject.Contains("Restablecer"));
+        var mail = api.Emails.Sent.Last(e => e.To == email && e.Subject.Contains("Restablece"));
         var href = EmailLinks.First(mail.Body);
         var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(href).Query);
         return query["code"].ToString();
